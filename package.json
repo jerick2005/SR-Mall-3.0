@@ -1,0 +1,21 @@
+{
+  "name": "srmall-capstone",
+  "private": true,
+  "scripts": {
+    "build": "cd apps/web && npm run build",
+    "dev": "cd apps/web && npm run dev", 
+    "lint": "cd apps/web && npm run lint",
+    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
+    "db:generate": "cd packages/database && npm run db:generate",
+    "db:seed": "cd packages/database && npm run db:seed"
+  },
+  "devDependencies": {
+    "prettier": "latest"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "enhanced-resolve": "^5.20.1"
+  }
+}

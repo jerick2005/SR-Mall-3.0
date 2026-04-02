@@ -1,0 +1,10 @@
+--- ACCOUNT LIST ---
+
+👑 ADMIN ACCOUNTS:
+  - Email: srmall@admin.com | Password: 123123 | Name: SR-MANAGE Admin
+
+🏪 TENANT ACCOUNTS:
+  - Email: jerick@tenant.com | Password: 123123 | Name: Jerick Mall Owner
+
+👤 STANDARD USERS:
+  - Email: wen@user.com | Password: $2b$10$dNHhlUxXLxngqPWlCWGv/eO94XxVa5fr27stss/DlWxnFAJf0TIcm | Name: wen wen

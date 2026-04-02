@@ -1,0 +1,258 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String?
+  password  String
+  role      String   @default("CUSTOMER") // DEFAULT TO CUSTOMER (CUSTOMER, ADMIN, TENANT)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sentMessages     Message[]      @relation("SentMessages")
+  userConversations Conversation[] @relation("UserConversations")
+  targetConversations Conversation[] @relation("TargetConversations")
+  mallAds            MallAd[]        @relation("AdminAds")
+  
+  notifications         Notification[]
+  notificationPreference NotificationPreference?
+  reviews               Review[]
+  
+  // CMS Relations
+  publicViewConfigs     PublicViewConfig[]
+  publicViewCarousels   PublicViewCarousel[]
+  
+  tenant           Tenant?
+}
+
+model Tenant {
+  id           String   @id @default(uuid())
+  shopName     String
+  unitId       String   
+  isOpen       Boolean  @default(true)
+  description  String?
+  logoUrl      String?
+  galleryUrls  String[]  @default([]) // Native PostgreSQL Array
+  
+  userId       String   @unique
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  promos       TenantPromo[]
+
+  status       String   @default("ACTIVE") // ACTIVE, INACTIVE
+  products     Json     @default("[]") // Native PostgreSQL JSONB
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model AreaSlot {
+  id           String     @id @default(uuid())
+  unit_id      String     @unique // e.g., 'L1-101'
+  status       String   @default("AVAILABLE") // AVAILABLE, OCCUPIED, MAINTENANCE
+  sqm_size     Float
+  base_rent    Float
+  space_images String[] @default([]) // Array of space images
+  
+  tenant_id    String?    // Link to tenant if occupied
+  
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  conversations Conversation[]
+}
+
+model MallAd {
+  id              String   @id @default(uuid())
+  title           String
+  description     String?
+  imageUrl        String
+  linkUrl         String?  @default("/public-view")
+  priority        String   @default("MEDIUM") // HIGH, MEDIUM, LOW
+  startDate       DateTime
+  endDate         DateTime
+  isGlobal        Boolean  @default(true)
+  
+  adminId         String
+  admin           User     @relation("AdminAds", fields: [adminId], references: [id])
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model TenantPromo {
+  id              String   @id @default(uuid())
+  title           String
+  description     String?
+  promoImage      String?
+  promoVideo      String?
+  category        String   // e.g., 'Food', 'Tech', 'Fashion'
+  status          String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  mediaType       String   @default("IMAGE") // IMAGE, VIDEO
+  
+  startDate       DateTime
+  endDate         DateTime
+  
+  tenantId        String
+  tenant          Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model Conversation {
+  id          String   @id @default(uuid())
+  type        String   
+  
+  userId      String
+  user        User     @relation("UserConversations", fields: [userId], references: [id], onDelete: Cascade)
+  
+  targetId    String
+  target      User     @relation("TargetConversations", fields: [targetId], references: [id], onDelete: Cascade)
+
+  spaceSlotId String?
+  areaSlot    AreaSlot? @relation(fields: [spaceSlotId], references: [id])
+  
+  messages    Message[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Message {
+  id             String       @id @default(uuid())
+  content        String
+  
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  
+  senderId       String
+  sender         User         @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  
+  createdAt      DateTime     @default(now())
+}
+
+model SiteConfig {
+  id              String   @id @default("singleton")
+  heroTitle       String   @default("Experience the Future of Shopping.")
+  heroSubtitle    String   @default("Discover world-class retail, dining, and workspace solutions at SR Mall.")
+  heroBadge       String   @default("Professional Mall Management System")
+  heroBgUrl       String?
+  heroOverlayDark Int      @default(40) 
+  primaryBtnText  String   @default("Explore Now")
+  isMaintenance   Boolean  @default(false)
+  
+  defaultAdTitle  String   @default("Luxe Summer Sale")
+  defaultAdDesc   String   @default("Experience up to 70% off on all premium luxury brands.")
+  defaultAdImage  String?
+  defaultAdCta    String   @default("View Directory")
+  
+  updatedAt       DateTime @updatedAt
+}
+
+model NotificationPreference {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Notification types
+  newBookingInquiry    Boolean @default(true)
+  feedbackSpamDetected Boolean @default(true)
+  expiringContracts    Boolean @default(true)
+  overdueRentPayments  Boolean @default(true)
+  adSubmissionReceived Boolean @default(false)
+  systemHealthReports  Boolean @default(false)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  type      String   // NEW_BOOKING_INQUIRY, FEEDBACK_SPAM_DETECTED, etc.
+  title     String
+  message   String
+  isRead    Boolean  @default(false)
+  
+  createdAt DateTime @default(now())
+}
+
+model Review {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  rating    Int      // 1-5 stars
+  comment   String?
+  isApproved Boolean @default(false) // Admin approval required
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// CMS Models for Public View Management
+model PublicViewConfig {
+  id    String @id @default(uuid())
+  admin User?  @relation(fields: [adminId], references: [id])
+  adminId String?
+  
+  // Header Configuration
+  logoUrl        String?
+  companyName    String?
+  contactEmail   String?
+  contactPhone   String?
+  contactAddress String?
+  
+  // Hero Section
+  heroTitle       String?
+  heroSubtitle    String?
+  heroBgUrl       String?
+  heroBadge       String?
+  heroOverlayDark Int      @default(40) // 0-100
+  
+  // Featured Video
+  featuredVideoUrl String?
+  videoTitle       String?
+  videoDescription String?
+  
+  // About Section
+  aboutTitle       String?
+  aboutDescription String?
+  aboutImageUrl    String?
+  
+  // Contact Section
+  contactTitle     String?
+  contactDescription String?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model PublicViewCarousel {
+  id    String @id @default(uuid())
+  admin User?  @relation(fields: [adminId], references: [id])
+  adminId String?
+  
+  title       String
+  description String
+  imageUrl    String
+  linkUrl     String?
+  isActive    Boolean @default(true)
+  priority    Int     @default(0) // Higher number = higher priority
+  startDate   DateTime?
+  endDate     DateTime?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+

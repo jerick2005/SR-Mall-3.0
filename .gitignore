@@ -1,0 +1,30 @@
+# Dependency directories
+node_modules/
+
+# Next.js build output
+.next/
+out/
+build/
+
+# Expo build output
+.expo/
+dist/
+
+# Turbo cache
+.turbo/
+
+# Environment variables
+.env
+.env*.local
+.env.production
+.env.development
+
+# Editor directories and files
+.idea
+.vscode
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.DS_Store

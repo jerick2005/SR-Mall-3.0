@@ -1,0 +1,54 @@
+const { PrismaClient } = require('@srmall/database');
+const bcrypt = require('bcryptjs');
+
+const prisma = new PrismaClient();
+
+async function main() {
+  try {
+    const adminPassword = await bcrypt.hash('admin123', 10);
+    const admin = await prisma.user.upsert({
+      where: { email: 'admin@srmall.com' },
+      update: {},
+      create: {
+        email: 'admin@srmall.com',
+        name: 'System Admin',
+        password: adminPassword,
+        role: 'ADMIN'
+      }
+    });
+
+    const tenantPassword = await bcrypt.hash('tenant123', 10);
+    const tenantUser = await prisma.user.upsert({
+      where: { email: 'tenant@srmall.com' },
+      update: {},
+      create: {
+        email: 'tenant@srmall.com',
+        name: 'Demo Shop',
+        password: tenantPassword,
+        role: 'TENANT'
+      }
+    });
+
+    await prisma.tenant.upsert({
+      where: { userId: tenantUser.id },
+      update: {},
+      create: {
+        userId: tenantUser.id,
+        shopName: 'Demo Shop',
+        unitId: 'L1-100',
+        isOpen: true,
+        galleryUrls: '[]'
+      }
+    });
+
+    console.log('✅ DATABASE SEEDED SUCCESSFULLY!');
+    console.log('Admin Email: admin@srmall.com | Password: admin123');
+    console.log('Tenant Email: tenant@srmall.com | Password: tenant123');
+  } catch (error) {
+    console.error('Error seeding database:', error);
+  } finally {
+    await prisma.$disconnect();
+  }
+}
+
+main();

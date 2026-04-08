@@ -1,10 +1,13 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Search, User, Menu, LogOut, ChevronDown, X } from 'lucide-react';
+import { Search, User, Menu, LogOut, ChevronDown, X, Heart, ShoppingBag, Store } from 'lucide-react';
+import { getAllStorefrontsAction } from '@/app/actions/tenant';
+import { DigitalStorefront } from '@/types/storefront';
 import { useAuth } from '@/app/providers';
 import { LoginModal } from './login-modal';
+import { MerchantApplicationModal } from './merchant-application-modal';
 import NotificationDropdown from './notification-dropdown';
 import { PublicThemeToggle } from './theme-toggle';
 import clsx from 'clsx';
@@ -14,6 +17,31 @@ export const Navbar = () => {
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isMerchantModalOpen, setIsMerchantModalOpen] = useState(false);
+  const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
+  const [allShops, setAllShops] = useState<DigitalStorefront[]>([]);
+
+  const loadFavorites = () => {
+    if (typeof window !== 'undefined') {
+      const saved = JSON.parse(localStorage.getItem('sr_mall_favorites') || '[]');
+      setFavoriteIds(saved);
+    }
+  };
+
+  useEffect(() => {
+    loadFavorites();
+    
+    const fetchShops = async () => {
+      const res = await getAllStorefrontsAction();
+      if (res.success && res.data) setAllShops(res.data);
+    };
+    fetchShops();
+
+    window.addEventListener('favorites-updated', loadFavorites);
+    return () => window.removeEventListener('favorites-updated', loadFavorites);
+  }, []);
+
+  const favoriteShops = allShops.filter(s => favoriteIds.includes(s.id));
 
   return (
     <>
@@ -83,14 +111,14 @@ export const Navbar = () => {
                 <div className="relative">
                   <button
                     onClick={() => setIsProfileOpen(!isProfileOpen)}
-                    className={clsx('flex', 'items-center', 'gap-3', 'px-4', 'py-2', 'bg-zinc-800', 'rounded-full', 'border', 'border-white/5', 'transition-all', 'hover:shadow-lg')}
+                    className={clsx('flex', 'items-center', 'gap-3', 'px-4', 'py-2', 'bg-slate-100', 'dark:bg-zinc-800', 'rounded-full', 'border', 'border-slate-200', 'dark:border-white/5', 'transition-all', 'hover:shadow-lg')}
                   >
                     <div className={clsx('w-8', 'h-8', 'rounded-full', 'bg-primary', 'text-white', 'flex', 'items-center', 'justify-center', 'font-bold', 'text-sm')}>
                       {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
                     </div>
                     <div className={clsx('flex', 'flex-col', 'items-start', 'leading-none')}>
-                      <span className={clsx('text-xs', 'font-bold', 'text-white')}>{user?.name}</span>
-                      <span className={clsx('text-[10px]', 'text-slate-400', 'font-medium', 'tracking-tight', 'uppercase')}>
+                      <span className={clsx('text-xs', 'font-bold', 'text-charcoal', 'dark:text-white')}>{user?.name}</span>
+                      <span className={clsx('text-[10px]', 'text-slate-500', 'dark:text-slate-400', 'font-medium', 'tracking-tight', 'uppercase')}>
                         {user?.role?.toLowerCase() || 'Mall Visitor'}
                       </span>
                     </div>
@@ -98,19 +126,75 @@ export const Navbar = () => {
                   </button>
 
                   {isProfileOpen && (
-                    <div className={clsx('absolute', 'top-full', 'right-0', 'mt-4', 'w-56', 'bg-zinc-900', 'rounded-2xl', 'shadow-2xl', 'border', 'border-white/5', 'py-3', 'animate-fade-in-up')}>
-                      <div className={clsx('px-5', 'py-2', 'border-b', 'border-white/5', 'mb-2')}>
-                        <p className={clsx('text-[10px]', 'font-bold', 'text-slate-400', 'uppercase', 'tracking-widest')}>Account Overview</p>
+                    <div className={clsx('absolute', 'top-full', 'right-0', 'mt-4', 'w-72', 'bg-white', 'dark:bg-zinc-900', 'rounded-3xl', 'shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)]', 'border', 'border-slate-200', 'dark:border-white/5', 'animate-fade-in-up', 'overflow-hidden', 'z-[60]')}>
+                      <div className={clsx('px-6', 'py-4', 'border-b', 'border-slate-100', 'dark:border-white/5', 'bg-slate-50/50', 'dark:bg-white/5')}>
+                        <p className={clsx('text-[10px]', 'font-black', 'text-slate-400', 'uppercase', 'tracking-[0.2em]')}>Account Overview</p>
                       </div>
-                      <button className={clsx('w-full', 'flex', 'items-center', 'gap-3', 'px-5', 'py-3', 'text-sm', 'font-medium', 'hover:bg-white/5', 'transition-colors')}>
-                        <User size={16} /> My Profile
-                      </button>
-                      <button
-                        onClick={() => logout()}
-                        className={clsx('w-full', 'flex', 'items-center', 'gap-3', 'px-5', 'py-3', 'text-sm', 'font-bold', 'text-primary', 'hover:bg-primary/5', 'transition-colors', 'mt-2')}
-                      >
-                        <LogOut size={16} /> Sign Out
-                      </button>
+                      
+                      <div className="py-2">
+                        <button className={clsx('w-full', 'flex', 'items-center', 'gap-3', 'px-6', 'py-3', 'text-xs', 'font-bold', 'text-charcoal', 'dark:text-white', 'hover:bg-slate-50', 'dark:hover:bg-white/5', 'transition-colors')}>
+                          <User size={16} className="text-primary" /> My Profile
+                        </button>
+                        {user?.role === 'CUSTOMER' && (
+                          <button 
+                            onClick={() => {
+                              setIsMerchantModalOpen(true);
+                              setIsProfileOpen(false);
+                            }}
+                            className={clsx('w-full', 'flex', 'items-center', 'gap-3', 'px-6', 'py-3', 'text-xs', 'font-black', 'text-primary', 'hover:bg-primary/5', 'transition-colors', 'uppercase', 'tracking-widest')}
+                          >
+                            <Store size={16} /> Become a Partner
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Favorites List */}
+                      <div className={clsx('px-6', 'py-3', 'border-t', 'border-slate-100', 'dark:border-white/5')}>
+                         <div className="flex items-center justify-between mb-3">
+                            <p className={clsx('text-[10px]', 'font-black', 'text-slate-400', 'uppercase', 'tracking-[0.2em]', 'flex', 'items-center', 'gap-2')}>
+                               <Heart size={12} className="text-primary fill-primary" /> Favorites
+                            </p>
+                            <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">{favoriteShops.length}</span>
+                         </div>
+                         
+                         <div className="space-y-2 max-h-48 overflow-y-auto no-scrollbar">
+                            {favoriteShops.length > 0 ? (
+                               favoriteShops.map(shop => (
+                                  <Link 
+                                    key={shop.id}
+                                    href={`/shop/${shop.id}`}
+                                    onClick={() => setIsProfileOpen(false)}
+                                    className="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-white/5 transition-all group/fav"
+                                  >
+                                     <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-zinc-800 overflow-hidden border border-slate-200 dark:border-white/5">
+                                        {shop.logo_url ? (
+                                           <img src={shop.logo_url} className="w-full h-full object-cover" />
+                                        ) : (
+                                           <div className="w-full h-full flex items-center justify-center text-slate-300"><ShoppingBag size={14} /></div>
+                                        )}
+                                     </div>
+                                     <div className="flex-1 min-w-0">
+                                        <p className="text-[11px] font-bold text-charcoal dark:text-white truncate group-hover/fav:text-primary transition-colors">{shop.shop_name}</p>
+                                        <p className="text-[9px] text-slate-400 font-medium">{shop.unit_id}</p>
+                                     </div>
+                                  </Link>
+                               ))
+                            ) : (
+                               <div className="text-center py-6 px-4 bg-slate-50 dark:bg-black/20 rounded-2xl border border-dashed border-slate-200 dark:border-white/5">
+                                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">No Favorites Yet</p>
+                               </div>
+                            )}
+                         </div>
+                      </div>
+
+                      <div className="p-2 border-t border-slate-100 dark:border-white/5">
+                        <button
+                          onClick={() => logout()}
+                          className={clsx('w-full', 'flex', 'items-center', 'gap-3', 'px-4', 'py-3', 'text-xs', 'font-black', 'text-primary', 'hover:bg-primary/5', 'rounded-xl', 'transition-colors', 'uppercase', 'tracking-widest')}
+                        >
+                          <LogOut size={16} /> Sign Out
+                        </button>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -188,6 +272,11 @@ export const Navbar = () => {
       <LoginModal
         isOpen={isLoginOpen}
         onClose={() => setIsLoginOpen(false)}
+      />
+
+      <MerchantApplicationModal 
+        isOpen={isMerchantModalOpen} 
+        onClose={() => setIsMerchantModalOpen(false)} 
       />
     </>
   );

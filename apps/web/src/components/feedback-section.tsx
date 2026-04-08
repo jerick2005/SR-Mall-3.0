@@ -3,8 +3,9 @@
 import React, { useState, useEffect } from 'react';
 import { Star, MessageSquare, Send, LogIn, Heart, CheckCircle, AlertCircle } from 'lucide-react';
 import clsx from 'clsx';
-import { submitReviewAction, getApprovedReviewsAction } from '@/app/actions/review';
+import { submitReviewAction, getApprovedReviewsAction, editMyReviewAction, deleteMyReviewAction } from '@/app/actions/review';
 import { LoginModal } from '@/components/login-modal';
+import { useAuth } from '@/app/providers';
 
 interface FeedbackSectionProps {
   isAuthenticated: boolean;
@@ -30,6 +31,8 @@ export const FeedbackSection = ({ isAuthenticated }: FeedbackSectionProps) => {
   const [submitMessage, setSubmitMessage] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
+  const { user } = useAuth();
+
   useEffect(() => {
     loadReviews();
   }, []);
@@ -47,6 +50,36 @@ export const FeedbackSection = ({ isAuthenticated }: FeedbackSectionProps) => {
     }
   };
 
+  const myReview = user ? reviews.find(r => r.user.email === user.email) : undefined;
+
+  useEffect(() => {
+    if (myReview && rating === 0) {
+      setRating(myReview.rating);
+      setComment(myReview.comment || "");
+    }
+  }, [myReview]);
+
+  const handleDelete = async () => {
+    if (!user || !user.id) return;
+    if (!confirm('Are you sure you want to delete your review?')) return;
+    setIsSubmitting(true);
+    try {
+      const result = await deleteMyReviewAction(user.id);
+      if (result.success) {
+        setSubmitMessage({ type: 'success', message: 'Review deleted successfully!' });
+        setRating(0);
+        setComment("");
+        setTimeout(loadReviews, 1000);
+      } else {
+        setSubmitMessage({ type: 'error', message: result.error || 'Failed to delete review.' });
+      }
+    } catch (error) {
+      setSubmitMessage({ type: 'error', message: 'An error occurred.' });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const handleSubmit = async () => {
     if (rating === 0) {
       setSubmitMessage({
@@ -56,11 +89,21 @@ export const FeedbackSection = ({ isAuthenticated }: FeedbackSectionProps) => {
       return;
     }
 
+    if (!user || (!user.id && !isAuthenticated)) {
+      setSubmitMessage({
+        type: 'error',
+        message: 'Session error. Please log in again.'
+      });
+      return;
+    }
+
     setIsSubmitting(true);
     setSubmitMessage(null);
 
     try {
-      const result = await submitReviewAction(rating, comment);
+      const result = myReview 
+        ? await editMyReviewAction(user.id, rating, comment)
+        : await submitReviewAction(user.id, rating, comment);
       
       if (result.success) {
         setSubmitMessage({
@@ -135,17 +178,26 @@ export const FeedbackSection = ({ isAuthenticated }: FeedbackSectionProps) => {
                     <div className={clsx('flex', 'justify-between', 'items-start', 'mb-3', 'sm:mb-4')}>
                       <div className={clsx('flex', 'items-center', 'gap-3')}>
                         <div className={clsx('w-10', 'h-10', 'sm:w-12', 'sm:h-12', 'bg-gradient-to-br', 'from-primary/20', 'to-primary/5', 'dark:from-zinc-800', 'dark:to-zinc-700', 'rounded-full', 'flex', 'items-center', 'justify-center', 'font-bold', 'text-primary', 'text-sm', 'sm:text-base', 'shadow-inner')}>
-                          {review.user.name.charAt(0).toUpperCase()}
+                          {review.user?.name ? review.user.name.charAt(0).toUpperCase() : 'U'}
                         </div>
                         <div>
-                          <h4 className={clsx('font-bold', 'text-charcoal', 'dark:text-white', 'text-sm', 'sm:text-base')}>{review.user.name}</h4>
+                          <h4 className={clsx('font-bold', 'text-charcoal', 'dark:text-white', 'text-sm', 'sm:text-base')}>{review.user?.name || 'Anonymous Customer'}</h4>
                           <p className={clsx('text-[10px]', 'sm:text-xs', 'text-slate-400', 'font-medium')}>{formatDate(review.createdAt)}</p>
                         </div>
                       </div>
-                      <div className={clsx('flex', 'gap-0.5')}>
-                        {[...Array(5)].map((_, i) => (
-                          <Star key={i} size={12} className={i < review.rating ? "fill-primary text-primary" : "text-slate-200"} />
-                        ))}
+                      <div className="flex flex-col items-end gap-2">
+                        <div className={clsx('flex', 'gap-0.5')}>
+                          {[...Array(5)].map((_, i) => (
+                            <Star key={i} size={12} className={i < review.rating ? "fill-primary text-primary" : "text-slate-200"} />
+                          ))}
+                        </div>
+                        {user && user.email === review.user?.email && (
+                          <div className="flex items-center gap-2 mt-1">
+                             <a href="#feedback-form" onClick={() => { setRating(review.rating); setComment(review.comment || ""); }} className="text-[10px] text-primary font-bold uppercase tracking-widest hover:underline cursor-pointer">Edit</a>
+                             <span className="text-slate-300">|</span>
+                             <button onClick={handleDelete} disabled={isSubmitting} className="text-[10px] text-red-500 font-bold uppercase tracking-widest hover:underline cursor-pointer">Delete</button>
+                          </div>
+                        )}
                       </div>
                     </div>
                     {review.comment && (
@@ -164,7 +216,7 @@ export const FeedbackSection = ({ isAuthenticated }: FeedbackSectionProps) => {
             </div>
 
           {/* Right Column: Submit Form */}
-          <div className={clsx('lg:sticky', 'lg:top-24', 'h-fit')}>
+          <div id="feedback-form" className={clsx('lg:sticky', 'lg:top-24', 'h-fit')}>
             <div className={clsx('p-4', 'sm:p-6', 'lg:p-8', 'bg-white', 'dark:bg-zinc-900', 'rounded-2xl', 'sm:rounded-3xl', 'shadow-xl', 'border', 'border-slate-100', 'dark:border-white/5')}>
               <div className={clsx('flex', 'items-center', 'gap-3', 'mb-6')}>
                 <div className={clsx('w-10', 'h-10', 'sm:w-12', 'sm:h-12', 'bg-primary/10', 'rounded-xl', 'sm:rounded-2xl', 'flex', 'items-center', 'justify-center')}>
@@ -241,23 +293,25 @@ export const FeedbackSection = ({ isAuthenticated }: FeedbackSectionProps) => {
                       />
                     </div>
 
-                    <button 
-                      onClick={handleSubmit}
-                      disabled={isSubmitting || rating === 0}
-                      className={clsx('w-full', 'flex', 'items-center', 'justify-center', 'gap-2', 'py-3', 'sm:py-4', 'bg-primary', 'text-white', 'font-bold', 'text-sm', 'rounded-xl', 'hover:bg-primary-hover', 'transition-all', 'active:scale-95', 'shadow-lg', 'shadow-primary/30', 'disabled:opacity-50', 'disabled:scale-100')}
-                    >
-                      {isSubmitting ? (
-                        <>
-                          <div className={clsx('inline-block', 'animate-spin', 'rounded-full', 'h-4', 'w-4', 'border-b-2', 'border-white')}></div>
-                          Submitting...
-                        </>
-                      ) : (
-                        <>
-                          <Send size={16} />
-                          Submit Review
-                        </>
-                      )}
-                    </button>
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      <button 
+                        onClick={handleSubmit}
+                        disabled={isSubmitting || rating === 0}
+                        className={clsx('w-full', 'flex', 'items-center', 'justify-center', 'gap-2', 'py-3', 'sm:py-4', 'bg-primary', 'text-white', 'font-bold', 'text-sm', 'rounded-xl', 'hover:bg-primary-hover', 'transition-all', 'active:scale-95', 'shadow-lg', 'shadow-primary/30', 'disabled:opacity-50', 'disabled:scale-100')}
+                      >
+                        {isSubmitting ? (
+                          <>
+                            <div className={clsx('inline-block', 'animate-spin', 'rounded-full', 'h-4', 'w-4', 'border-b-2', 'border-white')}></div>
+                            Processing...
+                          </>
+                        ) : (
+                          <>
+                            <Send size={16} />
+                            {myReview ? 'Update Review' : 'Submit Review'}
+                          </>
+                        )}
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>

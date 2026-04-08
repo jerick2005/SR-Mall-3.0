@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Store, Camera, Save, Phone, MapPin, CheckCircle, UploadCloud, Trash2, Loader2 } from 'lucide-react';
+import { Store, Camera, Save, Phone, MapPin, CheckCircle, UploadCloud, Trash2, Loader2, ShoppingBag } from 'lucide-react';
 import { DigitalStorefront, StoreProduct } from '@/types/storefront';
 import { updateStorefrontAction, getStorefrontAction } from '@/app/actions/tenant';
 import { useAuth } from '@/app/providers';
@@ -42,6 +42,7 @@ export default function DigitalStorefrontPage() {
   
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [activeTab, setActiveTab] = useState<'identity' | 'gallery' | 'catalog'>('identity');
   const logoInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
 
@@ -229,8 +230,31 @@ export default function DigitalStorefrontPage() {
         {/* Left Side: Editor (8 cols) */}
         <div className="lg:col-span-8 space-y-6 lg:space-y-10">
           
+          {/* Tab Navigation */}
+          <div className="flex overflow-x-auto gap-2 p-2 bg-slate-100 dark:bg-zinc-900/50 border border-slate-200 dark:border-white/5 rounded-3xl hide-scrollbar shadow-inner mt-2">
+            {[
+              { id: 'identity', label: 'Brand Identity', icon: Store },
+              { id: 'gallery', label: 'Visual Experience', icon: Camera },
+              { id: 'catalog', label: 'Products Catalog', icon: ShoppingBag }
+            ].map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as 'identity' | 'gallery' | 'catalog')}
+                className={`flex-1 flex items-center justify-center gap-2 px-4 sm:px-6 py-4 rounded-2xl text-[10px] sm:text-xs font-black uppercase tracking-widest whitespace-nowrap transition-all ${
+                  activeTab === tab.id 
+                    ? 'bg-white dark:bg-zinc-800 text-primary shadow-md ring-1 ring-slate-200 dark:ring-white/10' 
+                    : 'text-slate-500 hover:text-charcoal dark:hover:text-white hover:bg-white/50 dark:hover:bg-zinc-800/50'
+                }`}
+              >
+                <tab.icon size={16} />
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
           {/* Identity Card */}
-          <div className="bg-white dark:bg-zinc-900 border border-slate-100 dark:border-white/5 rounded-2xl lg:rounded-[3rem] shadow-sm p-6 lg:p-12 overflow-hidden relative">
+          {activeTab === 'identity' && (
+          <div className="bg-white dark:bg-zinc-900 border border-slate-100 dark:border-white/5 rounded-2xl lg:rounded-[3rem] shadow-sm p-6 lg:p-12 overflow-hidden relative animate-fade-in-up">
             <div className="absolute top-0 right-0 w-20 h-20 lg:w-32 lg:h-32 bg-primary/5 rounded-full -mr-10 -mt-10 lg:-mr-16 lg:-mt-16 blur-2xl"></div>
             
             <h2 className="font-black text-charcoal dark:text-white flex items-center gap-2 lg:gap-3 mb-6 lg:mb-10 text-lg lg:text-xl tracking-tight uppercase">
@@ -302,9 +326,11 @@ export default function DigitalStorefrontPage() {
                 </div>
             </div>
           </div>
+          )}
 
           {/* Gallery Card */}
-          <div className="bg-white dark:bg-zinc-900 border border-slate-100 dark:border-white/5 rounded-2xl lg:rounded-[3rem] shadow-sm p-6 lg:p-12">
+          {activeTab === 'gallery' && (
+          <div className="bg-white dark:bg-zinc-900 border border-slate-100 dark:border-white/5 rounded-2xl lg:rounded-[3rem] shadow-sm p-6 lg:p-12 animate-fade-in-up">
               <div className="flex items-center justify-between mb-6 lg:mb-10">
                 <h2 className="font-black text-charcoal dark:text-white flex items-center gap-2 lg:gap-3 text-lg lg:text-xl tracking-tight uppercase">
                     <UploadCloud size={20} className="text-primary lg:w-6 lg:h-6" /> Visual Experience
@@ -346,9 +372,11 @@ export default function DigitalStorefrontPage() {
                 ))}
               </div>
           </div>
+          )}
 
           {/* Product Catalog Card */}
-          <div className="bg-white dark:bg-zinc-900 border border-slate-100 dark:border-white/5 rounded-2xl lg:rounded-[3rem] shadow-sm p-6 lg:p-12 mt-6 lg:mt-10">
+          {activeTab === 'catalog' && (
+          <div className="bg-white dark:bg-zinc-900 border border-slate-100 dark:border-white/5 rounded-2xl lg:rounded-[3rem] shadow-sm p-6 lg:p-12 animate-fade-in-up">
               <div className="flex flex-col sm:flex-row items-center justify-between mb-6 lg:mb-10 gap-4">
                 <h2 className="font-black text-charcoal dark:text-white flex items-center gap-2 lg:gap-3 text-lg lg:text-xl tracking-tight uppercase">
                     <Store size={20} className="text-primary lg:w-6 lg:h-6" /> Products Catalog
@@ -409,6 +437,7 @@ export default function DigitalStorefrontPage() {
                 )}
               </div>
           </div>
+          )}
         </div>
 
         {/* Right Side: Live Feedback Preview (4 cols) */}

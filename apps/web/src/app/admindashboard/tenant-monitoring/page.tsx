@@ -9,7 +9,8 @@ import {
 } from 'lucide-react';
 import { RegisterTenantModal } from '@/components/admin/register-tenant-modal';
 import clsx from 'clsx';
-import { getAllTenantsAction, deleteTenantAction } from '@/app/actions/tenant';
+import { getAllTenantsAction, deleteTenantAction, approveTenantAction } from '@/app/actions/tenant';
+import { getAreaSlots } from '@/app/actions/space-slot';
 
 interface Tenant {
   id: string;
@@ -55,6 +56,9 @@ export default function TenantMonitoring() {
   const [selectedTenant, setSelectedTenant] = useState<Tenant | null>(null);
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
+  const [isApproving, setIsApproving] = useState<string | null>(null);
+  const [availableSlots, setAvailableSlots] = useState<any[]>([]);
+  const [selectedUnitForApproval, setSelectedUnitForApproval] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [paymentFilter, setPaymentFilter] = useState<string>('all');
@@ -116,7 +120,15 @@ export default function TenantMonitoring() {
 
   useEffect(() => {
     loadTenants();
+    loadAvailableSlots();
   }, []);
+
+  const loadAvailableSlots = async () => {
+    const result = await getAreaSlots();
+    if (result.success && result.data) {
+      setAvailableSlots(result.data.filter((s: any) => s.status === 'AVAILABLE'));
+    }
+  };
 
   const handleRegistrationSuccess = (shopName: string, slotId: string) => {
     setToast({ msg: `✓ ${shopName} registered successfully`, type: 'success' });
@@ -138,6 +150,30 @@ export default function TenantMonitoring() {
       }
     } catch (error) {
       setToast({ msg: 'Error deleting tenant', type: 'error' });
+    }
+  };
+
+  const handleApproveTenant = async (tenantId: string) => {
+    if (!selectedUnitForApproval) {
+      setToast({ msg: 'Please select a Unit ID to assign', type: 'error' });
+      return;
+    }
+
+    try {
+      setIsApproving(tenantId);
+      const result = await approveTenantAction(tenantId, selectedUnitForApproval);
+      if (result.success) {
+        setToast({ msg: '✓ Merchant approved! User role changed to TENANT', type: 'success' });
+        setSelectedTenant(null);
+        setSelectedUnitForApproval('');
+        loadTenants();
+      } else {
+        setToast({ msg: result.error || 'Failed to approve', type: 'error' });
+      }
+    } catch (error) {
+      setToast({ msg: 'Error approving merchant', type: 'error' });
+    } finally {
+      setIsApproving(null);
     }
   };
 
@@ -718,6 +754,47 @@ export default function TenantMonitoring() {
                   </div>
                 )}
               </div>
+
+              {/* Approval Section for PENDING tenants */}
+              {selectedTenant.status === 'PENDING' && (
+                <div className={clsx('p-6', 'border-t', 'border-amber-200', 'dark:border-amber-900/30', 'bg-amber-50', 'dark:bg-amber-900/10', 'shrink-0', 'space-y-4')}>
+                  <div className={clsx('flex', 'items-center', 'gap-2', 'text-amber-700', 'dark:text-amber-400')}>
+                    <CheckCircle size={18} />
+                    <span className={clsx('font-bold', 'text-sm', 'uppercase', 'tracking-wider')}>Approve Application</span>
+                  </div>
+                  <p className={clsx('text-xs', 'text-slate-600', 'dark:text-slate-400')}>
+                    Assign a Unit ID to approve this merchant. This will change their account role to TENANT.
+                  </p>
+                  <select
+                    value={selectedUnitForApproval}
+                    onChange={(e) => setSelectedUnitForApproval(e.target.value)}
+                    className={clsx('w-full', 'p-3', 'bg-white', 'dark:bg-zinc-800', 'border', 'border-slate-200', 'dark:border-white/10', 'rounded-xl', 'text-sm', 'focus:ring-2', 'focus:ring-primary', 'focus:border-primary')}
+                  >
+                    <option value="">Select Unit ID...</option>
+                    {availableSlots.map((slot) => (
+                      <option key={slot.unit_id} value={slot.unit_id}>
+                        {slot.unit_id} - {slot.sqm_size} sqm
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    onClick={() => handleApproveTenant(selectedTenant.id)}
+                    disabled={isApproving === selectedTenant.id || !selectedUnitForApproval}
+                    className={clsx(
+                      'w-full', 'py-3', 'font-black', 'text-xs', 'uppercase', 'tracking-widest', 'rounded-xl', 'transition-all', 'flex', 'items-center', 'justify-center', 'gap-2',
+                      isApproving === selectedTenant.id || !selectedUnitForApproval
+                        ? 'bg-slate-200 dark:bg-zinc-700 text-slate-400 cursor-not-allowed'
+                        : 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg hover:scale-[1.02]'
+                    )}
+                  >
+                    {isApproving === selectedTenant.id ? (
+                      <><RefreshCw size={16} className="animate-spin" /> Approving...</>
+                    ) : (
+                      <><CheckCircle size={16} /> Approve & Assign Unit</>
+                    )}
+                  </button>
+                </div>
+              )}
 
               {/* Modal Footer */}
               <div className={clsx('p-6', 'border-t', 'border-slate-200', 'dark:border-white/5', 'bg-slate-50', 'dark:bg-zinc-900', 'shrink-0', 'space-y-3')}>

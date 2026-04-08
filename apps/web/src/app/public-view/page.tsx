@@ -8,7 +8,7 @@ import { AdBanner } from '@/components/ad-banner';
 import { FeedbackSection } from '@/components/feedback-section';
 import { ChatBox } from '@/components/chat-box';
 import { EventInquiryForm } from '@/components/event-inquiry-form';
-import { Search, MapPin, Navigation, ArrowRight, MessageCircle, X, Loader2, RefreshCw } from 'lucide-react';
+import { Search, MapPin, Navigation, ArrowRight, MessageCircle, X, Loader2, RefreshCw, Tag, ShoppingBag, Sparkles, Zap, Shirt, Coffee } from 'lucide-react';
 import { useAuth } from '@/app/providers';
 import { DigitalStorefront } from '@/types/storefront';
 import { getAllStorefrontsAction } from '@/app/actions/tenant';
@@ -26,6 +26,8 @@ export default function PublicDigitalConcierge() {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [visibleCount, setVisibleCount] = useState(6);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [visibleSlotsCount, setVisibleSlotsCount] = useState(4);
+  const [isLoadingMoreSlots, setIsLoadingMoreSlots] = useState(false);
   const [config, setConfig] = useState<any>(null);
   const [selectedCategory, setSelectedCategory] = useState("All Categories");
   const [shops, setShops] = useState<DigitalStorefront[]>([]);
@@ -33,8 +35,12 @@ export default function PublicDigitalConcierge() {
   const [slots, setSlots] = useState<AreaSlot[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(true);
   const [selectedSlot, setSelectedSlot] = useState<AreaSlot | null>(null);
-  const [chatInitialShopName, setChatInitialShopName] = useState<string | undefined>(undefined);
-  const [chatRecipient, setChatRecipient] = useState<'admin' | 'shop'>('shop');
+  
+  // Dynamic Chat Intros
+  const [chatRecipient, setChatRecipient] = useState<'shop' | 'admin'>('shop');
+  const [chatInitialShopName, setChatInitialShopName] = useState<string | undefined>();
+  const [chatInquirySlotId, setChatInquirySlotId] = useState<string | null>(null);
+  
   const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
   const [ads, setAds] = useState<any[]>([]);
   const [tenantPromos, setTenantPromos] = useState<any[]>([]);
@@ -165,12 +171,23 @@ export default function PublicDigitalConcierge() {
     }, 800);
   };
 
+  const handleLoadMoreSlots = () => {
+    setIsLoadingMoreSlots(true);
+    setTimeout(() => {
+      setVisibleSlotsCount(prev => prev + 4);
+      setIsLoadingMoreSlots(false);
+    }, 800);
+  };
+
   const visibleShopsArray = filteredShops.slice(0, visibleCount);
   const hasMore = visibleCount < filteredShops.length;
 
+  const visibleSlotsArray = filteredSlots.slice(0, visibleSlotsCount);
+  const hasMoreSlots = visibleSlotsCount < filteredSlots.length;
+
 
   return (
-    <div className={clsx('min-h-screen', 'bg-white', 'dark:bg-black', 'font-sans', 'selection:bg-primary', 'selection:text-white', 'overflow-x-hidden')}>
+    <div className={clsx('min-h-screen', 'bg-slate-100', 'dark:bg-black', 'font-sans', 'selection:bg-primary', 'selection:text-white', 'overflow-x-hidden')}>
       <Navbar />
 
       {/* High Impact Hero Carousel */}
@@ -181,26 +198,26 @@ export default function PublicDigitalConcierge() {
 
       {/* Hero Content Section */}
       {config?.isMaintenance ? (
-        <section className={clsx('min-h-screen', 'bg-charcoal', 'flex', 'flex-col', 'items-center', 'justify-center', 'p-4', 'sm:p-8', 'lg:p-20', 'text-center', 'animate-fade-in')}>
+        <section className={clsx('min-h-screen', 'bg-slate-50', 'dark:bg-charcoal', 'flex', 'flex-col', 'items-center', 'justify-center', 'p-4', 'sm:p-8', 'lg:p-20', 'text-center', 'animate-fade-in')}>
           <div className={clsx('w-24', 'h-24', 'bg-primary/20', 'text-primary', 'border', 'border-primary/40', 'rounded-[2.5rem]', 'flex', 'items-center', 'justify-center', 'mb-10', 'shadow-2xl')}>
             <Loader2 size={48} className="animate-spin" />
           </div>
-          <h1 className={clsx('text-5xl', 'font-black', 'text-white', 'mb-4', 'uppercase', 'tracking-tighter')}>System Maintenance</h1>
-          <p className={clsx('text-slate-400', 'font-bold', 'max-w-lg', 'uppercase', 'tracking-widest', 'text-sm', 'leading-loose')}>
+          <h1 className={clsx('text-5xl', 'font-black', 'text-charcoal', 'dark:text-white', 'mb-4', 'uppercase', 'tracking-tighter')}>System Maintenance</h1>
+          <p className={clsx('text-slate-500', 'dark:text-slate-400', 'font-bold', 'max-w-lg', 'uppercase', 'tracking-widest', 'text-sm', 'leading-loose')}>
             We are currently upgrading the SR-MANAGE platform to serve you better. We'll be back shortly.
           </p>
         </section>
       ) : (
         <section className={clsx('relative', 'pt-16', 'sm:pt-20', 'lg:pt-24', 'pb-20', 'sm:pb-28', 'lg:pb-32', 'overflow-hidden', 'flex', 'items-center', 'justify-center', 'min-h-[500px]', 'sm:min-h-[600px]')}>
-          <div className={clsx('absolute', 'inset-0', 'bg-black')}>
+          <div className={clsx('absolute', 'inset-0', 'bg-slate-50', 'dark:bg-black')}>
             <div
-              className={clsx('absolute', 'inset-0', 'bg-cover', 'bg-center', 'opacity-60', 'transition-opacity', 'duration-1000')}
+              className={clsx('absolute', 'inset-0', 'bg-cover', 'bg-center', 'opacity-30', 'dark:opacity-60', 'transition-opacity', 'duration-1000')}
               style={{
                 backgroundImage: `url(${config?.heroBgUrl || 'https://images.unsplash.com/photo-1519642918688-7e43b19245d8?auto=format&fit=crop&q=80&w=2000'})`,
                 opacity: 1 - (config?.heroOverlayDark || 40) / 100
               }}
             />
-            <div className={clsx('absolute', 'inset-0', 'bg-linear-to-b', 'from-black/80', 'via-transparent', 'to-black/80')}></div>
+            <div className={clsx('absolute', 'inset-0', 'bg-linear-to-b', 'from-white', 'via-white/20', 'to-white', 'dark:from-black/80', 'dark:to-black/80')}></div>
           </div>
 
           <div className={clsx('max-w-7xl', 'mx-auto', 'px-4', 'sm:px-6', 'relative', 'z-10', 'flex', 'flex-col', 'items-center', 'text-center')}>
@@ -209,17 +226,17 @@ export default function PublicDigitalConcierge() {
                 <span className={clsx('inline-block', 'px-3', 'sm:px-4', 'py-1', 'sm:py-1.5', 'bg-primary/10', 'text-primary', 'text-[10px]', 'sm:text-[11px]', 'font-bold', 'uppercase', 'tracking-[0.15em]', 'sm:tracking-[0.2em]', 'rounded-full', 'border', 'border-primary/20', 'animate-fade-in', 'shadow-sm', 'backdrop-blur-md')}>
                   {config?.heroBadge || "Professional Mall Management System"}
                 </span>
-                <h1 className={clsx('text-3xl', 'sm:text-5xl', 'md:text-6xl', 'lg:text-8xl', 'font-black', 'text-white', 'tracking-tight', 'leading-[1.05]', 'sm:leading-[1.1]', 'animate-fade-in-up', 'drop-shadow-2xl')}>
+                <h1 className={clsx('text-4xl', 'sm:text-5xl', 'md:text-6xl', 'lg:text-8xl', 'font-black', 'text-charcoal', 'dark:text-white', 'tracking-tight', 'leading-[1.05]', 'sm:leading-[1.1]', 'animate-fade-in-up', 'drop-shadow-sm')}>
                   {config?.heroTitle || "Experience the Future of Shopping."}
                 </h1>
-                <p className={clsx('text-sm', 'sm:text-lg', 'md:text-xl', 'text-slate-300', 'font-medium', 'max-w-xl', 'sm:max-w-2xl', 'mx-auto', 'leading-relaxed', 'animate-fade-in-up', 'delay-100', 'drop-shadow-lg', 'px-2', 'sm:px-0')}>
+                <p className={clsx('text-xs', 'sm:text-lg', 'md:text-xl', 'text-slate-600', 'dark:text-slate-300', 'font-medium', 'max-w-xl', 'sm:max-w-2xl', 'mx-auto', 'leading-relaxed', 'animate-fade-in-up', 'delay-100', 'drop-shadow-none', 'px-4', 'sm:px-0')}>
                   {config?.heroSubtitle || "Discover world-class retail, dining, and workspace solutions at SR Mall — your digital concierge for everything mall-related."}
                 </p>
               </div>
 
               <div className={clsx('relative', 'max-w-xl', 'sm:max-w-2xl', 'mx-auto', 'group', 'animate-fade-in-up', 'delay-200', 'px-2', 'sm:px-0')}>
                 <div className={clsx('absolute', '-inset-1', 'bg-linear-to-r', 'from-primary', 'to-blue-600', 'rounded-3xl', 'blur', 'opacity-25', 'group-hover:opacity-40', 'transition', 'duration-1000', 'group-hover:duration-200')}></div>
-                <div className={clsx('relative', 'flex', 'flex-col', 'sm:flex-row', 'items-center', 'bg-white/95', 'dark:bg-zinc-900/95', 'backdrop-blur-xl', 'rounded-2xl', 'shadow-2xl', 'p-2', 'border', 'border-white/20')}>
+                <div className={clsx('relative', 'flex', 'flex-col', 'sm:flex-row', 'items-center', 'bg-slate-100/95', 'dark:bg-zinc-900/95', 'backdrop-blur-xl', 'rounded-2xl', 'shadow-2xl', 'p-2', 'border', 'border-white/20')}>
                   <Search size={22} className={clsx('ml-5', 'text-slate-400')} />
                   <input
                     type="text"
@@ -239,18 +256,18 @@ export default function PublicDigitalConcierge() {
 
               <div className={clsx('flex', 'flex-row', 'items-center', 'justify-center', 'gap-4', 'sm:gap-6', 'lg:gap-12', 'pt-4', 'sm:pt-6')}>
                 <div className={clsx('text-center', 'space-y-1')}>
-                  <div className={clsx('text-xl sm:text-2xl', 'font-black', 'text-white', 'italic')}>250+</div>
-                  <div className={clsx('text-[9px] sm:text-[10px]', 'font-bold', 'uppercase', 'tracking-widest', 'text-slate-400')}>Total Shops</div>
+                  <div className={clsx('text-xl sm:text-2xl', 'font-black', 'text-charcoal', 'dark:text-white', 'italic')}>250+</div>
+                  <div className={clsx('text-[9px] sm:text-[10px]', 'font-bold', 'uppercase', 'tracking-widest', 'text-slate-500', 'dark:text-slate-400')}>Total Shops</div>
                 </div>
-                <div className={clsx('hidden sm:block w-px h-10 bg-white/10')}></div>
+                <div className={clsx('hidden sm:block w-px h-10 bg-slate-200', 'dark:bg-white/10')}></div>
                 <div className={clsx('text-center', 'space-y-1', 'text-primary')}>
                   <div className={clsx('text-xl sm:text-2xl', 'font-black', 'italic')}>Open</div>
                   <div className={clsx('text-[9px] sm:text-[10px]', 'font-bold', 'uppercase', 'tracking-widest', 'opacity-60')}>Status</div>
                 </div>
-                <div className={clsx('hidden sm:block w-px h-10 bg-white/10')}></div>
+                <div className={clsx('hidden sm:block w-px h-10 bg-slate-200', 'dark:bg-white/10')}></div>
                 <div className={clsx('text-center', 'space-y-1')}>
-                  <div className={clsx('text-xl sm:text-2xl', 'font-black', 'text-white', 'italic')}>1.2M</div>
-                  <div className={clsx('text-[9px] sm:text-[10px]', 'font-bold', 'uppercase', 'tracking-widest', 'text-slate-400')}>Monthly Visitors</div>
+                  <div className={clsx('text-xl sm:text-2xl', 'font-black', 'text-charcoal', 'dark:text-white', 'italic')}>1.2M</div>
+                  <div className={clsx('text-[9px] sm:text-[10px]', 'font-bold', 'uppercase', 'tracking-widest', 'text-slate-500', 'dark:text-slate-400')}>Monthly Visitors</div>
                 </div>
               </div>
             </div>
@@ -259,7 +276,7 @@ export default function PublicDigitalConcierge() {
       )}
 
       {/* Featured Advertisement Video Section */}
-      <section className={clsx('py-12', 'sm:py-16', 'lg:py-24', 'bg-slate-100', 'dark:bg-zinc-950', 'relative', 'overflow-hidden', 'border-y', 'border-slate-200', 'dark:border-white/5')}>
+      <section className={clsx('py-12', 'sm:py-16', 'lg:py-24', 'bg-slate-200', 'dark:bg-zinc-950', 'relative', 'overflow-hidden', 'border-y', 'border-slate-300', 'dark:border-white/5')}>
         <div className={clsx('absolute', 'inset-0', 'bg-primary/5', 'dark:bg-[#BE1E2D]/5')}></div>
         <div className={clsx('max-w-7xl', 'mx-auto', 'px-4', 'relative', 'z-10', 'flex', 'flex-col', 'md:flex-row', 'items-center', 'gap-8', 'sm:gap-12', 'lg:gap-16')}>
 
@@ -310,35 +327,66 @@ export default function PublicDigitalConcierge() {
       </section>
 
       {/* Shop Directory Section */}
-      <section id="directory" className={clsx('py-16 sm:py-20 lg:py-24 bg-white dark:bg-zinc-950')}>
+      <section id="directory" className={clsx('py-16 sm:py-20 lg:py-24 bg-slate-100 dark:bg-zinc-950')}>
         <div className={clsx('max-w-7xl mx-auto px-4 sm:px-6 lg:px-8')}>
           {/* Section Header */}
-          <div className={clsx('text-center', 'mb-10', 'sm:mb-14')}>
-            <span className={clsx('inline-flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-primary font-bold bg-primary/10 px-4 py-1.5 rounded-full mb-4')}>
-              Premium Collection
-            </span>
-            <h2 className={clsx('text-2xl sm:text-3xl lg:text-4xl font-black text-charcoal dark:text-white tracking-tight mb-3')}>
-              Mall Directory
-            </h2>
-            <p className={clsx('text-slate-500 font-medium text-sm sm:text-base max-w-xl mx-auto')}>
-              Explore our curated selection of top-tier retail and dining experiences
-            </p>
+          <div className={clsx('relative', 'mb-16', 'sm:mb-20')}>
+            <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8">
+              <div className="max-w-2xl">
+                <span className={clsx('inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.4em] text-primary bg-primary/10 px-6 py-2 rounded-full mb-6 border border-primary/20')}>
+                  Premium Collection
+                </span>
+                <h2 className={clsx('text-4xl', 'sm:text-6xl', 'lg:text-7xl', 'font-black', 'text-charcoal', 'dark:text-white', 'tracking-tighter', 'leading-[0.95]', 'lg:leading-[0.9]', 'mb-6', 'sm:mb-8')}>
+                  Mall <br />
+                  <span className="text-slate-300 dark:text-zinc-800">Directory.</span>
+                </h2>
+                <p className={clsx('text-sm', 'sm:text-lg', 'text-slate-500', 'dark:text-slate-400', 'font-medium', 'leading-relaxed', 'max-w-xl')}>
+                  Navigate through our curated ecosystem of high-end retail, digital-first storefronts, and world-class dining destinations.
+                </p>
+              </div>
+
+              {/* In-Section Search Input */}
+              <div className="w-full lg:w-96">
+                <div className="relative group">
+                  <Search size={20} className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors" />
+                  <input 
+                    type="text" 
+                    placeholder="Search stores, brands, or unit IDs..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full bg-white dark:bg-zinc-900 border-2 border-slate-100 dark:border-white/5 rounded-[1.5rem] py-5 pl-14 pr-6 text-sm font-bold text-charcoal dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all shadow-xl shadow-slate-200/50 dark:shadow-none"
+                  />
+                </div>
+              </div>
+            </div>
           </div>
 
-          {/* Category Filter */}
-          <div className={clsx('flex flex-wrap justify-center gap-2 sm:gap-3 mb-8 sm:mb-12')}>
-            {['All Categories', 'Food', 'Tech', 'Fashion', 'Dining', 'Electronics'].map((cat) => (
+          {/* Icon-based Category Switcher */}
+          <div className={clsx('flex', 'items-center', 'gap-3', 'sm:gap-4', 'mb-10', 'sm:mb-16', 'pb-4', 'overflow-x-auto', 'no-scrollbar', 'touch-pan-x', 'relative')}>
+            {/* Scroll Indication for Mobile */}
+            <div className="lg:hidden absolute right-0 top-0 bottom-4 w-8 bg-linear-to-l from-slate-100 dark:from-zinc-950 to-transparent pointer-events-none z-20"></div>
+            {[
+              { id: 'All Categories', label: 'Everything', icon: <ShoppingBag size={16} /> },
+              { id: 'Food', label: 'Gastronomy', icon: <Coffee size={16} /> },
+              { id: 'Tech', label: 'Innovation', icon: <Zap size={16} /> },
+              { id: 'Fashion', label: 'Couture', icon: <Shirt size={16} /> },
+              { id: 'Dining', label: 'Experience', icon: <Sparkles size={16} /> },
+              { id: 'Electronics', label: 'Digital', icon: <Tag size={16} /> }
+            ].map((cat) => (
               <button
-                key={cat}
-                onClick={() => setSelectedCategory(cat === 'All Categories' ? 'All Categories' : cat)}
+                key={cat.id}
+                onClick={() => setSelectedCategory(cat.id)}
                 className={clsx(
-                  'px-3 sm:px-5 py-2 rounded-full text-xs sm:text-sm font-bold uppercase tracking-wider transition-all',
-                  selectedCategory === cat || (selectedCategory === 'All Categories' && cat === 'All Categories')
-                    ? 'bg-primary text-white shadow-lg shadow-primary/30'
-                    : 'bg-zinc-100 dark:bg-zinc-900 text-slate-600 dark:text-slate-400 hover:bg-zinc-200 dark:hover:bg-zinc-800'
+                  'flex items-center gap-3 px-6 py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all whitespace-nowrap border-2',
+                  selectedCategory === cat.id
+                    ? 'bg-primary text-white border-primary shadow-[0_10px_30px_-5px_rgba(190,30,45,0.4)] scale-105 z-10'
+                    : 'bg-white dark:bg-zinc-900 text-slate-400 dark:text-zinc-500 border-slate-50 dark:border-white/5 hover:border-slate-200 dark:hover:border-white/10'
                 )}
               >
-                {cat}
+                <span className={selectedCategory === cat.id ? 'text-white' : 'text-slate-300'}>
+                  {cat.icon}
+                </span>
+                {cat.label}
               </button>
             ))}
           </div>
@@ -374,7 +422,7 @@ export default function PublicDigitalConcierge() {
               <button
                 onClick={handleLoadMore}
                 disabled={isLoadingMore}
-                className={clsx('inline-flex items-center gap-2 sm:gap-3 px-6 sm:px-8 py-3 sm:py-4 bg-zinc-100 dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-xl sm:rounded-2xl text-primary font-bold uppercase text-xs tracking-wider sm:tracking-[0.2em] hover:bg-white dark:hover:bg-zinc-800 hover:border-primary transition-all active:scale-95 disabled:opacity-70 shadow-sm')}
+                className={clsx('inline-flex items-center gap-2 sm:gap-3 px-6 sm:px-8 py-3 sm:py-4 bg-zinc-100 dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-xl sm:rounded-2xl text-primary font-bold uppercase text-xs tracking-wider sm:tracking-[0.2em] hover:bg-slate-200 dark:hover:bg-zinc-800 hover:border-primary transition-all active:scale-95 disabled:opacity-70 shadow-sm')}
               >
                 {isLoadingMore ? (
                   <>
@@ -393,24 +441,25 @@ export default function PublicDigitalConcierge() {
       </section>
 
       {/* Available Spaces Section */}
-      <section id="availability" className={clsx('py-16 sm:py-20 lg:py-24 bg-gradient-to-b from-zinc-50 to-white dark:from-zinc-950 dark:to-zinc-900')}>
-        <div className={clsx('max-w-7xl mx-auto px-4 sm:px-6 lg:px-8')}>
+      <section id="availability" className={clsx('py-12', 'sm:py-20', 'lg:py-24', 'bg-gradient-to-b', 'from-slate-200', 'to-slate-100', 'dark:from-zinc-950', 'dark:to-zinc-900')}>
+        <div className={clsx('max-w-7xl', 'mx-auto', 'px-4', 'sm:px-6', 'lg:px-8')}>
           {/* Section Header */}
-          <div className={clsx('text-center', 'mb-10', 'sm:mb-14')}>
-            <span className={clsx('inline-flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-primary font-black bg-primary/10 px-4 py-1.5 rounded-full mb-4')}>
+          <div className={clsx('text-center', 'mb-8', 'sm:mb-14')}>
+            <span className={clsx('inline-flex', 'items-center', 'gap-2', 'text-[10px]', 'uppercase', 'tracking-[0.2em]', 'text-primary', 'font-black', 'bg-primary/10', 'px-4', 'py-1.5', 'rounded-full', 'mb-4')}>
               Leasing Opportunities
             </span>
-            <h2 className={clsx('text-2xl sm:text-3xl lg:text-4xl font-black text-charcoal dark:text-white tracking-tight mb-3')}>
+            <h2 className={clsx('text-3xl', 'sm:text-4xl', 'lg:text-5xl', 'font-black', 'text-charcoal', 'dark:text-white', 'tracking-tight', 'mb-4')}>
               Available Spaces
             </h2>
-            <p className={clsx('text-slate-500 font-medium text-sm sm:text-base max-w-xl mx-auto mb-6 sm:mb-8')}>
+            <p className={clsx('text-xs', 'sm:text-base', 'text-slate-500', 'font-medium', 'max-w-xl', 'mx-auto', 'mb-6', 'sm:mb-8', 'leading-relaxed')}>
               Join our premium retail ecosystem. Explore available slots and start your journey at SR Mall.
             </p>
             <button
-              className={clsx('inline-flex items-center gap-2 px-5 sm:px-6 py-2.5 sm:py-3 bg-primary text-white rounded-full text-xs sm:text-sm font-bold uppercase tracking-wider hover:bg-primary-hover transition-all active:scale-95 shadow-lg shadow-primary/30')}
+              className={clsx('inline-flex', 'items-center', 'gap-2', 'px-5', 'sm:px-8', 'py-3', 'sm:py-4', 'bg-primary', 'text-white', 'rounded-full', 'text-[10px]', 'sm:text-sm', 'font-bold', 'uppercase', 'tracking-wider', 'hover:bg-primary-hover', 'transition-all', 'active:scale-95', 'shadow-xl', 'shadow-primary/30', 'w-full', 'sm:w-auto', 'justify-center')}
               onClick={() => {
                 setChatInitialShopName("Leasing Inquiry");
                 setChatRecipient('admin');
+                setChatInquirySlotId(null);
                 setIsChatOpen(true);
               }}
             >
@@ -419,18 +468,18 @@ export default function PublicDigitalConcierge() {
             </button>
           </div>
 
-          <div className={clsx('grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6')}>
+          <div className={clsx('grid', 'grid-cols-1', 'sm:grid-cols-2', 'lg:grid-cols-4', 'gap-4', 'sm:gap-6')}>
             {loadingSlots ? (
               <div className={clsx('col-span-full', 'py-20', 'text-center')}>
                 <Loader2 size={40} className={clsx('animate-spin', 'text-primary', 'mx-auto')} />
                 <p className={clsx('mt-4', 'text-[10px]', 'font-black', 'uppercase', 'tracking-widest', 'text-slate-400')}>Syncing Physical Inventory...</p>
               </div>
-            ) : filteredSlots.length > 0 ? (
-              filteredSlots.map((slot) => (
+            ) : visibleSlotsArray.length > 0 ? (
+              visibleSlotsArray.map((slot) => (
                 <div
                   key={slot.id}
                   onClick={() => setSelectedSlot(slot)}
-                  className={clsx('group', 'relative', 'bg-white', 'dark:bg-zinc-900', 'rounded-4xl', 'border', 'border-slate-200', 'dark:border-white/5', 'overflow-hidden', 'hover:border-primary/40', 'transition-all', 'cursor-pointer', 'shadow-sm', 'hover:shadow-2xl', 'hover:shadow-primary/10')}
+                  className={clsx('group', 'relative', 'bg-slate-100', 'dark:bg-zinc-900', 'rounded-4xl', 'border', 'border-slate-300', 'dark:border-white/5', 'overflow-hidden', 'hover:border-primary/40', 'transition-all', 'cursor-pointer', 'shadow-sm', 'hover:shadow-2xl', 'hover:shadow-primary/10')}
                 >
                   <div className={clsx('aspect-4/5', 'relative', 'overflow-hidden', 'bg-black')}>
                     {slot.space_images[0] ? (
@@ -466,11 +515,32 @@ export default function PublicDigitalConcierge() {
                 </div>
               ))
             ) : (
-              <div className={clsx('col-span-full', 'py-20', 'text-center', 'bg-white', 'dark:bg-zinc-900', 'border', 'border-dashed', 'border-slate-200', 'dark:border-white/10', 'rounded-[3rem]')}>
+              <div className={clsx('col-span-full', 'py-20', 'text-center', 'bg-slate-100', 'dark:bg-zinc-900', 'border', 'border-dashed', 'border-slate-300', 'dark:border-white/10', 'rounded-[3rem]')}>
                 <p className={clsx('text-sm', 'font-bold', 'text-slate-500', 'uppercase', 'tracking-widest')}>No spaces currently available for lease.</p>
               </div>
             )}
           </div>
+
+          {hasMoreSlots && (
+            <div className={clsx('mt-10 sm:mt-12 text-center')}>
+              <button
+                onClick={handleLoadMoreSlots}
+                disabled={isLoadingMoreSlots}
+                className={clsx('inline-flex items-center gap-2 sm:gap-3 px-6 sm:px-8 py-3 sm:py-4 bg-zinc-100 dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-xl sm:rounded-2xl text-primary font-bold uppercase text-xs tracking-wider sm:tracking-[0.2em] hover:bg-slate-200 dark:hover:bg-zinc-800 hover:border-primary transition-all active:scale-95 disabled:opacity-70 shadow-sm')}
+              >
+                {isLoadingMoreSlots ? (
+                  <>
+                    <Loader2 size={16} className={clsx('animate-spin', 'sm:w-[18px]', 'sm:h-[18px]')} />
+                    Loading...
+                  </>
+                ) : (
+                  <>
+                    Load More Spaces <ArrowRight size={16} className={clsx('group-hover:translate-x-1', 'transition-transform', 'sm:w-[18px]', 'sm:h-[18px]')} />
+                  </>
+                )}
+              </button>
+            </div>
+          )}
         </div>
       </section>
 
@@ -482,15 +552,34 @@ export default function PublicDigitalConcierge() {
           onInquire={(unitId) => {
             setChatInitialShopName(`Leasing Inquiry for Unit ${unitId}`);
             setChatRecipient('admin');
+            setChatInquirySlotId(unitId);
             setIsChatOpen(true);
             setSelectedSlot(null);
           }}
         />
       )}
 
-      {/* Event Inquiry Section */}
-      <section id="event-inquiry" className={clsx('py-16 sm:py-20 lg:py-24 bg-slate-50 dark:bg-black border-y border-slate-200 dark:border-white/5')}>
-        <div className={clsx('max-w-7xl mx-auto px-4 sm:px-6 lg:px-8')}>
+      {/* High-Impact Event Inquiry Section */}
+      <section id="event-inquiry" className={clsx('py-24 sm:py-32 lg:py-40 bg-zinc-50 dark:bg-zinc-950 relative overflow-hidden')}>
+        {/* Background Visual Elements */}
+        <div className="absolute top-0 left-0 w-full h-full opacity-5 dark:opacity-10 pointer-events-none">
+          <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-primary rounded-full blur-[200px] -translate-y-1/2 translate-x-1/2"></div>
+          <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-blue-600 rounded-full blur-[150px] translate-y-1/2 -translate-x-1/2"></div>
+        </div>
+
+        <div className={clsx('max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10')}>
+           <div className="text-center mb-16 sm:mb-24">
+             <span className="inline-block px-4 py-1.5 bg-primary/10 text-primary text-[10px] font-black uppercase tracking-[0.3em] rounded-full mb-6 border border-primary/20">
+               Venue Booking
+             </span>
+             <h2 className="text-4xl sm:text-5xl lg:text-7xl font-black text-black dark:text-white tracking-tighter leading-none mb-6">
+               Plan Your Next <br />Masterpiece.
+             </h2>
+             <p className="max-w-2xl mx-auto text-sm sm:text-lg text-slate-500 dark:text-slate-400 font-medium leading-relaxed">
+               Whether it's a corporate exhibit or a regional esports final, our digital-ready spaces provide the ultimate canvas for your event.
+             </p>
+           </div>
+           
            <EventInquiryForm isAuthenticated={isAuthenticated} user={user} />
         </div>
       </section>
@@ -499,7 +588,7 @@ export default function PublicDigitalConcierge() {
       <FeedbackSection isAuthenticated={isAuthenticated} />
 
       {/* Location Section */}
-      <section id="location" className={clsx('py-16', 'sm:py-24', 'lg:py-32', 'bg-white', 'dark:bg-black')}>
+      <section id="location" className={clsx('py-16', 'sm:py-24', 'lg:py-32', 'bg-slate-100', 'dark:bg-black')}>
         <div className={clsx('max-w-7xl', 'mx-auto', 'px-4', 'grid', 'grid-cols-1', 'lg:grid-cols-2', 'gap-12', 'sm:gap-16', 'lg:gap-24', 'items-center')}>
           <div className={clsx('space-y-10', 'order-2', 'lg:order-1')}>
             <div className="space-y-4">
@@ -514,7 +603,7 @@ export default function PublicDigitalConcierge() {
 
             <div className="space-y-8">
               <div className={clsx('group flex flex-col sm:flex-row items-start gap-4 sm:gap-6 p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-zinc-50 dark:bg-zinc-900 border border-slate-100 dark:border-white/5 transition-all hover:shadow-xl')}>
-                <div className={clsx('w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-white dark:bg-black flex items-center justify-center text-primary shadow-sm border border-slate-100 dark:border-white/5 flex-shrink-0')}>
+                <div className={clsx('w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-slate-100 dark:bg-black flex items-center justify-center text-primary shadow-sm border border-slate-200 dark:border-white/5 flex-shrink-0')}>
                   <MapPin size={24} />
                 </div>
                 <div>
@@ -582,6 +671,7 @@ export default function PublicDigitalConcierge() {
         isAuthenticated={isAuthenticated}
         initialShopName={chatInitialShopName}
         initialRecipient={chatRecipient}
+        inquirySlotId={chatInquirySlotId}
       />
 
       {/* Video Modal */}

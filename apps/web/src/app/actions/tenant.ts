@@ -123,7 +123,6 @@ export async function getAllStorefrontsAction() {
 export async function getAllTenantsAction() {
   try {
     const tenants = await prisma.tenant.findMany({
-      where: { status: 'ACTIVE' },
       orderBy: { shopName: 'asc' },
       include: {
         user: {
@@ -225,7 +224,7 @@ export async function registerTenantAction(data: {
     const hashedPassword = await bcrypt.hash(data.password, 10);
 
     // 3. Create the User & Tenant in a transaction
-    const result = await prisma.$transaction(async (tx: typeof prisma) => {
+    const result = await prisma.$transaction(async (tx) => {
       const newUser = await tx.user.create({
         data: {
           email: data.email,
@@ -267,6 +266,93 @@ export async function registerTenantAction(data: {
   } catch (error: any) {
     console.error('[REGISTER_TENANT_ERROR]:', error);
     return { success: false, error: error.message || 'Failed to register new tenant' };
+  }
+}
+
+export async function requestTenantAction(userId: string, data: { shopName: string; description: string }) {
+  try {
+    // Verify the user exists in database first
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) return { success: false, error: 'User account not found. Please sign in again.' };
+
+    const existing = await prisma.tenant.findUnique({ where: { userId } });
+    if (existing) return { success: false, error: 'You already have a pending or active storefront.' };
+
+    await prisma.tenant.create({
+      data: {
+        userId,
+        shopName: data.shopName,
+        unitId: 'PENDING_ASSIGNMENT',
+        status: 'PENDING',
+        description: data.description,
+        products: [],
+        galleryUrls: []
+      }
+    });
+
+    const admins = await prisma.user.findMany({ where: { role: 'ADMIN' }, select: { id: true } });
+    if (admins.length > 0) {
+      await prisma.notification.createMany({
+        data: admins.map(admin => ({
+          userId: admin.id,
+          type: 'AD_SUBMISSION_RECEIVED',
+          title: 'New Merchant Application',
+          message: `Digital registration received for: ${data.shopName}. Review required.`,
+        }))
+      });
+    }
+
+    return { success: true };
+  } catch (error: any) {
+    console.error('[REQUEST_TENANT_ERROR]:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+export async function approveTenantAction(tenantId: string, unitId: string) {
+  try {
+    const tenant = await prisma.tenant.findUnique({
+      where: { id: tenantId },
+      include: { user: true }
+    });
+
+    if (!tenant) return { success: false, error: 'Application not found' };
+
+    await prisma.$transaction([
+      prisma.user.update({
+        where: { id: tenant.userId },
+        data: { role: 'TENANT' }
+      }),
+      prisma.tenant.update({
+        where: { id: tenantId },
+        data: { 
+          status: 'ACTIVE',
+          unitId: unitId
+        }
+      })
+    ]);
+
+    await occupySlot(unitId);
+
+    revalidatePath('/admindashboard/tenant-monitoring');
+    revalidatePath('/public-view');
+    
+    return { success: true };
+  } catch (error: any) {
+    console.error('[APPROVE_TENANT_ERROR]:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+export async function getPendingTenantsAction() {
+  try {
+    const pending = await prisma.tenant.findMany({
+      where: { status: 'PENDING' },
+      include: { user: true }
+    });
+    return { success: true, data: pending };
+  } catch (error: any) {
+    return { success: false, error: error.message };
   }
 }
 

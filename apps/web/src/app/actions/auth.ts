@@ -93,3 +93,37 @@ export async function signUpAction(data: { firstName: string; lastName: string; 
     return { success: false, error: 'Failed to create account. Please try again.' };
   }
 }
+
+export async function getUserCountAction() {
+  try {
+    const count = await prisma.user.count({
+      where: {
+        role: {
+          not: 'ADMIN' // or simply omit to get all
+        }
+      }
+    });
+    return { success: true, data: count };
+  } catch (error) {
+    return { success: false, error: 'Failed to fetch user count.' };
+  }
+}
+
+export async function getAllUsersAction() {
+  try {
+    const users = await prisma.user.findMany({
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        createdAt: true,
+      }
+    });
+    return { success: true, data: users };
+  } catch (error) {
+    console.error('[GET_ALL_USERS_ERROR]:', error);
+    return { success: false, error: 'Failed to fetch users.' };
+  }
+}

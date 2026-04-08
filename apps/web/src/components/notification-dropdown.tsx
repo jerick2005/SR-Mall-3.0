@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Bell, Check, CheckCircle, X, AlertTriangle, Info, Calendar, CreditCard, MessageSquare, Settings } from 'lucide-react';
 import { useAuth } from '@/app/providers';
+import { getNotificationsAction, markNotificationAsReadAction, markAllNotificationsAsReadAction } from '@/app/actions/notification';
 
 interface Notification {
   id: string;
@@ -24,40 +25,25 @@ export default function NotificationDropdown({ className = '' }: NotificationDro
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
 
-  // Mock notification data for now (will be replaced with real API calls)
-  const mockNotifications: Notification[] = [
-    {
-      id: '1',
-      type: 'NEW_BOOKING_INQUIRY',
-      title: 'New Booking Inquiry',
-      message: 'A user is interested in booking space L2-205. Check your messages for details.',
-      isRead: false,
-      createdAt: new Date(Date.now() - 1000 * 60 * 5).toISOString(), // 5 minutes ago
-    },
-    {
-      id: '2',
-      type: 'AD_SUBMISSION_RECEIVED',
-      title: 'Ad Submission Received',
-      message: 'Fashion Hub has submitted a new banner for approval.',
-      isRead: false,
-      createdAt: new Date(Date.now() - 1000 * 60 * 30).toISOString(), // 30 minutes ago
-    },
-    {
-      id: '3',
-      type: 'EXPIRING_CONTRACTS',
-      title: 'Contract Expiring Soon',
-      message: 'Tech Zone contract expires in 30 days. Consider renewal discussions.',
-      isRead: true,
-      createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(), // 2 hours ago
-    },
-  ];
+  const loadNotifications = async () => {
+    if (!user) return;
+    setLoading(true);
+    const res = await getNotificationsAction(user.id);
+    if (res.success && res.data) {
+      // @ts-ignore
+      setNotifications(res.data);
+      // @ts-ignore
+      setUnreadCount(res.data.filter((n: any) => !n.isRead).length);
+    }
+    setLoading(false);
+  };
 
   useEffect(() => {
-    if (user) {
-      // Load notifications (mock data for now)
-      setNotifications(mockNotifications);
-      setUnreadCount(mockNotifications.filter(n => !n.isRead).length);
-    }
+    loadNotifications();
+    
+    // Refresh notifications every 30 seconds
+    const interval = setInterval(loadNotifications, 30000);
+    return () => clearInterval(interval);
   }, [user]);
 
   const getNotificationIcon = (type: string) => {
@@ -90,16 +76,23 @@ export default function NotificationDropdown({ className = '' }: NotificationDro
     return `${Math.floor(diffInMinutes / 1440)}d ago`;
   };
 
-  const markAsRead = (notificationId: string) => {
-    setNotifications(prev => 
-      prev.map(n => n.id === notificationId ? { ...n, isRead: true } : n)
-    );
-    setUnreadCount(prev => Math.max(0, prev - 1));
+  const markAsRead = async (notificationId: string) => {
+    const res = await markNotificationAsReadAction(notificationId);
+    if (res.success) {
+      setNotifications(prev => 
+        prev.map(n => n.id === notificationId ? { ...n, isRead: true } : n)
+      );
+      setUnreadCount(prev => Math.max(0, prev - 1));
+    }
   };
 
-  const markAllAsRead = () => {
-    setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
-    setUnreadCount(0);
+  const markAllAsRead = async () => {
+    if (!user) return;
+    const res = await markAllNotificationsAsReadAction(user.id);
+    if (res.success) {
+      setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+      setUnreadCount(0);
+    }
   };
 
   return (

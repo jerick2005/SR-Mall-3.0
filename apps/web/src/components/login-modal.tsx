@@ -101,7 +101,7 @@ export const LoginModal = ({ isOpen, onClose }: LoginModalProps) => {
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 overflow-hidden">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-md animate-fade-in" onClick={onClose} />
 
-      <div className="relative w-full max-w-md bg-zinc-900 rounded-[2.5rem] shadow-2xl border border-white/5 overflow-hidden animate-fade-in-up">
+      <div className="relative w-full max-w-md bg-white dark:bg-zinc-900 rounded-[2.5rem] shadow-2xl border border-slate-200 dark:border-white/5 overflow-hidden animate-fade-in-up">
         <div className="relative h-32 bg-primary flex items-center justify-center overflow-hidden">
           <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl"></div>
           <div className="relative z-10 flex flex-col items-center">
@@ -116,7 +116,7 @@ export const LoginModal = ({ isOpen, onClose }: LoginModalProps) => {
         <div className="p-10">
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             {error && (
-              <div className="flex items-center gap-3 p-4 bg-red-950/30 text-red-500 text-xs font-bold rounded-2xl border border-red-900/30 animate-shake">
+              <div className="flex items-center gap-3 p-4 bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-500 text-xs font-bold rounded-2xl border border-red-100 dark:border-red-900/30 animate-shake">
                 <AlertCircle size={16} />
                 {error}
               </div>
@@ -127,12 +127,12 @@ export const LoginModal = ({ isOpen, onClose }: LoginModalProps) => {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">First Name</label>
-                    <input {...register('firstName')} type="text" placeholder="John" className="w-full px-4 py-4 bg-zinc-800 rounded-2xl border-2 border-transparent focus:border-primary outline-none transition-all text-sm font-medium" />
+                    <input {...register('firstName')} type="text" placeholder="John" className="w-full px-4 py-4 bg-slate-50 dark:bg-zinc-800 rounded-2xl border-2 border-transparent focus:border-primary outline-none transition-all text-sm font-bold text-charcoal dark:text-white" />
                     {errors.firstName && <span className="text-[10px] text-red-500 px-1">{errors.firstName.message?.toString()}</span>}
                   </div>
                   <div className="space-y-2">
                     <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Last Name</label>
-                    <input {...register('lastName')} type="text" placeholder="Doe" className="w-full px-4 py-4 bg-zinc-800 rounded-2xl border-2 border-transparent focus:border-primary outline-none transition-all text-sm font-medium" />
+                    <input {...register('lastName')} type="text" placeholder="Doe" className="w-full px-4 py-4 bg-slate-50 dark:bg-zinc-800 rounded-2xl border-2 border-transparent focus:border-primary outline-none transition-all text-sm font-bold text-charcoal dark:text-white" />
                     {errors.lastName && <span className="text-[10px] text-red-500 px-1">{errors.lastName.message?.toString()}</span>}
                   </div>
                 </div>
@@ -142,7 +142,7 @@ export const LoginModal = ({ isOpen, onClose }: LoginModalProps) => {
                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Email Address</label>
                 <div className="relative group">
                   <Mail size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-primary transition-colors" />
-                  <input {...register('email')} type="email" placeholder="Enter your email" className="w-full pl-14 pr-6 py-4 bg-zinc-800 rounded-2xl border-2 border-transparent focus:border-primary outline-none transition-all text-sm font-medium" />
+                  <input {...register('email')} type="email" placeholder="Enter your email" className="w-full pl-14 pr-6 py-4 bg-slate-50 dark:bg-zinc-800 rounded-2xl border-2 border-transparent focus:border-primary outline-none transition-all text-sm font-bold text-charcoal dark:text-white" />
                 </div>
                 {errors.email && <span className="text-[10px] text-red-500 px-1">{errors.email.message?.toString()}</span>}
               </div>
@@ -151,7 +151,7 @@ export const LoginModal = ({ isOpen, onClose }: LoginModalProps) => {
                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Password</label>
                 <div className="relative group">
                   <Lock size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-primary transition-colors" />
-                  <input {...register('password')} type="password" placeholder="••••••••" className="w-full pl-14 pr-6 py-4 bg-zinc-800 rounded-2xl border-2 border-transparent focus:border-primary outline-none transition-all text-sm font-medium" />
+                  <input {...register('password')} type="password" placeholder="••••••••" className="w-full pl-14 pr-6 py-4 bg-slate-50 dark:bg-zinc-800 rounded-2xl border-2 border-transparent focus:border-primary outline-none transition-all text-sm font-bold text-charcoal dark:text-white" />
                 </div>
                 {errors.password && <span className="text-[10px] text-red-500 px-1">{errors.password.message?.toString()}</span>}
               </div>

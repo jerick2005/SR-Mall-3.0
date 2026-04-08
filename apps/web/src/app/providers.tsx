@@ -60,7 +60,7 @@ export const AppProviders = ({ children }: { children: React.ReactNode }) => {
   );
 };
 
-export const useTheme = () => ({ theme: 'dark', toggleTheme: () => { } });
+export const useTheme = () => ({ theme: 'light', toggleTheme: () => { } });
 
 // Keep AuthProvider alias for backwards-compatibility with any existing imports
 export const AuthProvider = AppProviders;

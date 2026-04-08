@@ -4,30 +4,9 @@ import { prisma } from '@srmall/database';
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
 
-export async function submitReviewAction(rating: number, comment?: string) {
+export async function submitReviewAction(userId: string, rating: number, comment?: string) {
   try {
-    // Get user from cookie storage (custom auth system)
-    const cookieStore = await cookies();
-    const userCookie = cookieStore.get('srmall_user')?.value;
-    
-    if (!userCookie) {
-      return {
-        success: false,
-        error: 'You must be logged in to submit a review'
-      };
-    }
-
-    let user;
-    try {
-      user = JSON.parse(userCookie);
-    } catch (e) {
-      return {
-        success: false,
-        error: 'Invalid authentication data'
-      };
-    }
-
-    if (!user.id) {
+    if (!userId) {
       return {
         success: false,
         error: 'You must be logged in to submit a review'
@@ -44,7 +23,7 @@ export async function submitReviewAction(rating: number, comment?: string) {
     // Check if user already submitted a review
     const existingReview = await prisma.review.findFirst({
       where: {
-        userId: user.id
+        userId: userId
       }
     });
 
@@ -57,10 +36,10 @@ export async function submitReviewAction(rating: number, comment?: string) {
 
     const review = await prisma.review.create({
       data: {
-        userId: user.id,
+        userId: userId,
         rating,
         comment: comment || null,
-        isApproved: false // Reviews need admin approval
+        isApproved: true // Auto-approved for testing/functional purposes
       },
       include: {
         user: {
@@ -75,10 +54,10 @@ export async function submitReviewAction(rating: number, comment?: string) {
     // Create notification for admin about new review
     await prisma.notification.create({
       data: {
-        userId: user.id, // This would ideally go to admin users
+        userId: userId, // This would ideally go to admin users
         type: 'NEW_REVIEW_SUBMITTED',
         title: 'New Review Submitted',
-        message: `A new ${rating}-star review has been submitted and awaits approval.`
+        message: `A new ${rating}-star review has been published.`
       }
     });
 
@@ -88,7 +67,7 @@ export async function submitReviewAction(rating: number, comment?: string) {
     return {
       success: true,
       data: review,
-      message: 'Review submitted successfully! It will be visible after admin approval.'
+      message: 'Review submitted successfully! Thank you for sharing your experience.'
     };
 
   } catch (error) {
@@ -97,6 +76,48 @@ export async function submitReviewAction(rating: number, comment?: string) {
       success: false,
       error: 'Failed to submit review. Please try again.'
     };
+  }
+}
+
+export async function editMyReviewAction(userId: string, rating: number, comment?: string) {
+  try {
+    if (!userId) return { success: false, error: 'Unauthorized' };
+    if (rating < 1 || rating > 5) return { success: false, error: 'Invalid rating' };
+
+    const existingReview = await prisma.review.findFirst({ where: { userId } });
+    if (!existingReview) return { success: false, error: 'Review not found.' };
+
+    const review = await prisma.review.update({
+      where: { id: existingReview.id },
+      data: { rating, comment: comment || null }
+    });
+    
+    revalidatePath('/public-view');
+    revalidatePath('/admindashboard');
+    return { success: true, data: review, message: 'Review updated successfully!' };
+  } catch (error) {
+    console.error('Edit review error:', error);
+    return { success: false, error: 'Failed to update review.' };
+  }
+}
+
+export async function deleteMyReviewAction(userId: string) {
+  try {
+    if (!userId) return { success: false, error: 'Unauthorized' };
+    
+    const existingReview = await prisma.review.findFirst({ where: { userId } });
+    if (!existingReview) return { success: false, error: 'Review not found.' };
+
+    await prisma.review.delete({
+      where: { id: existingReview.id }
+    });
+    
+    revalidatePath('/public-view');
+    revalidatePath('/admindashboard');
+    return { success: true, message: 'Review deleted successfully!' };
+  } catch (error) {
+    console.error('Delete review error:', error);
+    return { success: false, error: 'Failed to delete review.' };
   }
 }
 

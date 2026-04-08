@@ -9,6 +9,24 @@ import clsx from 'clsx';
 export default function TenantDashboard() {
   const { user } = useAuth();
 
+  const [liveReviews, setLiveReviews] = React.useState<any[]>([]);
+  const [avgRating, setAvgRating] = React.useState(0);
+  const [isLoading, setIsLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    async function loadData() {
+      const { getApprovedReviewsAction } = await import('@/app/actions/review');
+      const result = await getApprovedReviewsAction();
+      if (result.success && result.data) {
+        setLiveReviews(result.data);
+        const total = result.data.reduce((acc: number, r: any) => acc + r.rating, 0);
+        setAvgRating(result.data.length > 0 ? Number((total / result.data.length).toFixed(1)) : 0);
+      }
+      setIsLoading(false);
+    }
+    loadData();
+  }, []);
+
   const kpiData = [
     {
       label: 'Profile Views',
@@ -30,20 +48,14 @@ export default function TenantDashboard() {
     },
     {
       label: 'Rating',
-      value: '4.8',
-      sub: '124 reviews',
-      trend: 'Stable',
+      value: isLoading ? '...' : avgRating.toString(),
+      sub: isLoading ? 'Loading...' : `${liveReviews.length} total reviews`,
+      trend: 'Live',
       icon: Star,
       color: 'amber',
       bg: 'bg-amber-500/10',
       text: 'text-amber-500'
     }
-  ];
-
-  const reviews = [
-    { author: 'Premium Member', text: 'Stunning storefront presentation!', rating: 5, time: '1h' },
-    { author: 'Verified Shopper', text: 'Supportive staff and easy navigation.', rating: 5, time: '12h' },
-    { author: 'Mall Visitor', text: 'Clean and modern. Love it!', rating: 4, time: '2d' }
   ];
 
   return (
@@ -170,11 +182,11 @@ export default function TenantDashboard() {
               <p className="text-[10px] text-slate-500">Views</p>
             </div>
             <div className="p-3 sm:p-4 text-center border-r border-slate-100 dark:border-white/5">
-              <p className="text-sm sm:text-base font-bold text-charcoal dark:text-white">4.8</p>
+              <p className="text-sm sm:text-base font-bold text-charcoal dark:text-white">{avgRating}</p>
               <p className="text-[10px] text-slate-500">Rating</p>
             </div>
             <div className="p-3 sm:p-4 text-center">
-              <p className="text-sm sm:text-base font-bold text-charcoal dark:text-white">124</p>
+              <p className="text-sm sm:text-base font-bold text-charcoal dark:text-white">{liveReviews.length}</p>
               <p className="text-[10px] text-slate-500">Reviews</p>
             </div>
           </div>
@@ -196,40 +208,49 @@ export default function TenantDashboard() {
           </div>
 
           {/* Reviews List */}
-          <div className="space-y-3">
-            {reviews.map((review, i) => (
-              <div
-                key={i}
-                className="p-3 sm:p-4 bg-slate-50 dark:bg-white/5 rounded-xl border border-transparent hover:border-slate-200 dark:hover:border-white/10 transition-all"
-              >
-                <div className="flex items-start justify-between gap-2 mb-2">
-                  <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-bold">
-                      {review.author[0]}
+            {isLoading ? (
+               <div className="text-center py-10">
+                 <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                 <p className="mt-4 text-xs text-slate-500">Syncing reviews...</p>
+               </div>
+            ) : liveReviews.length > 0 ? (
+              liveReviews.slice(0, 3).map((review, i) => (
+                <div
+                  key={i}
+                  className="p-3 sm:p-4 bg-slate-50 dark:bg-white/5 rounded-xl border border-transparent hover:border-slate-200 dark:hover:border-white/10 transition-all"
+                >
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <div className="flex items-center gap-2">
+                      <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-bold">
+                        {review.user?.name?.[0] || 'U'}
+                      </div>
+                      <div>
+                        <p className="text-xs sm:text-sm font-bold text-charcoal dark:text-white">{review.user?.name || 'Anonymous'}</p>
+                        <p className="text-[10px] text-slate-500">{new Date(review.createdAt).toLocaleDateString()}</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-xs sm:text-sm font-bold text-charcoal dark:text-white">{review.author}</p>
-                      <p className="text-[10px] text-slate-500">{review.time} ago</p>
+                    <div className="flex gap-0.5 shrink-0">
+                      {Array.from({ length: 5 }).map((_, rIdx) => (
+                        <Star
+                          key={rIdx}
+                          size={10}
+                          className={clsx(
+                            rIdx < review.rating ? 'fill-amber-500 text-amber-500' : 'text-slate-200 dark:text-zinc-700'
+                          )}
+                        />
+                      ))}
                     </div>
                   </div>
-                  <div className="flex gap-0.5 shrink-0">
-                    {Array.from({ length: 5 }).map((_, rIdx) => (
-                      <Star
-                        key={rIdx}
-                        size={10}
-                        className={clsx(
-                          rIdx < review.rating ? 'fill-amber-500 text-amber-500' : 'text-slate-200 dark:text-zinc-700'
-                        )}
-                      />
-                    ))}
-                  </div>
+                  <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                    "{review.comment || 'No comment provided.'}"
+                  </p>
                 </div>
-                <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-                  "{review.text}"
-                </p>
+              ))
+            ) : (
+              <div className="text-center py-10 bg-slate-50 dark:bg-black/20 rounded-2xl border-2 border-dashed border-slate-200 dark:border-white/5">
+                <p className="text-xs text-slate-500 font-medium tracking-tight">No approved reviews yet.</p>
               </div>
-            ))}
-          </div>
+            )}
         </section>
 
         {/* Quick Navigation Grid - Mobile Only */}

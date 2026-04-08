@@ -25,12 +25,16 @@ export async function submitInquiryAction(data: {
     });
 
     if (user && user.email) {
-      const { sendMessage } = await import('./chat');
-      await sendMessage({
-        userId: user.email,
-        recipientType: 'admin',
-        content: `I have submitted a new Event Inquiry for: ${data.eventType} on ${new Date(data.eventDate).toLocaleDateString()} at ${data.eventTime}.`
-      });
+      try {
+        const { sendMessage } = await import('./chat');
+        await sendMessage({
+          userId: user.email,
+          recipientType: 'admin',
+          content: `I have submitted a new Event Inquiry for: ${data.eventType} on ${new Date(data.eventDate).toLocaleDateString()} at ${data.eventTime}.`
+        });
+      } catch (err) {
+        console.error('Failed to send notification message for inquiry:', err);
+      }
     }
 
     revalidatePath('/public-view');

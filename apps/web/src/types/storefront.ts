@@ -15,6 +15,7 @@ export interface DigitalStorefront {
   logo_url: string | null; // URL from Supabase Storage
   gallery_urls: string[]; // Array of gallery image URLs
   products?: StoreProduct[]; // JSON array of products for the storefront
+  rent_cost?: number; // Monthly rent cost
   createdAt?: Date;
   updatedAt?: Date;
 }

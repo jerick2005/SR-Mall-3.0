@@ -1,20 +1,22 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { getAreaSlots, upsertAreaSlot, deleteAreaSlot } from '@/app/actions/space-slot';
+import { getAreaSlots, upsertAreaSlot, deleteAreaSlot, approveReservationAction } from '@/app/actions/space-slot';
 import { 
   Plus, Search, Map, LayoutGrid, List, SlidersHorizontal, Trash2, Edit3, Camera, Save, X, 
   ExternalLink, Zap, Droplets, Info, Ruler, CreditCard, Maximize2, Move, Eye, EyeOff, 
-  Layers, Grid3x3, Building, Store, Coffee, ShoppingBag, Smartphone, Car, Upload, Loader2
+  Layers, Grid3x3, Building, Store, Coffee, ShoppingBag, Smartphone, Car, Upload, Loader2,
+  CheckCircle2
 } from 'lucide-react';
 import clsx from 'clsx';
 import SpaceDetailModal from '@/components/space-detail-modal';
+import { toast } from 'sonner';
 
 // Define the slot type based on Prisma schema
 interface AreaSlot {
   id: string;
   unit_id: string;
-  status: 'AVAILABLE' | 'OCCUPIED' | 'MAINTENANCE';
+  status: 'AVAILABLE' | 'OCCUPIED' | 'MAINTENANCE' | 'RESERVED';
   sqm_size: number;
   base_rent: number;
   space_images: string[];
@@ -196,6 +198,7 @@ export default function SpaceManagerPage() {
     if (status === 'AVAILABLE') return 'bg-emerald-500/20 border-emerald-500';
     if (status === 'OCCUPIED') return 'bg-blue-500/20 border-blue-500';
     if (status === 'MAINTENANCE') return 'bg-amber-500/20 border-amber-500';
+    if (status === 'RESERVED') return 'bg-primary/20 border-primary animate-pulse';
     return 'bg-gray-500/20 border-gray-500';
   };
 
@@ -473,7 +476,25 @@ export default function SpaceManagerPage() {
                         </div>
 
                         {/* Hover Actions */}
-                        <div className={clsx('absolute', 'inset-0', 'bg-black/80', 'opacity-0', 'group-hover:opacity-100', 'transition-opacity', 'rounded-lg', 'flex', 'items-center', 'justify-center', 'gap-2')}>
+                        <div className={clsx('absolute', 'inset-0', 'bg-black/80', 'opacity-0', 'group-hover:opacity-100', 'transition-opacity', 'rounded-lg', 'flex', 'items-center', 'justify-center', 'gap-2', 'z-30')}>
+                          {slot.status === 'RESERVED' && (
+                             <button
+                               onClick={async (e) => {
+                                 e.stopPropagation();
+                                 if (confirm(`Approve reservation for Unit ${slot.unit_id}?`)) {
+                                    const res = await approveReservationAction(slot.unit_id);
+                                    if (res.success) {
+                                       toast.success("Reservation Approved");
+                                       loadSlots();
+                                    }
+                                 }
+                               }}
+                               className={clsx('p-2', 'bg-primary', 'rounded-lg', 'hover:bg-primary-hover', 'transition-all', 'text-white')}
+                               title="Approve Reservation"
+                             >
+                               <CheckCircle2 size={14} />
+                             </button>
+                          )}
                           <button
                             onClick={() => setPreviewSlot(slot)}
                             className={clsx('p-2', 'bg-white/20', 'backdrop-blur-sm', 'rounded-lg', 'hover:bg-white', 'transition-all', 'text-white', 'hover:text-black')}
@@ -614,6 +635,23 @@ export default function SpaceManagerPage() {
                           <span className={clsx('text-sm', 'font-black', 'text-charcoal', 'dark:text-white')}>₱{slot.base_rent.toLocaleString()}</span>
                         </div>
                         <div className={clsx('flex', 'justify-end', 'gap-2', 'opacity-0', 'group-hover:opacity-100', 'transition-all', 'duration-300')}>
+                          {slot.status === 'RESERVED' && (
+                             <button
+                               onClick={async () => {
+                                 if (confirm(`Approve reservation for Unit ${slot.unit_id}?`)) {
+                                    const res = await approveReservationAction(slot.unit_id);
+                                    if (res.success) {
+                                       toast.success("Reservation Approved");
+                                       loadSlots();
+                                    }
+                                 }
+                               }}
+                               className={clsx('p-2', 'bg-primary/20', 'text-primary', 'rounded-xl', 'hover:bg-primary', 'hover:text-white', 'transition-all')}
+                               title="Approve Reservation"
+                             >
+                               <CheckCircle2 size={18} />
+                             </button>
+                          )}
                           <button
                             onClick={() => setPreviewSlot(slot)}
                             className={clsx('p-2', 'hover:bg-primary', 'hover:text-white', 'text-slate-400', 'dark:text-slate-500', 'rounded-xl', 'transition-all')}
@@ -781,13 +819,13 @@ export default function SpaceManagerPage() {
               {/* Status */}
               <div className="space-y-4">
                 <label className={clsx('text-[10px]', 'font-black', 'text-slate-400', 'uppercase', 'tracking-[0.4em]')}>Status</label>
-                <div className={clsx('grid', 'grid-cols-3', 'gap-3')}>
-                  {['AVAILABLE', 'OCCUPIED', 'MAINTENANCE'].map((status) => (
+                <div className={clsx('grid', 'grid-cols-2', 'sm:grid-cols-4', 'gap-3')}>
+                  {['AVAILABLE', 'OCCUPIED', 'MAINTENANCE', 'RESERVED'].map((status) => (
                     <button
                       key={status}
                       type="button"
                       onClick={() => setActiveSlot({ ...activeSlot!, status: status as any })}
-                      className={clsx('p-3 rounded-xl border text-[11px] font-black tracking-[0.2em] transition-all', 
+                      className={clsx('p-3 rounded-xl border text-[10px] font-black tracking-[0.1em] transition-all', 
                         activeSlot?.status === status
                           ? 'bg-primary border-primary text-white'
                           : 'bg-slate-50 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-400 hover:text-charcoal dark:hover:text-white'

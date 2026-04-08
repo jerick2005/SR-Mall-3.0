@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { X, Send, Paperclip, Smile, Minimize2, MapPin } from 'lucide-react';
+import { X, Send, Paperclip, Smile, Minimize2, MapPin, ArrowLeft, Search } from 'lucide-react';
 import { useAuth } from '@/app/providers';
 import { LoginModal } from './login-modal';
 
@@ -13,6 +13,7 @@ interface ChatBoxProps {
   isAuthenticated: boolean;
   initialRecipient?: 'admin' | 'shop';
   initialShopName?: string;
+  inquirySlotId?: string | null;
 }
 
 const DEFAULT_SHOPS = [
@@ -24,7 +25,8 @@ export const ChatBox = ({
   onClose,
   isAuthenticated,
   initialRecipient = 'shop',
-  initialShopName
+  initialShopName,
+  inquirySlotId
 }: ChatBoxProps) => {
   const { user } = useAuth();
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
@@ -32,6 +34,8 @@ export const ChatBox = ({
   const [recipient, setRecipient] = useState<'admin' | 'shop'>(initialRecipient);
   const [availableShops, setAvailableShops] = useState<string[]>(DEFAULT_SHOPS);
   const [selectedShop, setSelectedShop] = useState(initialShopName || DEFAULT_SHOPS[0]);
+  const [viewMode, setViewMode] = useState<'list' | 'chat'>('list');
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Fetch true shops from DB
   useEffect(() => {
@@ -52,8 +56,8 @@ export const ChatBox = ({
 
   // Effect to handle prop changes (e.g. when changing shops via profile)
   useEffect(() => {
-    if (initialRecipient) setRecipient(initialRecipient);
-    if (initialShopName) setSelectedShop(initialShopName);
+    if (initialRecipient) { setRecipient(initialRecipient); setViewMode('chat'); }
+    if (initialShopName) { setSelectedShop(initialShopName); setViewMode('chat'); }
     // Clear messages when switching context to ensure isolation
     setDbMessages([]);
   }, [initialRecipient, initialShopName]);
@@ -91,9 +95,15 @@ export const ChatBox = ({
 
   const handleSend = async (e: React.FormEvent, slotId?: string) => {
     e.preventDefault();
-    if (!inputText.trim() && !slotId) return;
+    
+    // When slotId is provided via the quick-share button, append it if we have custom text, or send a pre-formatted message
+    let textToSend = inputText;
+    if (typeof slotId === 'string' && slotId) {
+      textToSend = inputText.trim() ? `${inputText} (Regarding Unit ${slotId})` : `Hello, I would like to inquire about leasing Unit ${slotId}.`;
+    }
 
-    const textToSend = inputText || `Inquiring about Slot: ${slotId}`;
+    if (!textToSend.trim()) return;
+
     setInputText('');
 
     if (user?.email) {
@@ -118,17 +128,22 @@ export const ChatBox = ({
     <>
       <div className="fixed inset-x-0 bottom-0 sm:inset-auto sm:bottom-32 sm:right-10 z-[100] w-full h-[85vh] sm:w-[400px] sm:h-[600px] bg-white dark:bg-zinc-900 rounded-t-[2rem] sm:rounded-[2.5rem] shadow-2xl border-0 sm:border border-slate-100 dark:border-white/5 flex flex-col overflow-hidden animate-slide-up">
         {/* Header */}
-        <div className="p-6 bg-primary flex items-center justify-between text-white shadow-md z-10">
-          <div className="flex items-center gap-4">
+        <div className="p-6 bg-primary flex items-center justify-between text-white shadow-md z-10 transition-all">
+          <div className="flex items-center gap-3 sm:gap-4">
+            {viewMode === 'chat' && (
+              <button onClick={() => setViewMode('list')} className="p-1 hover:bg-white/20 rounded-full transition-colors active:scale-95 mr-1">
+                <ArrowLeft size={20} />
+              </button>
+            )}
             <div className="relative">
-              <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center font-black text-xl shadow-inner">
-                S
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center font-black text-lg sm:text-xl shadow-inner">
+                {viewMode === 'chat' && recipient === 'shop' ? selectedShop.substring(0, 1).toUpperCase() : 'S'}
               </div>
-              <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-400 rounded-full border-2 border-primary animate-pulse"></div>
+              <div className="absolute -bottom-1 -right-1 w-3 h-3 sm:w-4 sm:h-4 bg-green-400 rounded-full border-2 border-primary animate-pulse"></div>
             </div>
             <div className="flex flex-col">
-              <h3 className="font-bold text-sm tracking-tight">Mall Messenger</h3>
-              <span className="text-[10px] font-bold text-white/80 uppercase tracking-widest">Live Connect</span>
+              <h3 className="font-bold text-xs sm:text-sm tracking-tight">{viewMode === 'chat' && recipient === 'shop' ? selectedShop : 'Mall Messenger'}</h3>
+              <span className="text-[9px] sm:text-[10px] font-bold text-white/80 uppercase tracking-widest">{viewMode === 'chat' ? 'Active Conversation' : 'Live Connect'}</span>
             </div>
           </div>
           <div className="flex items-center gap-1">
@@ -137,110 +152,134 @@ export const ChatBox = ({
           </div>
         </div>
 
-        {isAuthenticated && (
-          <div className="bg-slate-50 dark:bg-zinc-800/50 p-3 border-b border-slate-100 dark:border-white/5 text-xs">
-            <div className="flex flex-col gap-2 px-1">
-              <select
-                value={recipient}
-                onChange={(e) => setRecipient(e.target.value as 'admin' | 'shop')}
-                className="px-3 py-2 rounded-xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 font-bold text-charcoal dark:text-white focus:outline-none focus:border-primary shadow-sm w-full"
-              >
-                <option value="shop">Specific Shop (Product Inquiries)</option>
-                <option value="admin">Mall Admin (Booking & Support)</option>
-              </select>
-              {recipient === 'shop' && (
-                <select
-                  value={selectedShop}
-                  onChange={(e) => {
-                    setSelectedShop(e.target.value);
-                    setDbMessages([]); // Isolate chats immediately
-                  }}
-                  className="px-3 py-2 rounded-xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 font-bold text-charcoal dark:text-white focus:outline-none focus:border-primary w-full shadow-sm"
-                >
-                  {initialShopName && !availableShops.includes(initialShopName) && (
-                    <option value={initialShopName}>{initialShopName}</option>
-                  )}
-                  {availableShops.map(s => <option key={s} value={s}>{s}</option>)}
-                </select>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Messages Area */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-hide bg-slate-50/50 dark:bg-black/20">
-          <div className="flex flex-col items-start animate-fade-in">
-            <div className="max-w-[85%] rounded-3xl px-5 py-3.5 shadow-sm text-sm font-medium leading-relaxed bg-white dark:bg-zinc-800 text-charcoal dark:text-slate-300 rounded-tl-sm border border-slate-100 dark:border-white/5">
-              {isAuthenticated ? `Welcome back ${user?.name || ''}! How can we help you seamlessly access ${recipient === 'admin' ? 'Mall Administration' : selectedShop}?` : `Welcome to SR Mall. Login to start a conversation with Mall Admin or Tenants.`}
-            </div>
-          </div>
-
-          {dbMessages.map((msg: any) => {
-            const isUserSender = msg.sender?.email === user?.email;
-            return (
-              <div
-                key={msg.id}
-                className={`flex flex-col ${isUserSender ? 'items-end' : 'items-start'} animate-fade-in`}
-              >
-                <div className={`max-w-[85%] rounded-3xl px-5 py-3.5 shadow-sm text-sm font-medium leading-relaxed ${isUserSender
-                    ? 'bg-primary text-white rounded-tr-sm'
-                    : 'bg-white dark:bg-zinc-800 text-charcoal dark:text-slate-300 rounded-tl-sm border border-slate-100 dark:border-white/5'
-                  }`}>
-                  {msg.content}
+        {viewMode === 'list' ? (
+          <div className="flex-1 overflow-y-auto bg-slate-50 dark:bg-black/20 custom-scrollbar">
+            {isAuthenticated ? (
+              <div className="p-3 sm:p-4 space-y-2">
+                <div className="px-2 mb-4 mt-1 flex flex-col gap-3">
+                   <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Your Conversations</h4>
+                   <div className="relative">
+                     <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                     <input 
+                       type="text" 
+                       placeholder="Search stores or admin..." 
+                       value={searchQuery}
+                       onChange={(e) => setSearchQuery(e.target.value)}
+                       className="w-full bg-white dark:bg-zinc-800 border border-slate-200 dark:border-white/10 rounded-xl py-2 pl-9 pr-3 text-xs font-medium text-charcoal dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-primary shadow-sm transition-all focus:ring-2 focus:ring-primary/20"
+                     />
+                   </div>
                 </div>
-                <div className="mt-1.5 px-2 text-[9px] font-bold uppercase tracking-widest text-slate-400">
-                  {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </div>
+                
+                {/* Admin */}
+                {(!searchQuery || 'mall administration booking support admin'.includes(searchQuery.toLowerCase())) && (
+                  <div
+                    onClick={() => { setRecipient('admin'); setViewMode('chat'); }}
+                    className="flex items-center gap-4 p-4 bg-white dark:bg-zinc-800 rounded-xl hover:shadow-md cursor-pointer transition-all border border-slate-100 dark:border-white/5"
+                  >
+                    <div className="w-12 h-12 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold">
+                      MA
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="font-bold text-sm text-charcoal dark:text-white">Mall Administration</h4>
+                      <p className="text-xs text-slate-500 font-medium">Booking & Support Inquiries</p>
+                    </div>
+                  </div>
+                )}
+                
+                {/* Shops */}
+                {availableShops.filter(shop => shop.toLowerCase().includes(searchQuery.toLowerCase())).map((shop) => (
+                  <div
+                    key={shop}
+                    onClick={() => { setRecipient('shop'); setSelectedShop(shop); setViewMode('chat'); }}
+                    className="flex items-center gap-4 p-4 bg-white dark:bg-zinc-800 rounded-xl hover:shadow-md cursor-pointer transition-all border border-slate-100 dark:border-white/5"
+                  >
+                    <div className="w-12 h-12 rounded-full bg-blue-500/10 text-blue-500 flex items-center justify-center font-bold">
+                      {shop.substring(0, 2).toUpperCase()}
+                    </div>
+                    <div className="flex-1 overflow-hidden">
+                      <h4 className="font-bold text-sm text-charcoal dark:text-white truncate">{shop}</h4>
+                      <p className="text-xs text-slate-500 font-medium">Tenant Support</p>
+                    </div>
+                  </div>
+                ))}
               </div>
-            );
-          })}
-          <div ref={messagesEndRef} />
-        </div>
-
-        {/* Input Area */}
-        {isAuthenticated ? (
-          <div className="p-4 border-t border-slate-100 dark:border-white/5 bg-white dark:bg-zinc-900 shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.1)]">
-            {recipient === 'admin' && (
-              <div className="mb-3 px-1">
-                <button
-                  onClick={(e) => handleSend(e, 'GF-A12 (Available)')}
-                  className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-green-600 bg-green-50 dark:bg-green-900/20 px-3 py-1.5 rounded-full border border-green-200 dark:border-green-900/50 hover:bg-green-100 transition-colors"
-                >
-                  <MapPin size={12} /> Share Currently Viewed Slot (GF-A12)
-                </button>
+            ) : (
+              <div className="h-full flex flex-col items-center justify-center p-6 text-center top-0 left-0 right-0 bottom-0 absolute bg-white/50 dark:bg-zinc-900/50 backdrop-blur-sm z-10 w-full">
+                 <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+                   <MapPin size={32} className="text-primary" />
+                 </div>
+                 <h4 className="font-bold text-lg text-charcoal dark:text-white mb-2">Member Chat</h4>
+                 <p className="text-sm font-medium text-slate-500 mb-6 max-w-[200px] leading-relaxed">Connect securely with mall administration and individual stores.</p>
+                 <button onClick={() => setIsLoginModalOpen(true)} className="px-8 py-3 bg-primary text-white font-bold tracking-widest text-xs uppercase rounded-xl shadow-lg hover:bg-primary-hover hover:scale-105 transition-all">Sign In</button>
               </div>
             )}
-            <form onSubmit={handleSend} className="relative flex items-center gap-2 bg-slate-50 dark:bg-zinc-800/50 rounded-2xl border border-slate-200 dark:border-white/10 p-1.5 focus-within:ring-2 ring-primary/20 focus-within:border-primary transition-all">
-              <button type="button" className="p-2.5 text-slate-400 hover:text-primary transition-colors rounded-xl hover:bg-white dark:hover:bg-zinc-700"><Paperclip size={18} /></button>
-              <input
-                type="text"
-                value={inputText}
-                onChange={(e) => setInputText(e.target.value)}
-                placeholder="Message..."
-                className="flex-1 px-2 py-2 bg-transparent outline-none text-sm font-medium dark:text-white placeholder:text-slate-400 min-w-0"
-              />
-              <button type="button" className="p-2 text-slate-400 hover:text-primary transition-colors sm:block hidden"><Smile size={18} /></button>
-              <button
-                type="submit"
-                disabled={!inputText.trim()}
-                className="p-3 bg-primary text-white rounded-xl hover:bg-primary-hover transition-all active:scale-95 disabled:opacity-50 disabled:scale-100 shadow-md"
-              >
-                <Send size={16} />
-              </button>
-            </form>
           </div>
         ) : (
-          <div className="p-6 border-t border-slate-100 dark:border-white/5 bg-slate-50 dark:bg-zinc-900 text-center">
-            <p className="text-xs font-bold text-slate-500 uppercase tracking-widest leading-relaxed">
-              Read-Only Mode
-            </p>
-            <button
-              onClick={() => setIsLoginModalOpen(true)}
-              className="mt-3 px-6 py-2 bg-charcoal dark:bg-white text-white dark:text-black font-bold text-xs rounded-full hover:scale-105 transition-all shadow-lg"
-            >
-              Login to Reply
-            </button>
-          </div>
+          <>
+            {/* Messages Area */}
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6 custom-scrollbar bg-slate-50/50 dark:bg-black/20">
+              <div className="flex flex-col items-start animate-fade-in">
+                <div className="max-w-[85%] rounded-3xl px-5 py-3.5 shadow-sm text-sm font-medium leading-relaxed bg-white dark:bg-zinc-800 text-charcoal dark:text-slate-300 rounded-tl-sm border border-slate-100 dark:border-white/5">
+                  {isAuthenticated ? `Welcome back ${user?.name || ''}! How can we help you seamlessly access ${recipient === 'admin' ? 'Mall Administration' : selectedShop}?` : `Welcome to SR Mall. Login to start a conversation with Mall Admin or Tenants.`}
+                </div>
+              </div>
+
+              {dbMessages.map((msg: any) => {
+                const isUserSender = msg.sender?.email === user?.email;
+                return (
+                  <div
+                    key={msg.id}
+                    className={`flex flex-col ${isUserSender ? 'items-end' : 'items-start'} animate-fade-in`}
+                  >
+                    <div className={`max-w-[85%] rounded-3xl px-5 py-3.5 shadow-sm text-sm font-medium leading-relaxed ${isUserSender
+                        ? 'bg-primary text-white rounded-tr-sm'
+                        : 'bg-white dark:bg-zinc-800 text-charcoal dark:text-slate-300 rounded-tl-sm border border-slate-100 dark:border-white/5'
+                      }`}>
+                      {msg.content}
+                    </div>
+                    <div className="mt-1.5 px-2 text-[9px] font-bold uppercase tracking-widest text-slate-400">
+                      {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </div>
+                  </div>
+                );
+              })}
+              <div ref={messagesEndRef} />
+            </div>
+
+            {/* Input Area */}
+            {isAuthenticated && (
+              <div className="p-3 sm:p-4 border-t border-slate-100 dark:border-white/5 bg-white dark:bg-zinc-900 shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.05)] z-10 relative">
+                {recipient === 'admin' && inquirySlotId && (
+                  <div className="mb-3 px-1">
+                    <button
+                      onClick={(e) => handleSend(e, inquirySlotId)}
+                      className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-green-600 bg-green-50 dark:bg-green-900/20 px-3 py-1.5 rounded-full border border-green-200 dark:border-green-900/50 hover:bg-green-100 transition-colors"
+                    >
+                      <MapPin size={12} /> Share Inquiry For Unit {inquirySlotId}
+                    </button>
+                  </div>
+                )}
+                <form onSubmit={handleSend} className="relative flex items-center gap-2 bg-slate-50 dark:bg-zinc-800/50 rounded-2xl border border-slate-200 dark:border-white/10 p-1.5 focus-within:ring-2 ring-primary/20 focus-within:border-primary transition-all">
+                  <button type="button" className="p-2 sm:p-2.5 text-slate-400 hover:text-primary transition-colors rounded-xl hover:bg-white dark:hover:bg-zinc-700 shrink-0"><Paperclip size={18} /></button>
+                  <input
+                    type="text"
+                    value={inputText}
+                    onChange={(e) => setInputText(e.target.value)}
+                    placeholder="Message..."
+                    className="flex-1 px-1 sm:px-2 py-2 bg-transparent outline-none text-sm font-medium dark:text-white placeholder:text-slate-400 min-w-0"
+                  />
+                  <button type="button" className="p-2 text-slate-400 hover:text-primary transition-colors sm:block hidden shrink-0"><Smile size={18} /></button>
+                  <button
+                    type="submit"
+                    disabled={!inputText.trim()}
+                    className="p-2.5 sm:p-3 bg-primary text-white rounded-xl hover:bg-primary-hover transition-all active:scale-95 disabled:opacity-50 disabled:scale-100 shadow-md shrink-0"
+                  >
+                    <Send size={16} />
+                  </button>
+                </form>
+              </div>
+            )}
+          </>
         )}
 
       </div>

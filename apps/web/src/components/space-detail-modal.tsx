@@ -1,9 +1,12 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { AreaSlot } from '@srmall/database';
 import { X, ChevronLeft, ChevronRight, Square, Ruler, CreditCard, Send, MapPin } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { useAuth } from '@/app/providers';
+import { reserveSlotAction } from '@/app/actions/space-slot';
+import { toast } from 'sonner';
 
 interface SpaceDetailModalProps {
   slot: AreaSlot;
@@ -13,6 +16,8 @@ interface SpaceDetailModalProps {
 
 export default function SpaceDetailModal({ slot, onClose, onInquire }: SpaceDetailModalProps) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [isReserving, setIsReserving] = useState(false);
+  const { isAuthenticated, user } = useAuth();
   const router = useRouter();
 
   // Images are now a native array in PostgreSQL
@@ -25,6 +30,31 @@ export default function SpaceDetailModal({ slot, onClose, onInquire }: SpaceDeta
       // Fallback or default behavior
       router.push(`/messenger?recipient=admin&subject=Inquiry_for_${slot.unit_id}&unitId=${slot.id}`);
       onClose();
+    }
+  };
+
+  const handleReservation = async () => {
+    if (!isAuthenticated || !user) {
+      toast.error('Sign in required', { description: 'Please log in to place a reservation request.' });
+      return;
+    }
+
+    try {
+      setIsReserving(true);
+      const res = await reserveSlotAction(slot.unit_id, user.id, user.name || 'Anonymous User');
+      
+      if (res.success) {
+        toast.success('Reservation Request Sent', {
+          description: `Admin has been notified of your interest in Unit ${slot.unit_id}. Status set to RESERVED pending approval.`
+        });
+        onClose();
+      } else {
+        toast.error('Reservation Failed', { description: res.error });
+      }
+    } catch (err) {
+      toast.error('Error', { description: 'An unexpected error occurred.' });
+    } finally {
+      setIsReserving(false);
     }
   };
 
@@ -155,18 +185,27 @@ export default function SpaceDetailModal({ slot, onClose, onInquire }: SpaceDeta
               </div>
             </div>
 
-            <div className="mt-10">
+            <div className="mt-10 space-y-4">
               {slot.status === 'AVAILABLE' ? (
-                <button
-                  onClick={handleInquiry}
-                  className="w-full flex items-center justify-center gap-3 px-8 py-4 bg-[#BE1E2D] hover:bg-[#a31926] text-white font-bold rounded-xl transition-all shadow-lg hover:shadow-[#BE1E2D]/20 transform hover:-translate-y-1"
-                >
-                  <Send size={18} />
-                  Inquire Now
-                </button>
+                <div className="flex flex-col gap-3">
+                  <button
+                    onClick={handleReservation}
+                    disabled={isReserving}
+                    className="w-full flex items-center justify-center gap-3 px-8 py-4 bg-white text-black hover:bg-slate-100 font-bold rounded-xl transition-all shadow-xl disabled:opacity-50 active:scale-95"
+                  >
+                    {isReserving ? 'Processing...' : 'Reserve This Space'}
+                  </button>
+                  <button
+                    onClick={handleInquiry}
+                    className="w-full flex items-center justify-center gap-3 px-8 py-4 bg-[#BE1E2D]/10 hover:bg-[#BE1E2D]/20 text-[#BE1E2D] font-bold rounded-xl transition-all border border-[#BE1E2D]/20"
+                  >
+                    <Send size={18} />
+                    Detailed Inquiry
+                  </button>
+                </div>
               ) : (
-                <div className="w-full px-8 py-4 bg-white/5 text-white/40 font-bold rounded-xl text-center border border-white/10 cursor-not-allowed">
-                  Waitlist Only
+                <div className="w-full px-8 py-4 bg-white/5 text-white/40 font-bold rounded-xl text-center border border-white/10 cursor-not-allowed uppercase tracking-widest text-xs">
+                  {slot.status} - No Actions Available
                 </div>
               )}
               <p className="text-[10px] text-white/30 text-center mt-3 uppercase tracking-widest">

@@ -130,26 +130,26 @@ export const AdBanner = ({ ads, tenantPromos }: { ads?: any[]; tenantPromos?: an
               />
             );
           })()}
-          <div className="absolute inset-0 bg-linear-to-r from-black/60 via-black/30 to-transparent flex items-center">
+          <div className="absolute inset-0 bg-linear-to-r from-white via-white/80 dark:from-black/60 dark:via-black/30 to-transparent flex items-center">
             <div className="max-w-7xl mx-auto px-10 w-full">
               <div className="max-w-xl animate-fade-in-up">
                 <span className="inline-block px-4 py-1.5 bg-primary text-white text-[10px] font-bold uppercase tracking-[0.2em] mb-6 rounded-full shadow-lg shadow-primary/30">
                   {ad.id === 'default' ? 'Featured Content' : 'Sponsored Content'}
                 </span>
-                <h2 className="text-5xl md:text-7xl font-bold text-white mb-6 leading-tight tracking-tight">
+                <h2 className="text-5xl md:text-7xl font-bold text-charcoal dark:text-white mb-6 leading-tight tracking-tight">
                   {ad.title}
                 </h2>
-                <p className="text-lg text-slate-300 mb-10 leading-relaxed font-medium line-clamp-3">
+                <p className="text-lg text-slate-600 dark:text-slate-300 mb-10 leading-relaxed font-medium line-clamp-3">
                   {ad.description || 'Visit us and experience the future of digital shopping today.'}
                 </p>
                 <div className="flex flex-wrap gap-4">
                   <button
                     onClick={() => handleAdClick(ad.id)}
-                    className="px-10 py-5 bg-white text-charcoal text-sm font-bold rounded-full hover:bg-slate-100 transition-all active:scale-95 shadow-xl"
+                    className="px-10 py-5 bg-primary text-white text-sm font-bold rounded-full hover:bg-primary/90 transition-all active:scale-95 shadow-xl"
                   >
                     {ad.id === 'default' ? DEFAULT_AD.ctaText : ad.tenant ? 'View Tenant Page' : 'Learn More'}
                   </button>
-                  <button className="px-8 py-5 border border-white/20 text-white text-sm font-bold rounded-full hover:bg-white/10 transition-all backdrop-blur-sm">
+                  <button className="px-8 py-5 border border-slate-200 dark:border-white/20 text-charcoal dark:text-white text-sm font-bold rounded-full hover:bg-slate-50 dark:hover:bg-white/10 transition-all backdrop-blur-sm">
                     Learn More
                   </button>
                 </div>
@@ -161,12 +161,12 @@ export const AdBanner = ({ ads, tenantPromos }: { ads?: any[]; tenantPromos?: an
 
       {/* Slide Indicators */}
       {localAds.length > 1 && (
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 z-20 bg-charcoal/50 backdrop-blur-md px-3 py-2 rounded-full border border-white/10">
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 z-20 bg-white/50 dark:bg-charcoal/50 backdrop-blur-md px-3 py-2 rounded-full border border-slate-200 dark:border-white/10">
           {localAds.map((_, index) => (
             <button
               key={index}
               onClick={() => setCurrentIndex(index)}
-              className={`w-1.5 h-1.5 rounded-full transition-all ${index === currentIndex ? 'bg-primary w-4' : 'bg-white/50 hover:bg-white'}`}
+              className={`w-1.5 h-1.5 rounded-full transition-all ${index === currentIndex ? 'bg-primary w-4' : 'bg-slate-400 dark:bg-white/50 hover:bg-primary dark:hover:bg-white'}`}
             />
           ))}
         </div>

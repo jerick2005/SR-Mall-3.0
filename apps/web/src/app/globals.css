@@ -3,14 +3,19 @@
 @tailwind utilities;
 
 :root {
-  --background: #0a0a0a;
-  --foreground: #f8fafc;
+  --background: #f8fafc;
+  --foreground: #0f172a;
   --crimson: #be1e2d;
   --crimson-hover: #a31a26;
   --slate: #64748b;
   --charcoal: #1e293b;
   --radius-xl: 1rem;
   --radius-2xl: 1.5rem;
+}
+
+.dark {
+  --background: #0a0a0a;
+  --foreground: #f8fafc;
 }
 
 @layer base {
@@ -32,23 +37,25 @@
 }
 
 @layer utilities {
-  .glass {
-    background: rgba(15, 15, 15, 0.7);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  .glass-premium {
+    @apply bg-white/70 dark:bg-black/40 backdrop-blur-xl border border-white/20 dark:border-white/10;
   }
 
   /* Smooth transition for all color-sensitive properties */
   * {
-    transition-property: background-color, border-color, color, fill, stroke;
-    transition-timing-function: ease;
-    transition-duration: 150ms;
+    transition-property: background-color, border-color, color, fill, stroke, opacity, transform;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 200ms;
   }
 
   /* But don't override animation-driven transitions */
-  *[class*="animate-"],
-  *[class*="transition-"] {
-    transition-duration: inherit;
+  *[class*="animate-"] {
+    transition-duration: 0ms;
+  }
+}
+
+@layer components {
+  .dashboard-card {
+    @apply glass-premium rounded-[2.5rem] p-6 md:p-8 shadow-xl shadow-slate-200/50 dark:shadow-none hover:shadow-2xl hover:shadow-primary/5 transition-all duration-300;
   }
 }

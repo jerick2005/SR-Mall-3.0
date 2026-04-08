@@ -64,7 +64,7 @@ export const LoginModal = ({ isOpen, onClose }: LoginModalProps) => {
         }
 
         const newUser = res.data;
-        login(newUser.id, newUser.name || newUser.email, newUser.email, 'USER');
+        login(newUser.id, newUser.name || newUser.email, newUser.email, newUser.role);
         onClose();
         
         // Redirect standard user

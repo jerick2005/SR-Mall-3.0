@@ -135,7 +135,7 @@ export const Navbar = () => {
                         <button className={clsx('w-full', 'flex', 'items-center', 'gap-3', 'px-6', 'py-3', 'text-xs', 'font-bold', 'text-charcoal', 'dark:text-white', 'hover:bg-slate-50', 'dark:hover:bg-white/5', 'transition-colors')}>
                           <User size={16} className="text-primary" /> My Profile
                         </button>
-                        {user?.role === 'CUSTOMER' && (
+                        {(user?.role === 'CUSTOMER' || user?.role === 'USER') && (
                           <button 
                             onClick={() => {
                               setIsMerchantModalOpen(true);

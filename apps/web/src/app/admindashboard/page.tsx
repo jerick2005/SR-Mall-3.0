@@ -17,6 +17,7 @@ import { useAuth } from '@/app/providers';
 import { getAreaSlots } from '@/app/actions/space-slot';
 import { getAllStorefrontsAction } from '@/app/actions/tenant';
 import { getUserCountAction } from '@/app/actions/auth';
+import { fixUserRolesAction, checkUserRolesAction } from '@/app/actions/fix-roles';
 
 // --- Types ---
 interface DashboardStats {
@@ -75,6 +76,8 @@ const COLORS = ['#ef4444', '#10b981', '#f59e0b', '#3b82f6', '#8b5cf6'];
 export default function AdminDashboard() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
+  const [fixingRoles, setFixingRoles] = useState(false);
+  const [roleStats, setRoleStats] = useState({ userRole: 0, customerRole: 0 });
   const [stats, setStats] = useState<DashboardStats>({
     totalUsers: 0,
     totalRevenue: 0,
@@ -224,9 +227,27 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     loadDashboardData();
-    const interval = setInterval(loadDashboardData, 300000);
-    return () => clearInterval(interval);
+    checkRoles();
   }, []);
+
+  const checkRoles = async () => {
+    const res = await checkUserRolesAction();
+    if (res.success && res.data) {
+      setRoleStats(res.data);
+    }
+  };
+
+  const handleFixRoles = async () => {
+    setFixingRoles(true);
+    const res = await fixUserRolesAction();
+    if (res.success) {
+      alert(res.message);
+      checkRoles();
+    } else {
+      alert('Error: ' + res.error);
+    }
+    setFixingRoles(false);
+  };
 
   const occupancyPieData = [
     { name: 'Occupied', value: stats.occupiedSpaces, color: '#ef4444' }, // Using primary-like red
@@ -259,6 +280,18 @@ export default function AdminDashboard() {
         </div>
         
         <div className="flex items-center gap-3">
+          {/* Fix User Roles Button */}
+          {roleStats.userRole > 0 && (
+            <button
+              onClick={handleFixRoles}
+              disabled={fixingRoles}
+              className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs uppercase tracking-widest rounded-2xl transition-all shadow-sm active:scale-95 disabled:opacity-50 flex items-center gap-2"
+              title={`${roleStats.userRole} users have incorrect 'USER' role`}
+            >
+              {fixingRoles ? <RefreshCw size={16} className="animate-spin" /> : <Shield size={16} />}
+              Fix {roleStats.userRole} User Roles
+            </button>
+          )}
           <div className="text-right px-4 py-2 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl shadow-sm">
             <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Global Sync</p>
             <p className="text-xs font-black text-charcoal dark:text-white flex items-center gap-2">

@@ -75,7 +75,7 @@ export async function signUpAction(data: { firstName: string; lastName: string; 
         email,
         name: fullName,
         password: hashedPassword,
-        role: data.role || 'USER', // Custom role or default to USER
+        role: data.role || 'CUSTOMER', // Default to CUSTOMER for regular users
       },
     });
 

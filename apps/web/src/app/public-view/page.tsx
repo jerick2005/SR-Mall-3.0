@@ -7,6 +7,7 @@ import { ShopCard } from '@/components/shop-card';
 import { AdBanner } from '@/components/ad-banner';
 import { FeedbackSection } from '@/components/feedback-section';
 import { ChatBox } from '@/components/chat-box';
+import { EventInquiryForm } from '@/components/event-inquiry-form';
 import { Search, MapPin, Navigation, ArrowRight, MessageCircle, X, Loader2, RefreshCw } from 'lucide-react';
 import { useAuth } from '@/app/providers';
 import { DigitalStorefront } from '@/types/storefront';
@@ -20,7 +21,7 @@ import SpaceDetailModal from '@/components/space-detail-modal';
 import clsx from 'clsx';
 
 export default function PublicDigitalConcierge() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [visibleCount, setVisibleCount] = useState(6);
@@ -486,6 +487,13 @@ export default function PublicDigitalConcierge() {
           }}
         />
       )}
+
+      {/* Event Inquiry Section */}
+      <section id="event-inquiry" className={clsx('py-16 sm:py-20 lg:py-24 bg-slate-50 dark:bg-black border-y border-slate-200 dark:border-white/5')}>
+        <div className={clsx('max-w-7xl mx-auto px-4 sm:px-6 lg:px-8')}>
+           <EventInquiryForm isAuthenticated={isAuthenticated} user={user} />
+        </div>
+      </section>
 
       {/* Gated Feedback & Communication */}
       <FeedbackSection isAuthenticated={isAuthenticated} />

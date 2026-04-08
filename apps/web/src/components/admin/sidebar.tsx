@@ -14,6 +14,7 @@ const navItems = [
   { href: '/admindashboard/feedback-moderation', label: 'Feedback Moderation', icon: ShieldAlert },
   { href: '/admindashboard/user-management', label: 'User Management & Blacklist', icon: ShieldAlert },
   { href: '/admindashboard/public-view-cms', label: 'Public-View CMS', icon: Palette },
+  { href: '/admindashboard/inquiries', label: 'Event Inquiries', icon: Calendar },
 ];
 
 export const AdminSidebar = () => {

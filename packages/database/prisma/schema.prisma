@@ -29,6 +29,8 @@ model User {
   publicViewConfigs     PublicViewConfig[]
   publicViewCarousels   PublicViewCarousel[]
   
+  inquiries             EventInquiry[]
+
   tenant           Tenant?
 }
 
@@ -251,6 +253,20 @@ model PublicViewCarousel {
   priority    Int     @default(0) // Higher number = higher priority
   startDate   DateTime?
   endDate     DateTime?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model EventInquiry {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  eventType String
+  eventDate DateTime
+  eventTime String
+  status    String   @default("PENDING") // PENDING, ACCEPTED, REJECTED
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

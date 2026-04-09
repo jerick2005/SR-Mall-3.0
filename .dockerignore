@@ -1,0 +1,17 @@
+node_modules
+.next
+dist
+.git
+*.log
+.env
+.env.*
+.agent
+.vscode
+out
+build
+coverage
+.cache
+.npm
+**/node_modules
+**/dist
+**/.next

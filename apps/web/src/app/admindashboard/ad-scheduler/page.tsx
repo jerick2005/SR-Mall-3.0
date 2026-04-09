@@ -276,9 +276,7 @@ export default function AdScheduler() {
           </div>
           
           <div className={clsx('grid', 'grid-cols-1', 'md:grid-cols-2', 'xl:grid-cols-3', 'gap-6')}>
-            {console.log('🎨 Rendering mall ads:', mallAds.length, 'items')}
             {mallAds.map((ad) => {
-              console.log('🎨 Rendering ad:', ad.title, ad.id);
               return (
               <div key={ad.id} className={clsx('bg-white', 'dark:bg-zinc-900', 'border', 'border-slate-100', 'dark:border-white/5', 'rounded-4xl', 'overflow-hidden', 'shadow-sm', 'group', 'hover:border-primary/50', 'transition-all')}>
                  <div className={clsx('aspect-19/6', 'w-full', 'bg-slate-100', 'dark:bg-zinc-800', 'overflow-hidden', 'relative')}>

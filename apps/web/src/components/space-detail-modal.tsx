@@ -12,9 +12,10 @@ interface SpaceDetailModalProps {
   slot: AreaSlot;
   onClose: () => void;
   onInquire?: (unitId: string) => void;
+  onLoginRequired?: () => void;
 }
 
-export default function SpaceDetailModal({ slot, onClose, onInquire }: SpaceDetailModalProps) {
+export default function SpaceDetailModal({ slot, onClose, onInquire, onLoginRequired }: SpaceDetailModalProps) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isReserving, setIsReserving] = useState(false);
   const { isAuthenticated, user } = useAuth();
@@ -35,7 +36,16 @@ export default function SpaceDetailModal({ slot, onClose, onInquire }: SpaceDeta
 
   const handleReservation = async () => {
     if (!isAuthenticated || !user) {
-      toast.error('Sign in required', { description: 'Please log in to place a reservation request.' });
+      if (onLoginRequired) {
+        onLoginRequired();
+      } else {
+        router.push('/login');
+      }
+      return;
+    }
+
+    if (slot.status !== 'AVAILABLE') {
+      toast.error('Unit Unavailable', { description: 'This unit has already been reserved or occupied.' });
       return;
     }
 
@@ -44,15 +54,16 @@ export default function SpaceDetailModal({ slot, onClose, onInquire }: SpaceDeta
       const res = await reserveSlotAction(slot.unit_id, user.id, user.name || 'Anonymous User');
       
       if (res.success) {
-        toast.success('Reservation Request Sent', {
-          description: `Admin has been notified of your interest in Unit ${slot.unit_id}. Status set to RESERVED pending approval.`
+        toast.success('Interest Registered', {
+          description: `Success! Our leasing team has been notified of your interest in Unit ${slot.unit_id}. We will contact you shortly.`,
+          duration: 6000
         });
         onClose();
       } else {
-        toast.error('Reservation Failed', { description: res.error });
+        toast.error('Request Interrupted', { description: res.error || 'The reservation could not be processed at this time.' });
       }
     } catch (err) {
-      toast.error('Error', { description: 'An unexpected error occurred.' });
+      toast.error('Network Error', { description: 'Unable to reach the leasing server. Please check your connection.' });
     } finally {
       setIsReserving(false);
     }
@@ -69,48 +80,47 @@ export default function SpaceDetailModal({ slot, onClose, onInquire }: SpaceDeta
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-300">
-      <div className="relative w-full max-w-4xl bg-[#1A1A1A] border border-white/10 rounded-2xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 dark:bg-black/90 backdrop-blur-xl animate-in fade-in duration-500">
+      <div className="relative w-full max-w-5xl bg-white/90 dark:bg-zinc-950/50 border border-slate-200 dark:border-white/10 rounded-[3rem] overflow-hidden shadow-[0_50px_100px_-20px_rgba(0,0,0,0.15)] dark:shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] animate-in zoom-in-95 duration-500 flex flex-col md:flex-row">
+        {/* Mall Identity Accent Line */}
+        <div className="absolute top-0 left-0 right-0 h-1.5 bg-linear-to-r from-primary via-orange-500 to-primary opacity-80" />
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 z-10 p-2 text-white/50 hover:text-white bg-black/20 hover:bg-black/40 rounded-full transition-all"
+          className="absolute top-8 right-8 z-50 p-3 text-slate-400 dark:text-white/40 hover:text-charcoal dark:hover:text-white bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 rounded-full transition-all border border-slate-200 dark:border-white/10 backdrop-blur-md active:scale-95"
         >
           <X size={20} />
         </button>
 
-        <div className="flex flex-col md:flex-row h-full">
           {/* Image Carousel Section */}
-          <div className="relative w-full md:w-3/5 h-[300px] md:h-[500px] bg-black">
+          <div className="relative w-full md:w-1/2 h-[350px] md:h-[650px] bg-black">
             {images.length > 0 ? (
               <>
                 <img
                   src={images[currentImageIndex]}
                   alt={`${slot.unit_id} - View ${currentImageIndex + 1}`}
-                  className="w-full h-full object-cover transition-all duration-500"
+                  className="w-full h-full object-cover transition-all duration-700 brightness-90 group-hover:brightness-100"
                 />
 
                 {images.length > 1 && (
                   <>
                     <button
                       onClick={prevImage}
-                      className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-1 px-3 py-2 text-white bg-black/60 hover:bg-primary rounded-full transition-all border border-white/20 shadow-xl backdrop-blur-md"
+                      className="absolute left-6 top-1/2 -translate-y-1/2 w-12 h-12 flex items-center justify-center text-white bg-black/40 hover:bg-primary rounded-full transition-all border border-white/20 shadow-2xl backdrop-blur-xl"
                     >
-                      <ChevronLeft size={20} />
-                      <span className="hidden sm:inline text-xs font-bold uppercase tracking-widest mr-1">Prev</span>
+                      <ChevronLeft size={24} />
                     </button>
                     <button
                       onClick={nextImage}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-1 px-3 py-2 text-white bg-black/60 hover:bg-primary rounded-full transition-all border border-white/20 shadow-xl backdrop-blur-md"
+                      className="absolute right-6 top-1/2 -translate-y-1/2 w-12 h-12 flex items-center justify-center text-white bg-black/40 hover:bg-primary rounded-full transition-all border border-white/20 shadow-2xl backdrop-blur-xl"
                     >
-                      <span className="hidden sm:inline text-xs font-bold uppercase tracking-widest ml-1">Next</span>
-                      <ChevronRight size={20} />
+                      <ChevronRight size={24} />
                     </button>
 
-                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 bg-black/50 px-3 py-2 rounded-full backdrop-blur-md border border-white/10">
+                    <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-3 bg-black/40 px-4 py-2.5 rounded-full backdrop-blur-xl border border-white/10">
                       {images.map((_item: string, i: number) => (
                         <div
                           key={i}
-                          className={`h-2 rounded-full transition-all ${i === currentImageIndex ? 'bg-[#BE1E2D] w-6' : 'bg-white/40 w-2 hover:bg-white/70 cursor-pointer'
+                          className={`h-1.5 rounded-full transition-all duration-500 ${i === currentImageIndex ? 'bg-primary w-8' : 'bg-white/20 w-1.5 hover:bg-white/50 cursor-pointer'
                             }`}
                           onClick={() => setCurrentImageIndex(i)}
                         />
@@ -120,101 +130,99 @@ export default function SpaceDetailModal({ slot, onClose, onInquire }: SpaceDeta
                 )}
               </>
             ) : (
-              <div className="w-full h-full flex flex-col items-center justify-center text-white/30 gap-3">
-                <Square size={48} strokeWidth={1} />
-                <p>No preview images available</p>
+              <div className="w-full h-full flex flex-col items-center justify-center text-slate-200 dark:text-white/10 gap-4 bg-slate-50 dark:bg-zinc-950">
+                <Square size={64} strokeWidth={1} />
+                <p className="text-[10px] font-black uppercase tracking-widest">No Visual Assets</p>
               </div>
             )}
 
-            {/* Status Badge */}
-            <div className="absolute top-4 left-4 flex items-center gap-2 px-3 py-1.5 bg-black/60 backdrop-blur-md rounded-full border border-white/10">
-              <div className={`w-2 h-2 rounded-full animate-pulse ${slot.status === 'AVAILABLE' ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]' :
+            {/* Premium Status Badge */}
+            <div className="absolute top-8 left-8 flex items-center gap-3 px-5 py-2.5 bg-black/60 backdrop-blur-xl rounded-full border border-white/10 shadow-2xl">
+              <div className={`w-2.5 h-2.5 rounded-full ${slot.status === 'AVAILABLE' ? 'bg-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.8)] animate-pulse' :
                 slot.status === 'OCCUPIED' ? 'bg-red-500' : 'bg-yellow-500'
                 }`} />
-              <span className="text-xs font-semibold text-white tracking-wider uppercase">
+              <span className="text-[10px] font-black text-white tracking-[0.3em] uppercase">
                 {slot.status}
               </span>
             </div>
           </div>
 
           {/* Details Section */}
-          <div className="flex-1 p-8 flex flex-col justify-between overflow-y-auto max-h-[500px] md:max-h-full">
-            <div>
-              <div className="flex items-center gap-2 text-[#BE1E2D] mb-1">
-                <MapPin size={16} />
-                <span className="text-sm font-medium uppercase tracking-[0.2em]">Premium Location</span>
+          <div className="flex-1 p-10 sm:p-14 lg:p-16 flex flex-col justify-between overflow-y-auto max-h-[600px] md:max-h-full">
+            <div className="space-y-10">
+              <div>
+                <div className="flex items-center gap-3 text-primary mb-3">
+                  <MapPin size={18} />
+                  <span className="text-[10px] font-black uppercase tracking-[0.4em] mb-0.5">Premier Business Hub</span>
+                </div>
+                <h2 className="text-5xl sm:text-6xl font-black text-charcoal dark:text-white tracking-tighter uppercase leading-[0.8] mb-10">Unit <span className="text-slate-200 dark:text-white/20">{slot.unit_id}</span></h2>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="group bg-slate-50 dark:bg-white/5 p-6 rounded-[2rem] border border-slate-100 dark:border-white/10 hover:border-primary/20 dark:hover:border-white/20 transition-all duration-500 shadow-inner">
+                    <div className="flex items-center gap-3 text-slate-400 dark:text-white/40 mb-3 group-hover:text-primary transition-colors">
+                      <Ruler size={18} />
+                      <span className="text-[9px] uppercase font-black tracking-[0.2em]">Scale / Area</span>
+                    </div>
+                    <p className="text-3xl font-black text-charcoal dark:text-white tracking-tight">{slot.sqm_size} <span className="text-sm font-bold text-slate-300 dark:text-white/20">SQM</span></p>
+                  </div>
+
+                  <div className="group bg-slate-50 dark:bg-white/5 p-6 rounded-[2rem] border border-slate-100 dark:border-white/10 hover:border-emerald-500/20 dark:hover:border-white/20 transition-all duration-500 shadow-inner">
+                    <div className="flex items-center gap-3 text-slate-400 dark:text-white/40 mb-3 group-hover:text-emerald-500 transition-colors">
+                      <CreditCard size={18} />
+                      <span className="text-[9px] uppercase font-black tracking-[0.2em]">Base Rent</span>
+                    </div>
+                    <p className="text-3xl font-black text-charcoal dark:text-white tracking-tight">₱{slot.base_rent.toLocaleString()}</p>
+                  </div>
+                </div>
               </div>
-              <h2 className="text-3xl font-bold text-white mb-6">Unit {slot.unit_id}</h2>
 
-              <div className="space-y-6">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-white/5 p-4 rounded-xl border border-white/5">
-                    <div className="flex items-center gap-2 text-white/50 mb-1">
-                      <Ruler size={16} />
-                      <span className="text-xs uppercase font-bold tracking-widest">Total Area</span>
-                    </div>
-                    <p className="text-xl font-semibold text-white">{slot.sqm_size} sqm</p>
-                  </div>
-
-                  <div className="bg-white/5 p-4 rounded-xl border border-white/5">
-                    <div className="flex items-center gap-2 text-white/50 mb-1">
-                      <CreditCard size={16} />
-                      <span className="text-xs uppercase font-bold tracking-widest">Base Rent</span>
-                    </div>
-                    <p className="text-xl font-semibold text-white">₱{slot.base_rent.toLocaleString()}</p>
-                  </div>
-                </div>
-
-                <div className="space-y-4 pt-4 border-t border-white/10">
-                  <h4 className="text-sm font-bold text-white/50 uppercase tracking-widest">Features & Utilities</h4>
-                  <ul className="grid grid-cols-1 gap-3 text-sm text-white/70">
-                    <li className="flex items-center gap-3">
-                      <div className="w-1.5 h-1.5 rounded-full bg-[#BE1E2D]" />
-                      High visibility storefront potential
+              <div className="space-y-6 pt-10 border-t border-slate-100 dark:border-white/5">
+                <h4 className="text-[10px] font-black text-slate-300 dark:text-white/30 uppercase tracking-[0.4em]">Integrated Features</h4>
+                <ul className="space-y-4">
+                  {[
+                    'Dynamic high-visibility frontage',
+                    'Enterprise-grade utility infrastructure',
+                    'Direct concierge & mall support access',
+                    'Climate-optimized spatial layout'
+                  ].map((feat, index) => (
+                    <li key={index} className="flex items-center gap-4 text-sm font-bold text-slate-600 dark:text-white/60 group">
+                      <div className="w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_8px_rgba(190,30,45,0.4)] group-hover:scale-150 transition-transform" />
+                      {feat}
                     </li>
-                    <li className="flex items-center gap-3">
-                      <div className="w-1.5 h-1.5 rounded-full bg-[#BE1E2D]" />
-                      Independent utility metering
-                    </li>
-                    <li className="flex items-center gap-3">
-                      <div className="w-1.5 h-1.5 rounded-full bg-[#BE1E2D]" />
-                      Proximity to digital concierge kiosks
-                    </li>
-                  </ul>
-                </div>
+                  ))}
+                </ul>
               </div>
             </div>
 
-            <div className="mt-10 space-y-4">
+            <div className="mt-14 space-y-4">
               {slot.status === 'AVAILABLE' ? (
-                <div className="flex flex-col gap-3">
+                <div className="flex flex-col gap-4">
                   <button
                     onClick={handleReservation}
                     disabled={isReserving}
-                    className="w-full flex items-center justify-center gap-3 px-8 py-4 bg-white text-black hover:bg-slate-100 font-bold rounded-xl transition-all shadow-xl disabled:opacity-50 active:scale-95"
+                    className="w-full py-6 bg-charcoal dark:bg-white text-white dark:text-black hover:bg-primary dark:hover:bg-primary dark:hover:text-white font-black rounded-2xl transition-all shadow-xl dark:shadow-[0_20px_40px_-10px_rgba(255,255,255,0.2)] disabled:opacity-50 active:scale-95 uppercase tracking-widest text-xs"
                   >
-                    {isReserving ? 'Processing...' : 'Reserve This Space'}
+                    {isReserving ? 'Confirming Protocol...' : 'Secure Reservation'}
                   </button>
                   <button
                     onClick={handleInquiry}
-                    className="w-full flex items-center justify-center gap-3 px-8 py-4 bg-[#BE1E2D]/10 hover:bg-[#BE1E2D]/20 text-[#BE1E2D] font-bold rounded-xl transition-all border border-[#BE1E2D]/20"
+                    className="w-full flex items-center justify-center gap-3 py-6 bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 text-charcoal dark:text-white font-black rounded-2xl transition-all border border-slate-200 dark:border-white/10 group uppercase tracking-widest text-xs"
                   >
-                    <Send size={18} />
-                    Detailed Inquiry
+                    <Send size={18} className="text-primary group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+                    Request Executive Inquiry
                   </button>
                 </div>
               ) : (
-                <div className="w-full px-8 py-4 bg-white/5 text-white/40 font-bold rounded-xl text-center border border-white/10 cursor-not-allowed uppercase tracking-widest text-xs">
-                  {slot.status} - No Actions Available
+                <div className="w-full py-6 bg-slate-50 dark:bg-white/5 text-slate-300 dark:text-white/20 font-black rounded-2xl text-center border border-slate-100 dark:border-white/5 cursor-not-allowed uppercase tracking-[0.3em] text-[10px]">
+                  Exclusive Access Only - {slot.status}
                 </div>
               )}
-              <p className="text-[10px] text-white/30 text-center mt-3 uppercase tracking-widest">
-                Terms and conditions apply for lease applications
+              <p className="text-[8px] text-slate-400 dark:text-white/20 text-center mt-6 uppercase tracking-[0.3em] font-medium leading-loose">
+                Lease operations subject to mall administration regulatory approval and verification.
               </p>
             </div>
           </div>
         </div>
       </div>
-    </div>
-  );
+    );
 }

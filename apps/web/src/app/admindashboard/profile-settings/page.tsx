@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { User, Lock, Bell, Shield, Save, Camera, Eye, EyeOff, CheckCircle, AlertTriangle, Mail, Phone, Globe, Key } from 'lucide-react';
 import { useAuth } from '@/app/providers';
 import { getNotificationPreferences, updateNotificationPreferences } from '@/app/actions/notifications';
+import clsx from 'clsx';
 
 type Tab = 'profile' | 'security' | 'notifications' | 'system';
 
@@ -50,7 +51,7 @@ export default function ProfileSettings() {
   };
 
   const updateNotificationPref = (key: string, value: boolean) => {
-    setNotificationPrefs(prev => prev ? { ...prev, [key]: value } : null);
+    setNotificationPrefs((prev: any) => prev ? { ...prev, [key]: value } : null);
   };
 
   const tabs: { key: Tab; label: string; icon: React.ElementType }[] = [

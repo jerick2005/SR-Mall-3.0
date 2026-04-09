@@ -68,11 +68,11 @@ export const ShopCard = ({ shop, onClick, onMessage }: ShopCardProps) => {
           onClick();
         }
       }}
-      className={`group relative bg-white dark:bg-zinc-900 rounded-[2rem] overflow-hidden shadow-[0_4px_20px_-1px_rgba(0,0,0,0.05)] dark:shadow-none hover:shadow-[0_20px_50px_-8px_rgba(0,0,0,0.12)] dark:hover:shadow-[0_20px_50px_-8px_rgba(0,0,0,0.5)] transition-all duration-700 border border-slate-100 dark:border-white/5 cursor-pointer block ${!is_open ? 'opacity-80' : ''
+      className={`group relative bg-white dark:bg-zinc-950 rounded-[2.5rem] overflow-hidden shadow-[0_10px_40px_-10px_rgba(0,0,0,0.08)] dark:shadow-none hover:shadow-[0_30px_70px_-10px_rgba(190,30,45,0.2)] transition-all duration-700 border border-slate-100 dark:border-white/5 cursor-pointer block ${!is_open ? 'opacity-85' : ''
         }`}
     >
       {/* Image Container with Hover Zoom & Grayscale Logic */}
-      <div className={`relative h-64 sm:h-72 overflow-hidden transition-all duration-700 ${!is_open ? 'grayscale' : ''}`}>
+      <div className={`relative h-48 sm:h-64 md:h-72 overflow-hidden transition-all duration-700 ${!is_open ? 'grayscale' : ''}`}>
         <Image
           src={getSafeUrl(logo_url, 0) || '/placeholder-shop.jpg'}
           alt={shop_name}
@@ -111,37 +111,41 @@ export const ShopCard = ({ shop, onClick, onMessage }: ShopCardProps) => {
       </div>
 
       {/* Info Section */}
-      <div className="p-8">
+      <div className="p-5 sm:p-8 relative">
+        {/* Mall Theme Accent */}
+        <div className="absolute top-0 right-10 w-12 h-1 bg-primary transform origin-right scale-x-0 group-hover:scale-x-100 transition-transform duration-500 rounded-b-full"></div>
+        
         <div className="flex flex-col gap-2 mb-6">
           <div className="flex justify-between items-start">
              <div>
-                <h3 className="text-2xl font-black text-charcoal dark:text-white tracking-tighter group-hover:text-primary transition-colors leading-none mb-2">
+                <h3 className="text-2xl font-black text-charcoal dark:text-white tracking-tighter group-hover:text-primary transition-colors leading-none mb-2 uppercase">
                   {shop_name}
                 </h3>
-                <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                   {shop.id === 'preview' ? 'Sample Store' : 'Official Retailer'}
+                <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
+                   <Tag size={12} className="text-primary/40" />
+                   {shop.id === 'preview' ? 'Sample Store' : 'Official Tenant'}
                 </div>
              </div>
           </div>
-          <p className="text-sm text-slate-500 dark:text-slate-400 font-medium leading-relaxed line-clamp-2 mt-4">
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium leading-relaxed line-clamp-2 mt-4">
             {shop.description || 'Discover a premium selection of high-quality products and bespoke services curated just for you at SR Mall.'}
           </p>
         </div>
 
-        <div className="flex items-center gap-4 pt-6 mt-2 border-t border-slate-100 dark:border-white/5">
+        <div className="flex items-center gap-4 pt-6 mt-2 border-t border-slate-100 dark:border-white/10">
           <button
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
               if (onMessage) onMessage(shop_name);
             }}
-            className="flex-1 py-4 bg-slate-50 dark:bg-zinc-800/50 hover:bg-primary hover:text-white text-slate-900 dark:text-white rounded-[1.25rem] text-[10px] font-black uppercase tracking-[0.2em] transition-all border border-slate-200 dark:border-white/5 flex items-center justify-center gap-3 shadow-sm hover:shadow-lg hover:shadow-primary/20 active:scale-95"
+            className="flex-1 py-4 bg-slate-50 dark:bg-zinc-900/50 hover:bg-primary/5 hover:text-primary text-slate-900 dark:text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all border border-slate-200 dark:border-white/5 flex items-center justify-center gap-3 shadow-xs hover:border-primary/20 active:scale-95"
           >
-            <MessageCircle size={16} className="" />
-            Inquire
+            <MessageCircle size={16} className="text-primary" />
+            Live Inquiry
           </button>
           
-          <div className="w-12 h-12 rounded-[1.25rem] bg-primary text-white flex items-center justify-center transition-all shadow-[0_10px_20px_-5px_rgba(190,30,45,0.3)] group-hover:shadow-[0_15px_30px_-5px_rgba(190,30,45,0.5)] active:scale-95 group-hover:scale-110">
+          <div className="w-12 h-12 rounded-2xl bg-charcoal dark:bg-zinc-800 text-white flex items-center justify-center transition-all shadow-xl group-hover:bg-primary group-hover:shadow-[0_15px_30px_-5px_rgba(190,30,45,0.5)] active:scale-95 group-hover:scale-110">
              <ChevronRight size={20} />
           </div>
         </div>

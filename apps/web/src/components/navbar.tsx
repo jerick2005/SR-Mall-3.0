@@ -126,7 +126,7 @@ export const Navbar = () => {
                   </button>
 
                   {isProfileOpen && (
-                    <div className={clsx('absolute', 'top-full', 'right-0', 'mt-4', 'w-72', 'bg-white', 'dark:bg-zinc-900', 'rounded-3xl', 'shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)]', 'border', 'border-slate-200', 'dark:border-white/5', 'animate-fade-in-up', 'overflow-hidden', 'z-[60]')}>
+                    <div className={clsx('absolute', 'top-full', 'right-0', 'mt-4', 'w-[calc(100vw-2rem)]', 'sm:w-72', 'bg-white', 'dark:bg-zinc-900', 'rounded-3xl', 'shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)]', 'border', 'border-slate-200', 'dark:border-white/5', 'animate-fade-in-up', 'overflow-hidden', 'z-[60]', 'max-w-xs')}>
                       <div className={clsx('px-6', 'py-4', 'border-b', 'border-slate-100', 'dark:border-white/5', 'bg-slate-50/50', 'dark:bg-white/5')}>
                         <p className={clsx('text-[10px]', 'font-black', 'text-slate-400', 'uppercase', 'tracking-[0.2em]')}>Account Overview</p>
                       </div>
@@ -226,44 +226,64 @@ export const Navbar = () => {
 
       {/* Mobile Menu Overlay */}
       {isMobileMenuOpen && (
-        <div className="fixed inset-0 top-20 z-40 bg-white dark:bg-zinc-900 md:hidden animate-fade-in">
-          <div className="flex flex-col p-6 gap-4">
-            {/* @ts-ignore */}
-            <Link 
-              href="#directory"
-              className="text-lg font-medium text-slate-700 dark:text-slate-200 py-3 border-b border-slate-100 dark:border-white/5"
-            >
-              <div onClick={() => setIsMobileMenuOpen(false)}>Mall Directory</div>
-            </Link>
-            {/* @ts-ignore */}
-            <Link 
-              href="#availability"
-              className="text-lg font-medium text-slate-700 dark:text-slate-200 py-3 border-b border-slate-100 dark:border-white/5"
-            >
-              <div onClick={() => setIsMobileMenuOpen(false)}>Available Spaces</div>
-            </Link>
-            {/* @ts-ignore */}
-            <Link 
-              href="#events"
-              className="text-lg font-medium text-slate-700 dark:text-slate-200 py-3 border-b border-slate-100 dark:border-white/5"
-            >
-              <div onClick={() => setIsMobileMenuOpen(false)}>What's On</div>
-            </Link>
-            {/* @ts-ignore */}
-            <Link 
-              href="#location"
-              className="text-lg font-medium text-slate-700 dark:text-slate-200 py-3 border-b border-slate-100 dark:border-white/5"
-            >
-              <div onClick={() => setIsMobileMenuOpen(false)}>Location</div>
-            </Link>
-            {isAuthenticated && (user?.role === 'ADMIN' || user?.role === 'TENANT') && (
-              // @ts-ignore
+        <div className="fixed inset-0 top-20 z-40 bg-white dark:bg-zinc-900 md:hidden overflow-y-auto animate-fade-in">
+          <div className="flex flex-col px-4 py-4">
+            {[
+              { href: '#directory', label: 'Mall Directory' },
+              { href: '#availability', label: 'Available Spaces' },
+              { href: '#event-inquiry', label: 'Book an Event' },
+              { href: '#location', label: 'Location' },
+              { href: '#feedback', label: 'Reviews' },
+            ].map(link => (
               <Link
-                href={user.role === 'ADMIN' ? '/admindashboard' : '/tenantdashboard'}
-                className="text-lg font-medium text-primary py-3 border-b border-slate-100 dark:border-white/5"
+                key={link.href}
+                href={link.href}
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="flex items-center justify-between py-4 border-b border-slate-100 dark:border-white/5 text-base font-bold text-slate-700 dark:text-slate-200 hover:text-primary transition-colors"
               >
-                <div onClick={() => setIsMobileMenuOpen(false)}>Go to Dashboard</div>
+                {link.label}
+                <ChevronDown size={16} className="-rotate-90 text-slate-300" />
               </Link>
+            ))}
+
+            {isAuthenticated && (user?.role === 'ADMIN' || user?.role === 'TENANT') && (
+              <Link
+                href={user?.role === 'ADMIN' ? '/admindashboard' : '/tenantdashboard'}
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="flex items-center justify-between py-4 border-b border-slate-100 dark:border-white/5 text-base font-bold text-primary"
+              >
+                Go to Dashboard
+                <ChevronDown size={16} className="-rotate-90 text-primary/40" />
+              </Link>
+            )}
+
+            {isAuthenticated && (user?.role === 'CUSTOMER' || user?.role === 'USER') && (
+              <button
+                onClick={() => { setIsMerchantModalOpen(true); setIsMobileMenuOpen(false); }}
+                className="flex items-center justify-between w-full py-4 border-b border-slate-100 dark:border-white/5 text-base font-bold text-primary text-left"
+              >
+                Become a Partner
+                <Store size={16} className="text-primary/60" />
+              </button>
+            )}
+
+            {isAuthenticated && (
+              <button
+                onClick={() => { logout(); setIsMobileMenuOpen(false); }}
+                className="flex items-center justify-between w-full py-4 text-base font-bold text-red-500 mt-2"
+              >
+                Sign Out
+                <LogOut size={16} className="text-red-400" />
+              </button>
+            )}
+
+            {!isAuthenticated && (
+              <button
+                onClick={() => { setIsLoginOpen(true); setIsMobileMenuOpen(false); }}
+                className="mt-4 w-full py-4 bg-primary text-white font-black text-sm uppercase tracking-widest rounded-2xl active:scale-95 shadow-xl shadow-primary/30 transition-all"
+              >
+                Sign In
+              </button>
             )}
           </div>
         </div>

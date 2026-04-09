@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { ShieldCheck, User, Store, CheckCircle2, XCircle, Loader2, Mail, ExternalLink, MapPin } from 'lucide-react';
-import { getPendingTenantsAction, approveTenantAction, deleteTenantAction } from '@/app/actions/tenant';
+import { getPendingTenantsAction, approveTenantAction, rejectTenantAction } from '@/app/actions/tenant';
 import { getAreaSlots } from '@/app/actions/space-slot';
 import { toast } from 'sonner';
 
@@ -31,8 +31,8 @@ export default function MerchantRequestsPage() {
 
   const handleApprove = async (tenantId: string) => {
     const unitId = selectedUnits[tenantId];
-    if (!unitId) {
-      toast.error("Required Field", { description: "You must assign a Unit ID to approve this merchant." });
+    
+    if (!unitId && !confirm("No Unit Assigned: This merchant will be approved without a physical unit assigned. Proceed?")) {
       return;
     }
 
@@ -53,11 +53,13 @@ export default function MerchantRequestsPage() {
   };
 
   const handleReject = async (tenantId: string) => {
-    if (confirm("Are you sure you want to reject this merchant application? This will remove the request permanently.")) {
-      const res = await deleteTenantAction(tenantId);
+    if (confirm("Are you sure you want to reject this merchant application? The user will be notified and won't be able to reapply.")) {
+      const res = await rejectTenantAction(tenantId);
       if (res.success) {
         toast.warning("Merchant Application Rejected");
         loadData();
+      } else {
+        toast.error("Rejection Failed", { description: res.error });
       }
     }
   };

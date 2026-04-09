@@ -14,5 +14,19 @@ services:
       - srmall_pgdata:/var/lib/postgresql/data
     restart: always
 
+  web:
+    build: .
+    container_name: srmall_web
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:admin123@db:5432/srmalldb
+      - NODE_ENV=development
+      - NEXT_PUBLIC_CLOUD_PROVIDER=local
+      - NEXT_PUBLIC_CLOUD_URL=http://localhost:3000/uploads
+    depends_on:
+      - db
+    restart: always
+
 volumes:
   srmall_pgdata:

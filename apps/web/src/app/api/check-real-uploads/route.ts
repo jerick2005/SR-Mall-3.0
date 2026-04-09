@@ -41,8 +41,8 @@ export async function GET() {
     return NextResponse.json({
       success: true,
       totalPromos: allPromos.length,
-      uploadPromos: uploadPromos.length,
-      approvedUploadPromos: approvedUploadPromos.length,
+      uploadPromosCount: uploadPromos.length,
+      approvedUploadPromosCount: approvedUploadPromos.length,
       allPromos: allPromos.map(p => ({
         id: p.id,
         title: p.title,

@@ -11,8 +11,8 @@ interface ChatBoxProps {
   isOpen: boolean;
   onClose: () => void;
   isAuthenticated: boolean;
-  initialRecipient?: 'admin' | 'shop';
-  initialShopName?: string;
+  initialRecipient?: 'admin' | 'shop' | null;
+  initialShopName?: string | null;
   inquirySlotId?: string | null;
 }
 
@@ -24,14 +24,14 @@ export const ChatBox = ({
   isOpen,
   onClose,
   isAuthenticated,
-  initialRecipient = 'shop',
+  initialRecipient,
   initialShopName,
   inquirySlotId
 }: ChatBoxProps) => {
   const { user } = useAuth();
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [inputText, setInputText] = useState('');
-  const [recipient, setRecipient] = useState<'admin' | 'shop'>(initialRecipient);
+  const [recipient, setRecipient] = useState<'admin' | 'shop'>(initialRecipient || 'shop');
   const [availableShops, setAvailableShops] = useState<string[]>(DEFAULT_SHOPS);
   const [selectedShop, setSelectedShop] = useState(initialShopName || DEFAULT_SHOPS[0]);
   const [viewMode, setViewMode] = useState<'list' | 'chat'>('list');

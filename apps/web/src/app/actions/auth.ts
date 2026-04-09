@@ -127,3 +127,73 @@ export async function getAllUsersAction() {
     return { success: false, error: 'Failed to fetch users.' };
   }
 }
+
+import { revalidatePath } from 'next/cache';
+
+export async function deleteUserAction(userId: string) {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: { tenant: true }
+    });
+
+    if (!user) return { success: false, error: 'User not found.' };
+
+    await prisma.$transaction(async (tx) => {
+      // If user is a tenant, free up their assigned area slot before deletion
+      if (user.tenant) {
+        const slot = await tx.areaSlot.findFirst({ where: { tenant_id: user.tenant.id } });
+        if (slot) {
+          await tx.areaSlot.update({
+            where: { id: slot.id },
+            data: { status: 'AVAILABLE', tenant_id: null }
+          });
+        }
+      }
+      // Delete user (cascade will delete Tenant and other related records)
+      await tx.user.delete({ where: { id: userId } });
+    });
+
+    revalidatePath('/admindashboard/user-management');
+    return { success: true };
+  } catch (error) {
+    console.error('[DELETE_USER_ERROR]:', error);
+    return { success: false, error: 'Failed to delete user.' };
+  }
+}
+
+export async function updateUserRoleAction(userId: string, newRole: string) {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: { tenant: true }
+    });
+
+    if (!user) return { success: false, error: 'User not found.' };
+
+    await prisma.$transaction(async (tx) => {
+      // If demoting from TENANT to CUSTOMER/ADMIN, we should clean up their tenant profile
+      if (user.role === 'TENANT' && newRole !== 'TENANT' && user.tenant) {
+        const slot = await tx.areaSlot.findFirst({ where: { tenant_id: user.tenant.id } });
+        if (slot) {
+          await tx.areaSlot.update({
+            where: { id: slot.id },
+            data: { status: 'AVAILABLE', tenant_id: null }
+          });
+        }
+        await tx.tenant.delete({ where: { id: user.tenant.id } });
+      }
+
+      await tx.user.update({
+        where: { id: userId },
+        data: { role: newRole }
+      });
+    });
+
+    revalidatePath('/admindashboard/user-management');
+    return { success: true };
+  } catch (error) {
+    console.error('[UPDATE_USER_ROLE_ERROR]:', error);
+    return { success: false, error: 'Failed to update user role.' };
+  }
+}

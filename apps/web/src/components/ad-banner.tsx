@@ -92,7 +92,7 @@ export const AdBanner = ({ ads, tenantPromos }: { ads?: any[]; tenantPromos?: an
   };
 
   return (
-    <div className="relative w-full h-[500px] overflow-hidden group">
+    <div className="relative w-full h-[280px] sm:h-[380px] md:h-[500px] overflow-hidden group">
       {/* High-impact Image/Video with Dark Overlay */}
       {localAds.map((ad, index) => (
         <div
@@ -131,25 +131,25 @@ export const AdBanner = ({ ads, tenantPromos }: { ads?: any[]; tenantPromos?: an
             );
           })()}
           <div className="absolute inset-0 bg-linear-to-r from-white via-white/80 dark:from-black/60 dark:via-black/30 to-transparent flex items-center">
-            <div className="max-w-7xl mx-auto px-10 w-full">
-              <div className="max-w-xl animate-fade-in-up">
-                <span className="inline-block px-4 py-1.5 bg-primary text-white text-[10px] font-bold uppercase tracking-[0.2em] mb-6 rounded-full shadow-lg shadow-primary/30">
+            <div className="max-w-7xl mx-auto px-5 sm:px-10 w-full">
+              <div className="max-w-xs sm:max-w-xl animate-fade-in-up">
+                <span className="inline-block px-3 sm:px-4 py-1 sm:py-1.5 bg-primary text-white text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.2em] mb-3 sm:mb-6 rounded-full shadow-lg shadow-primary/30">
                   {ad.id === 'default' ? 'Featured Content' : 'Sponsored Content'}
                 </span>
-                <h2 className="text-5xl md:text-7xl font-bold text-charcoal dark:text-white mb-6 leading-tight tracking-tight">
+                <h2 className="text-2xl sm:text-5xl md:text-7xl font-bold text-white mb-2 sm:mb-6 leading-tight tracking-tight line-clamp-2 sm:line-clamp-none">
                   {ad.title}
                 </h2>
-                <p className="text-lg text-slate-600 dark:text-slate-300 mb-10 leading-relaxed font-medium line-clamp-3">
+                <p className="text-xs sm:text-lg text-white/80 mb-4 sm:mb-10 leading-relaxed font-medium line-clamp-2 sm:line-clamp-3">
                   {ad.description || 'Visit us and experience the future of digital shopping today.'}
                 </p>
-                <div className="flex flex-wrap gap-4">
+                <div className="flex flex-wrap gap-2 sm:gap-4">
                   <button
                     onClick={() => handleAdClick(ad.id)}
-                    className="px-10 py-5 bg-primary text-white text-sm font-bold rounded-full hover:bg-primary/90 transition-all active:scale-95 shadow-xl"
+                    className="px-5 sm:px-10 py-3 sm:py-5 bg-primary text-white text-xs sm:text-sm font-bold rounded-full hover:bg-primary/90 transition-all active:scale-95 shadow-xl"
                   >
                     {ad.id === 'default' ? DEFAULT_AD.ctaText : ad.tenant ? 'View Tenant Page' : 'Learn More'}
                   </button>
-                  <button className="px-8 py-5 border border-slate-200 dark:border-white/20 text-charcoal dark:text-white text-sm font-bold rounded-full hover:bg-slate-50 dark:hover:bg-white/10 transition-all backdrop-blur-sm">
+                  <button className="px-4 sm:px-8 py-3 sm:py-5 border border-white/30 text-white text-xs sm:text-sm font-bold rounded-full hover:bg-white/10 transition-all backdrop-blur-sm">
                     Learn More
                   </button>
                 </div>

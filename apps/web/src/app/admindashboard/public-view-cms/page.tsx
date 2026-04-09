@@ -16,7 +16,7 @@ import clsx from 'clsx';
 
 interface CarouselItem {
   id: string;
-  adminId: string;
+  adminId: string | null;
   createdAt: Date;
   updatedAt: Date;
   title: string;

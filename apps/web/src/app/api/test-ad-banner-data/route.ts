@@ -38,7 +38,7 @@ export async function GET() {
         items: combinedAds.map(ad => ({
           id: ad.id,
           title: ad.title,
-          type: ad.promoImage ? 'tenant_promo' : 'mall_ad'
+          type: ('promoImage' in ad) ? 'tenant_promo' : 'mall_ad'
         }))
       }
     });

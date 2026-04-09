@@ -12,7 +12,6 @@ const navItems = [
   { href: '/admindashboard/tenant-monitoring', label: 'Tenant Monitoring', icon: Users },
   { href: '/admindashboard/ad-scheduler', label: 'Ad Scheduler', icon: Presentation },
   { href: '/admindashboard/reservation-queue', label: 'Reservation Queue', icon: Calendar },
-  { href: '/admindashboard/feedback-moderation', label: 'Feedback Moderation', icon: ShieldAlert },
   { href: '/admindashboard/user-management', label: 'User Management & Blacklist', icon: ShieldAlert },
   { href: '/admindashboard/public-view-cms', label: 'Public-View CMS', icon: Palette },
   { href: '/admindashboard/inquiries', label: 'Event Inquiries', icon: Calendar },

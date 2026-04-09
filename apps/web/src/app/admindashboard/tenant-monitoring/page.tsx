@@ -19,7 +19,7 @@ interface Tenant {
   description?: string;
   logoUrl?: string;
   isOpen: boolean;
-  status: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED' | 'PENDING';
+  status: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED' | 'PENDING' | 'REJECTED';
   metrics?: {
     clicks: number;
     offersClaimed: number;
@@ -42,6 +42,7 @@ const STATUS_CONFIG = {
   INACTIVE: { color: 'bg-slate-400', bg: 'bg-slate-400/10', border: 'border-slate-400/20', text: 'text-slate-500' },
   SUSPENDED: { color: 'bg-red-500', bg: 'bg-red-500/10', border: 'border-red-500/20', text: 'text-red-600' },
   PENDING: { color: 'bg-amber-500', bg: 'bg-amber-500/10', border: 'border-amber-500/20', text: 'text-amber-600' },
+  REJECTED: { color: 'bg-red-600', bg: 'bg-red-600/10', border: 'border-red-600/20', text: 'text-red-700' },
 };
 
 const PAYMENT_CONFIG = {

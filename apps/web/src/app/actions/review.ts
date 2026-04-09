@@ -39,7 +39,7 @@ export async function submitReviewAction(userId: string, rating: number, comment
         userId: userId,
         rating,
         comment: comment || null,
-        isApproved: true // Auto-approved for testing/functional purposes
+        isApproved: false // Requires admin approval before appearing on public view
       },
       include: {
         user: {
@@ -54,10 +54,10 @@ export async function submitReviewAction(userId: string, rating: number, comment
     // Create notification for admin about new review
     await prisma.notification.create({
       data: {
-        userId: userId, // This would ideally go to admin users
+        userId: userId,
         type: 'NEW_REVIEW_SUBMITTED',
         title: 'New Review Submitted',
-        message: `A new ${rating}-star review has been published.`
+        message: `A new ${rating}-star review is pending moderation approval.`
       }
     });
 
@@ -67,7 +67,7 @@ export async function submitReviewAction(userId: string, rating: number, comment
     return {
       success: true,
       data: review,
-      message: 'Review submitted successfully! Thank you for sharing your experience.'
+      message: 'Review submitted! It will appear publicly once approved by our team.'
     };
 
   } catch (error) {
@@ -118,6 +118,19 @@ export async function deleteMyReviewAction(userId: string) {
   } catch (error) {
     console.error('Delete review error:', error);
     return { success: false, error: 'Failed to delete review.' };
+  }
+}
+
+export async function getMyReviewAction(userId: string) {
+  try {
+    const review = await prisma.review.findFirst({
+      where: { userId },
+      orderBy: { createdAt: 'desc' }
+    });
+    return { success: true, data: review };
+  } catch (error) {
+    console.error('Get my review error:', error);
+    return { success: false, error: 'Failed to fetch your review.' };
   }
 }
 

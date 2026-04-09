@@ -276,7 +276,12 @@ export async function requestTenantAction(userId: string, data: { shopName: stri
     if (!user) return { success: false, error: 'User account not found. Please sign in again.' };
 
     const existing = await prisma.tenant.findUnique({ where: { userId } });
-    if (existing) return { success: false, error: 'You already have a pending or active storefront.' };
+    if (existing) {
+      if (existing.status === 'REJECTED') {
+        return { success: false, error: 'Your previous application was rejected. You cannot reapply at this time.' };
+      }
+      return { success: false, error: 'You already have a pending or active storefront application.' };
+    }
 
     await prisma.tenant.create({
       data: {
@@ -309,7 +314,7 @@ export async function requestTenantAction(userId: string, data: { shopName: stri
   }
 }
 
-export async function approveTenantAction(tenantId: string, unitId: string) {
+export async function approveTenantAction(tenantId: string, unitId?: string) {
   try {
     const tenant = await prisma.tenant.findUnique({
       where: { id: tenantId },
@@ -327,12 +332,14 @@ export async function approveTenantAction(tenantId: string, unitId: string) {
         where: { id: tenantId },
         data: { 
           status: 'ACTIVE',
-          unitId: unitId
+          ...(unitId && { unitId })
         }
       })
     ]);
 
-    await occupySlot(unitId);
+    if (unitId && unitId !== 'PENDING_ASSIGNMENT') {
+      await occupySlot(unitId);
+    }
 
     revalidatePath('/admindashboard/tenant-monitoring');
     revalidatePath('/public-view');
@@ -368,22 +375,66 @@ export async function deleteTenantAction(tenantId: string) {
       return { success: false, error: 'Tenant not found' };
     }
 
-    // Delete the tenant (this will also delete the user due to cascade)
-    await prisma.tenant.delete({
-      where: { id: tenantId }
-    });
-
-    // Also delete the user since they are no longer needed
-    if (tenant.user) {
-      await prisma.user.delete({
-        where: { id: tenant.user.id }
-      });
+    // Free up the unit if they had one
+    if (tenant.unitId && tenant.unitId !== 'PENDING_ASSIGNMENT') {
+      try {
+        await prisma.areaSlot.update({
+          where: { unit_id: tenant.unitId },
+          data: { status: 'AVAILABLE', tenant_id: null }
+        });
+      } catch (e) {
+        console.warn(`Could not free unit ${tenant.unitId}`, e);
+      }
     }
 
+    // Use a transaction to ensure both operations complete atomically
+    await prisma.$transaction(async (tx) => {
+      // Revert the user back to CUSTOMER instead of deleting them
+      if (tenant.userId) {
+        await tx.user.update({
+          where: { id: tenant.userId },
+          data: { role: 'CUSTOMER' }
+        });
+      }
+
+      // Delete the tenant profile
+      await tx.tenant.delete({
+        where: { id: tenantId }
+      });
+    });
+
     revalidatePath('/admindashboard/tenant-monitoring');
+    revalidatePath('/admindashboard/user-management');
     return { success: true };
   } catch (error: any) {
     console.error('[DELETE_TENANT_ERROR]:', error);
     return { success: false, error: error.message || 'Failed to delete tenant' };
+  }
+}
+
+export async function rejectTenantAction(tenantId: string) {
+  try {
+    await prisma.tenant.update({
+      where: { id: tenantId },
+      data: { status: 'REJECTED' }
+    });
+
+    revalidatePath('/admindashboard/merchant-requests');
+    return { success: true };
+  } catch (error: any) {
+    console.error('[REJECT_TENANT_ERROR]:', error);
+    return { success: false, error: error.message || 'Failed to reject application' };
+  }
+}
+
+export async function getTenantStatusAction(userId: string) {
+  try {
+    const tenant = await prisma.tenant.findUnique({
+      where: { userId },
+      select: { status: true }
+    });
+    return { success: true, status: tenant?.status || null };
+  } catch (error: any) {
+    return { success: false, error: error.message };
   }
 }

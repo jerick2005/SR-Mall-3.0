@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Star, MessageSquare, Send, LogIn, Heart, CheckCircle, AlertCircle } from 'lucide-react';
 import clsx from 'clsx';
-import { submitReviewAction, getApprovedReviewsAction, editMyReviewAction, deleteMyReviewAction } from '@/app/actions/review';
+import { submitReviewAction, getApprovedReviewsAction, editMyReviewAction, deleteMyReviewAction, getMyReviewAction } from '@/app/actions/review';
 import { LoginModal } from '@/components/login-modal';
 import { useAuth } from '@/app/providers';
 
@@ -23,6 +23,9 @@ interface Review {
 }
 
 export const FeedbackSection = ({ isAuthenticated }: FeedbackSectionProps) => {
+  const { user } = useAuth();
+
+  // ── State ──────────────────────────────────────────────
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -30,18 +33,14 @@ export const FeedbackSection = ({ isAuthenticated }: FeedbackSectionProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitMessage, setSubmitMessage] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [myPendingReview, setMyPendingReview] = useState<any>(null);
 
-  const { user } = useAuth();
-
-  useEffect(() => {
-    loadReviews();
-  }, []);
-
+  // ── Data Loaders ───────────────────────────────────────
   const loadReviews = async () => {
     try {
       const result = await getApprovedReviewsAction();
       if (result.success && result.data) {
-        setReviews(result.data);
+        setReviews(result.data as Review[]);
       }
     } catch (error) {
       console.error('Failed to load reviews:', error);
@@ -50,7 +49,32 @@ export const FeedbackSection = ({ isAuthenticated }: FeedbackSectionProps) => {
     }
   };
 
+  const loadMyPendingReview = async (userId: string) => {
+    try {
+      const result = await getMyReviewAction(userId);
+      if (result.success && result.data && !(result.data as any).isApproved) {
+        setMyPendingReview(result.data);
+      } else {
+        setMyPendingReview(null);
+      }
+    } catch {}
+  };
+
+  // ── Derived ────────────────────────────────────────────
   const myReview = user ? reviews.find(r => r.user.email === user.email) : undefined;
+
+  // ── Effects ────────────────────────────────────────────
+  useEffect(() => {
+    loadReviews();
+  }, []);
+
+  useEffect(() => {
+    if (user?.id) {
+      loadMyPendingReview(user.id);
+    } else {
+      setMyPendingReview(null);
+    }
+  }, [user?.id]);
 
   useEffect(() => {
     if (myReview && rating === 0) {
@@ -58,6 +82,7 @@ export const FeedbackSection = ({ isAuthenticated }: FeedbackSectionProps) => {
       setComment(myReview.comment || "");
     }
   }, [myReview]);
+
 
   const handleDelete = async () => {
     if (!user || !user.id) return;
@@ -69,6 +94,7 @@ export const FeedbackSection = ({ isAuthenticated }: FeedbackSectionProps) => {
         setSubmitMessage({ type: 'success', message: 'Review deleted successfully!' });
         setRating(0);
         setComment("");
+        setMyPendingReview(null);
         setTimeout(loadReviews, 1000);
       } else {
         setSubmitMessage({ type: 'error', message: result.error || 'Failed to delete review.' });
@@ -112,8 +138,8 @@ export const FeedbackSection = ({ isAuthenticated }: FeedbackSectionProps) => {
         });
         setRating(0);
         setComment("");
-        // Reload reviews to include the new one if approved
-        setTimeout(loadReviews, 1000);
+        // Reload reviews + check pending state
+        setTimeout(() => { loadReviews(); if (user?.id) loadMyPendingReview(user.id); }, 1000);
       } else {
         setSubmitMessage({
           type: 'error',
@@ -167,6 +193,28 @@ export const FeedbackSection = ({ isAuthenticated }: FeedbackSectionProps) => {
           <div className={clsx('grid', 'grid-cols-1', 'lg:grid-cols-2', 'gap-8', 'lg:gap-12')}>
             {/* Left Column: Reviews List */}
             <div className={clsx('space-y-4', 'max-h-[500px]', 'sm:max-h-[600px]', 'overflow-y-auto', 'pr-2', 'sm:pr-4', 'custom-scrollbar')}>
+              {/* Pending review notice for logged-in user */}
+              {myPendingReview && (
+                <div className={clsx('p-4', 'sm:p-5', 'bg-amber-50', 'dark:bg-amber-950/20', 'rounded-xl', 'sm:rounded-2xl', 'border', 'border-amber-200', 'dark:border-amber-800/50')}>
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <CheckCircle size={16} className="text-amber-600" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-bold uppercase tracking-widest text-amber-700 dark:text-amber-400 mb-1">Your review is pending approval</p>
+                      <p className="text-xs text-amber-600 dark:text-amber-500 font-medium">
+                        {myPendingReview.comment ? `"${myPendingReview.comment}"` : `${myPendingReview.rating}-star review submitted.`}
+                      </p>
+                      <p className="text-[10px] text-amber-500/70 mt-1">It will appear here once approved by our team.</p>
+                    </div>
+                    <div className="flex gap-0.5 flex-shrink-0">
+                      {[...Array(5)].map((_: any, i: number) => (
+                        <Star key={i} size={10} className={i < myPendingReview.rating ? "fill-amber-400 text-amber-400" : "text-amber-200"} />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
               {isLoading ? (
                 <div className={clsx('text-center', 'py-12')}>
                   <div className={clsx('inline-block', 'animate-spin', 'rounded-full', 'h-8', 'w-8', 'border-b-2', 'border-primary')}></div>

@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { X, Store, Send, CheckCircle2, Loader2, Info, Building2, Phone, Mail, Tag } from 'lucide-react';
-import { requestTenantAction } from '@/app/actions/tenant';
+import { X, Store, Send, CheckCircle2, XCircle, Loader2, Info, Building2, Phone, Mail, Tag } from 'lucide-react';
+import { requestTenantAction, getTenantStatusAction } from '@/app/actions/tenant';
 import { useAuth } from '@/app/providers';
 import { toast } from 'sonner';
 
@@ -24,6 +24,8 @@ export const MerchantApplicationModal = ({ isOpen, onClose }: MerchantApplicatio
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const [existingStatus, setExistingStatus] = useState<string | null>(null);
+  const [checkingStatus, setCheckingStatus] = useState(false);
 
   const categories = [
     'Fashion & Apparel',
@@ -51,8 +53,26 @@ export const MerchantApplicationModal = ({ isOpen, onClose }: MerchantApplicatio
       setErrors({});
       setTouched({});
       setIsSuccess(false);
+
+      if (user?.id) {
+        checkStatus();
+      }
     }
-  }, [isOpen, user?.email]);
+  }, [isOpen, user?.id, user?.email]);
+
+  const checkStatus = async () => {
+    try {
+      setCheckingStatus(true);
+      const res = await getTenantStatusAction(user!.id);
+      if (res.success) {
+        setExistingStatus(res.status ?? null);
+      }
+    } catch (err) {
+      console.error("Error checking tenant status:", err);
+    } finally {
+      setCheckingStatus(false);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -135,8 +155,10 @@ export const MerchantApplicationModal = ({ isOpen, onClose }: MerchantApplicatio
       } else {
         if (res.error?.includes('User account not found')) {
           toast.error("Session Expired", { description: "Please log out and log back in, then try again." });
-        } else if (res.error?.includes('already have a pending')) {
-          toast.error("Application Already Exists", { description: "You already have a pending application. Please wait for admin approval." });
+        } else if (res.error?.includes('already have') || res.error?.includes('rejected')) {
+          toast.error("Application Error", { description: res.error });
+          setExistingStatus('CHECK_AGAIN'); // Trigger refresh or just block
+          checkStatus();
         } else {
           toast.error("Application Failed", { description: res.error });
         }
@@ -159,7 +181,43 @@ export const MerchantApplicationModal = ({ isOpen, onClose }: MerchantApplicatio
         </button>
 
         <div className="p-8 lg:p-12">
-          {isSuccess ? (
+          {checkingStatus ? (
+            <div className="py-20 text-center space-y-4">
+              <Loader2 className="animate-spin mx-auto text-primary" size={40} />
+              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Verifying Application Status...</p>
+            </div>
+          ) : existingStatus && !isSuccess ? (
+            <div className="text-center py-10 space-y-6">
+              <div className={`w-20 h-20 rounded-[2rem] flex items-center justify-center mx-auto border ${
+                existingStatus === 'REJECTED' 
+                  ? 'bg-red-500/10 text-red-500 border-red-500/20' 
+                  : 'bg-primary/10 text-primary border-primary/20'
+              }`}>
+                {existingStatus === 'REJECTED' ? <XCircle size={40} /> : <CheckCircle2 size={40} />}
+              </div>
+              <div className="space-y-2 px-4">
+                <h2 className="text-3xl font-black text-charcoal dark:text-white tracking-tight italic uppercase">
+                  {existingStatus === 'REJECTED' ? 'Application ' : 'Existing '} 
+                  <span className={existingStatus === 'REJECTED' ? 'text-red-500' : 'text-primary'}>
+                    {existingStatus === 'REJECTED' ? 'Rejected' : 'Found'}
+                  </span>
+                </h2>
+                <p className="text-slate-500 font-medium">
+                  {existingStatus === 'REJECTED' 
+                    ? 'Unfortunately, your application to become a merchant partner has been rejected. You cannot reapply at this time.' 
+                    : existingStatus === 'ACTIVE' 
+                      ? 'You are already an active merchant partner. Access your tools via the Tenant Dashboard.' 
+                      : 'You already have a pending application. We are currently reviewing your request.'}
+                </p>
+              </div>
+              <button 
+                onClick={onClose}
+                className="px-10 py-4 bg-charcoal dark:bg-white text-white dark:text-black font-black rounded-2xl uppercase tracking-widest text-xs transition-all hover:scale-105"
+              >
+                Close Window
+              </button>
+            </div>
+          ) : isSuccess ? (
             <div className="text-center py-10 space-y-6">
               <div className="w-20 h-20 bg-emerald-500/10 text-emerald-500 rounded-[2rem] flex items-center justify-center mx-auto border border-emerald-500/20">
                 <CheckCircle2 size={40} />

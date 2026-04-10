@@ -342,6 +342,7 @@ export async function approveTenantAction(tenantId: string, unitId?: string) {
     }
 
     revalidatePath('/admindashboard/tenant-monitoring');
+    revalidatePath('/admindashboard/space-manager');
     revalidatePath('/public-view');
     
     return { success: true };
@@ -404,7 +405,9 @@ export async function deleteTenantAction(tenantId: string) {
     });
 
     revalidatePath('/admindashboard/tenant-monitoring');
+    revalidatePath('/admindashboard/space-manager');
     revalidatePath('/admindashboard/user-management');
+    revalidatePath('/public-view');
     return { success: true };
   } catch (error: any) {
     console.error('[DELETE_TENANT_ERROR]:', error);

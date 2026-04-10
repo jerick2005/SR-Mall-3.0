@@ -193,7 +193,32 @@ export async function updateUserRoleAction(userId: string, newRole: string) {
     revalidatePath('/admindashboard/user-management');
     return { success: true };
   } catch (error) {
-    console.error('[UPDATE_USER_ROLE_ERROR]:', error);
     return { success: false, error: 'Failed to update user role.' };
+  }
+}
+
+export async function updateProfileAction(userId: string, data: { name: string; email: string }) {
+  try {
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        name: data.name,
+        email: data.email.trim().toLowerCase(),
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+      }
+    });
+
+    return { success: true, data: updatedUser };
+  } catch (error: any) {
+    console.error('[UPDATE_PROFILE_ERROR]:', error);
+    if (error.code === 'P2002') {
+       return { success: false, error: 'Email already in use by another account.' };
+    }
+    return { success: false, error: 'Failed to update profile.' };
   }
 }

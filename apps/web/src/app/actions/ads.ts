@@ -27,21 +27,34 @@ export async function createMallAd(data: {
   startDate: Date;
   endDate: Date;
   adminId: string;
+  storageKey?: string;
 }) {
   try {
-    const ad = await prisma.mallAd.create({
+    console.log('[ADS_ACTION]: Attempting to create Mall Ad with data:', { ...data, adminId: data.adminId });
+    // Using any cast to bypass stale generated client types while dev server holds files
+    const ad = await (prisma.mallAd as any).create({
       data: {
-        ...data,
+        title: data.title,
+        description: data.description || '',
+        imageUrl: data.imageUrl,
+        linkUrl: data.linkUrl,
+        priority: data.priority,
+        startDate: data.startDate,
+        endDate: data.endDate,
+        adminId: data.adminId,
+        storageKey: data.storageKey,
         isGlobal: true,
       }
     });
+    console.log('[ADS_ACTION]: Mall Ad created successfully:', ad.id);
 
+    revalidatePath('/admindashboard/ad-scheduler');
     revalidatePath('/admindashboard/ad-scheduler');
     revalidatePath('/public-view');
     return { success: true, ad };
-  } catch (error) {
+  } catch (error: any) {
     console.error('[CREATE_MALL_AD_ERROR]:', error);
-    return { success: false, error: 'Failed' };
+    return { success: false, error: 'Database transaction failed: ' + (error?.message || 'Unknown') };
   }
 }
 
@@ -115,9 +128,12 @@ export async function createTenantPromo(data: {
   startDate: Date;
   endDate: Date;
   mediaType: 'IMAGE' | 'VIDEO';
+  storageKey?: string;
 }) {
   try {
-    const promo = await prisma.tenantPromo.create({
+    console.log('[PROMO_ACTION]: Attempting to create Tenant Promo for tenant:', data.tenantId);
+    // Using any cast to bypass stale generated client types
+    const promo = await (prisma.tenantPromo as any).create({
       data: {
         title: data.title,
         description: data.description,
@@ -128,9 +144,11 @@ export async function createTenantPromo(data: {
         endDate: data.endDate,
         tenantId: data.tenantId,
         mediaType: data.mediaType,
-        status: 'PENDING'
+        status: 'PENDING',
+        storageKey: data.storageKey
       }
     });
+    console.log('[PROMO_ACTION]: Tenant Promo created successfully:', promo.id);
 
     revalidatePath('/tenantdashboard/ad-promo-manager');
     revalidatePath('/admindashboard/ad-scheduler');
@@ -189,6 +207,12 @@ export async function getActivePromos(category?: string) {
 
 export async function deletePromo(id: string) {
   try {
+    const promo = await (prisma.tenantPromo as any).findUnique({ where: { id } });
+    if (promo?.storageKey) {
+      const storage = getCloudStorageProvider();
+      await storage.deleteFile(promo.storageKey);
+    }
+    
     await prisma.tenantPromo.delete({ where: { id } });
     revalidatePath('/tenantdashboard/ad-promo-manager');
     return { success: true };
@@ -205,9 +229,10 @@ export async function updateMallAd(id: string, data: {
   priority?: 'HIGH' | 'MEDIUM' | 'LOW';
   startDate?: Date;
   endDate?: Date;
+  storageKey?: string;
 }) {
   try {
-    const ad = await prisma.mallAd.update({
+    const ad = await (prisma.mallAd as any).update({
       where: { id },
       data
     });
@@ -215,14 +240,20 @@ export async function updateMallAd(id: string, data: {
     revalidatePath('/admindashboard/ad-scheduler');
     revalidatePath('/public-view');
     return { success: true, ad };
-  } catch (error) {
+  } catch (error: any) {
     console.error('[UPDATE_MALL_AD_ERROR]:', error);
-    return { success: false, error: 'Failed to update ad' };
+    return { success: false, error: error?.message || 'Database transaction failed' };
   }
 }
 
 export async function deleteMallAd(id: string) {
   try {
+    const ad = await (prisma.mallAd as any).findUnique({ where: { id } });
+    if (ad?.storageKey) {
+      const storage = getCloudStorageProvider();
+      await storage.deleteFile(ad.storageKey);
+    }
+
     await prisma.mallAd.delete({
       where: { id }
     });
@@ -279,6 +310,12 @@ export async function updateTenantPromoStatus(id: string, status: 'APPROVED' | '
 
 export async function deleteTenantPromo(id: string) {
   try {
+    const promo = await (prisma.tenantPromo as any).findUnique({ where: { id } });
+    if (promo?.storageKey) {
+      const storage = getCloudStorageProvider();
+      await storage.deleteFile(promo.storageKey);
+    }
+
     await prisma.tenantPromo.delete({
       where: { id }
     });

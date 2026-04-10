@@ -48,23 +48,24 @@ export const Navbar = () => {
       <nav className={clsx('fixed', 'top-0', 'left-0', 'right-0', 'z-50', 'glass', 'bg-white/70', 'dark:bg-black/70', 'border-b', 'border-slate-100', 'dark:border-white/5')}>
         <div className={clsx('max-w-7xl', 'mx-auto', 'px-4', 'h-20', 'flex', 'items-center', 'justify-between')}>
           {/* Left: Logo */}
-          <Link href="/" className="flex items-center gap-3 group">
-            <div className="relative w-8 h-8 sm:w-11 sm:h-11 bg-white rounded-lg sm:rounded-xl overflow-hidden shadow-lg border-2 border-primary/20 group-hover:border-primary/50 transition-all duration-500">
+          <Link href="/" className="flex items-center gap-2 sm:gap-3 group shrink-0">
+            <div className="relative w-9 h-9 sm:w-11 sm:h-11 bg-white rounded-lg sm:rounded-xl overflow-hidden shadow-md border-2 border-primary/10 group-hover:border-primary/40 transition-all duration-500">
               <img 
                 src="/images/srmall-logo/sr_logo2.jpg" 
-                alt="Sophie Red Mall Logo" 
+                alt="SR Logo" 
                 className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" 
               />
             </div>
             <div className="flex flex-col">
-              <span className="text-base sm:text-xl font-black tracking-tighter text-charcoal dark:text-white leading-none">
+              <span className="text-sm sm:text-xl font-black tracking-tighter text-charcoal dark:text-white leading-none">
                 SR MALL
               </span>
-              <span className="text-[8px] sm:text-[9px] font-bold text-primary tracking-[0.2em] sm:tracking-[0.3em] uppercase leading-none mt-0.5">
+              <span className="hidden xs:block text-[7px] sm:text-[9px] font-bold text-primary tracking-[0.2em] sm:tracking-[0.3em] uppercase leading-none mt-0.5">
                 Management
               </span>
             </div>
           </Link>
+
           {/* Center: Nav links - hidden on mobile */}
           <div className={clsx('hidden', 'md:flex', 'items-center', 'gap-4', 'lg:gap-8')}>
             <Link href="#directory" className={clsx('text-sm', 'font-medium', 'text-slate-500', 'dark:text-slate-300', 'hover:text-primary', 'transition-colors')}>
@@ -81,60 +82,65 @@ export const Navbar = () => {
             </Link>
           </div>
 
-          {/* Right: Status Pill & Auth */}
-          <div className={clsx('flex items-center gap-2 sm:gap-4')}>
-            <div className={clsx('hidden', 'lg:flex', 'items-center', 'gap-2', 'px-3', 'py-1.5', 'rounded-full', 'bg-red-950/30', 'border', 'border-red-900/30')}>
+          {/* Right: Actions */}
+          <div className={clsx('flex items-center gap-1.5 sm:gap-4')}>
+            <div className={clsx('hidden', 'xl:flex', 'items-center', 'gap-2', 'px-3', 'py-1.5', 'rounded-full', 'bg-red-950/20', 'border', 'border-red-900/10')}>
               <span className={clsx('flex', 'h-2', 'w-2', 'relative')}>
                 <span className={clsx('animate-ping', 'absolute', 'inline-flex', 'h-full', 'w-full', 'rounded-full', 'bg-primary', 'opacity-75')}></span>
                 <span className={clsx('relative', 'inline-flex', 'rounded-full', 'h-2', 'w-2', 'bg-primary')}></span>
               </span>
               <span className={clsx('text-[10px]', 'font-bold', 'uppercase', 'tracking-wider', 'text-primary')}>
-                Mall is Open: 10:00 AM - 9:00 PM
+                Mall is Open: 10AM - 9PM
               </span>
             </div>
 
             {isAuthenticated ? (
-              <div className={clsx('flex', 'items-center', 'gap-4', 'relative')}>
-                <PublicThemeToggle />
+              <div className={clsx('flex', 'items-center', 'gap-2 sm:gap-4', 'relative')}>
+                <div className="flex items-center gap-2">
+                   <PublicThemeToggle />
+                </div>
                 {(user?.role === 'ADMIN' || user?.role === 'TENANT') && (
                   <Link
                     href={user.role === 'ADMIN' ? '/admindashboard' : '/tenantdashboard'}
-                    className={clsx('hidden', 'md:flex', 'items-center', 'gap-2', 'px-5', 'py-2', 'bg-white', 'text-black', 'font-bold', 'text-xs', 'uppercase', 'tracking-widest', 'rounded-full', 'hover:bg-slate-200', 'transition-colors', 'shadow-lg')}
+                    className={clsx('hidden', 'lg:flex', 'items-center', 'gap-2', 'px-5', 'py-2', 'bg-white', 'text-black', 'font-bold', 'text-xs', 'uppercase', 'tracking-widest', 'rounded-full', 'hover:bg-slate-200', 'transition-colors', 'shadow-md')}
                   >
-                    Go to Dashboard
+                    Dashboard
                   </Link>
                 )}
                 
-                {/* Notification Dropdown */}
                 <NotificationDropdown />
                 
                 <div className="relative">
                   <button
                     onClick={() => setIsProfileOpen(!isProfileOpen)}
-                    className={clsx('flex', 'items-center', 'gap-3', 'px-4', 'py-2', 'bg-slate-100', 'dark:bg-zinc-800', 'rounded-full', 'border', 'border-slate-200', 'dark:border-white/5', 'transition-all', 'hover:shadow-lg')}
+                    className={clsx('flex', 'items-center', 'gap-2 sm:gap-3', 'p-1.5 sm:px-4 sm:py-2', 'bg-slate-100', 'dark:bg-zinc-800', 'rounded-full', 'border', 'border-slate-200', 'dark:border-white/5', 'transition-all', 'hover:shadow-md')}
                   >
-                    <div className={clsx('w-8', 'h-8', 'rounded-full', 'bg-primary', 'text-white', 'flex', 'items-center', 'justify-center', 'font-bold', 'text-sm')}>
+                    <div className={clsx('w-7 h-7 sm:w-8 sm:h-8', 'rounded-full', 'bg-primary', 'text-white', 'flex', 'items-center', 'justify-center', 'font-bold', 'text-xs sm:text-sm')}>
                       {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
                     </div>
-                    <div className={clsx('flex', 'flex-col', 'items-start', 'leading-none')}>
-                      <span className={clsx('text-xs', 'font-bold', 'text-charcoal', 'dark:text-white')}>{user?.name}</span>
-                      <span className={clsx('text-[10px]', 'text-slate-500', 'dark:text-slate-400', 'font-medium', 'tracking-tight', 'uppercase')}>
-                        {user?.role?.toLowerCase() || 'Mall Visitor'}
+                    <div className={clsx('hidden sm:flex', 'flex-col', 'items-start', 'leading-none')}>
+                      <span className={clsx('text-[10px] sm:text-xs', 'font-bold', 'text-charcoal', 'dark:text-white')}>{user?.name?.split(' ')[0]}</span>
+                      <span className={clsx('text-[8px] sm:text-[10px]', 'text-slate-500', 'dark:text-slate-400', 'font-medium', 'tracking-tight', 'uppercase')}>
+                        {user?.role?.toLowerCase()}
                       </span>
                     </div>
                     <ChevronDown size={14} className={`text-slate-400 transition-transform ${isProfileOpen ? 'rotate-180' : ''}`} />
                   </button>
 
                   {isProfileOpen && (
-                    <div className={clsx('absolute', 'top-full', 'right-0', 'mt-4', 'w-[calc(100vw-2rem)]', 'sm:w-72', 'bg-white', 'dark:bg-zinc-900', 'rounded-3xl', 'shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)]', 'border', 'border-slate-200', 'dark:border-white/5', 'animate-fade-in-up', 'overflow-hidden', 'z-[60]', 'max-w-xs')}>
+                    <div className={clsx('absolute', 'top-full', 'right-0', 'mt-3', 'w-64 sm:w-72', 'bg-white', 'dark:bg-zinc-900', 'rounded-2xl sm:rounded-3xl', 'shadow-2xl', 'border', 'border-slate-200', 'dark:border-white/5', 'animate-fade-in-up', 'overflow-hidden', 'z-[60]')}>
                       <div className={clsx('px-6', 'py-4', 'border-b', 'border-slate-100', 'dark:border-white/5', 'bg-slate-50/50', 'dark:bg-white/5')}>
                         <p className={clsx('text-[10px]', 'font-black', 'text-slate-400', 'uppercase', 'tracking-[0.2em]')}>Account Overview</p>
                       </div>
                       
                       <div className="py-2">
-                        <button className={clsx('w-full', 'flex', 'items-center', 'gap-3', 'px-6', 'py-3', 'text-xs', 'font-bold', 'text-charcoal', 'dark:text-white', 'hover:bg-slate-50', 'dark:hover:bg-white/5', 'transition-colors')}>
+                        <Link 
+                          href="/profile"
+                          onClick={() => setIsProfileOpen(false)}
+                          className={clsx('w-full', 'flex', 'items-center', 'gap-3', 'px-6', 'py-3', 'text-xs', 'font-bold', 'text-charcoal', 'dark:text-white', 'hover:bg-slate-50', 'dark:hover:bg-white/5', 'transition-colors')}
+                        >
                           <User size={16} className="text-primary" /> My Profile
-                        </button>
+                        </Link>
                         {(user?.role === 'CUSTOMER' || user?.role === 'USER') && (
                           <button 
                             onClick={() => {
@@ -146,45 +152,6 @@ export const Navbar = () => {
                             <Store size={16} /> Become a Partner
                           </button>
                         )}
-                      </div>
-
-                      {/* Favorites List */}
-                      <div className={clsx('px-6', 'py-3', 'border-t', 'border-slate-100', 'dark:border-white/5')}>
-                         <div className="flex items-center justify-between mb-3">
-                            <p className={clsx('text-[10px]', 'font-black', 'text-slate-400', 'uppercase', 'tracking-[0.2em]', 'flex', 'items-center', 'gap-2')}>
-                               <Heart size={12} className="text-primary fill-primary" /> Favorites
-                            </p>
-                            <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">{favoriteShops.length}</span>
-                         </div>
-                         
-                         <div className="space-y-2 max-h-48 overflow-y-auto no-scrollbar">
-                            {favoriteShops.length > 0 ? (
-                               favoriteShops.map(shop => (
-                                  <Link 
-                                    key={shop.id}
-                                    href={`/shop/${shop.id}`}
-                                    onClick={() => setIsProfileOpen(false)}
-                                    className="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-white/5 transition-all group/fav"
-                                  >
-                                     <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-zinc-800 overflow-hidden border border-slate-200 dark:border-white/5">
-                                        {shop.logo_url ? (
-                                           <img src={shop.logo_url} className="w-full h-full object-cover" />
-                                        ) : (
-                                           <div className="w-full h-full flex items-center justify-center text-slate-300"><ShoppingBag size={14} /></div>
-                                        )}
-                                     </div>
-                                     <div className="flex-1 min-w-0">
-                                        <p className="text-[11px] font-bold text-charcoal dark:text-white truncate group-hover/fav:text-primary transition-colors">{shop.shop_name}</p>
-                                        <p className="text-[9px] text-slate-400 font-medium">{shop.unit_id}</p>
-                                     </div>
-                                  </Link>
-                               ))
-                            ) : (
-                               <div className="text-center py-6 px-4 bg-slate-50 dark:bg-black/20 rounded-2xl border border-dashed border-slate-200 dark:border-white/5">
-                                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">No Favorites Yet</p>
-                               </div>
-                            )}
-                         </div>
                       </div>
 
                       <div className="p-2 border-t border-slate-100 dark:border-white/5">
@@ -201,16 +168,16 @@ export const Navbar = () => {
               </div>
             ) : (
               <div className="flex items-center gap-2 sm:gap-4">
-                <div className="scale-75 sm:scale-100 origin-right">
+                <div className="flex items-center gap-2">
                   <PublicThemeToggle />
                 </div>
-            <button
-              onClick={() => setIsLoginOpen(true)}
-              className="flex items-center gap-1 sm:gap-2 px-2 sm:px-8 py-1.5 sm:py-2.5 rounded-full bg-primary text-white font-bold text-xs sm:text-sm hover:bg-primary-hover transition-all duration-300 shadow-xl shadow-primary/20 active:scale-95 whitespace-nowrap"
-            >
-              <span className="hidden sm:inline">Sign In</span>
-              <span className="sm:hidden">Sign</span>
-            </button>
+                <button
+                  onClick={() => setIsLoginOpen(true)}
+                  className="flex items-center justify-center w-10 h-10 sm:w-auto sm:px-8 sm:py-2.5 rounded-full bg-primary text-white font-bold text-sm hover:bg-primary-hover transition-all duration-300 shadow-xl shadow-primary/20 active:scale-95"
+                >
+                  <User size={18} className="sm:hidden" />
+                  <span className="hidden sm:inline">Sign In</span>
+                </button>
               </div>
             )}
 
@@ -245,6 +212,16 @@ export const Navbar = () => {
                 <ChevronDown size={16} className="-rotate-90 text-slate-300" />
               </Link>
             ))}
+            {isAuthenticated && (
+              <Link
+                href="/profile"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="flex items-center justify-between py-4 border-b border-slate-100 dark:border-white/5 text-base font-bold text-slate-700 dark:text-slate-200 hover:text-primary transition-colors"
+              >
+                My Profile
+                <User size={16} className="text-primary/60" />
+              </Link>
+            )}
 
             {isAuthenticated && (user?.role === 'ADMIN' || user?.role === 'TENANT') && (
               <Link

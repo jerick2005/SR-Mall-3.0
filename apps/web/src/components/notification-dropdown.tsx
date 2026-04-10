@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Bell, Check, CheckCircle, X, AlertTriangle, Info, Calendar, CreditCard, MessageSquare, Settings } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/app/providers';
 import { getNotificationsAction, markNotificationAsReadAction, markAllNotificationsAsReadAction } from '@/app/actions/notification';
 
@@ -20,6 +21,7 @@ interface NotificationDropdownProps {
 
 export default function NotificationDropdown({ className = '' }: NotificationDropdownProps) {
   const { user } = useAuth();
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -120,7 +122,7 @@ export default function NotificationDropdown({ className = '' }: NotificationDro
           />
           
           {/* Dropdown Panel */}
-          <div className="absolute right-0 top-12 w-96 bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl border border-slate-100 dark:border-white/5 z-50 overflow-hidden">
+          <div className="absolute right-0 top-12 w-[calc(100vw-2rem)] sm:w-96 bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl border border-slate-100 dark:border-white/5 z-50 overflow-hidden max-w-sm sm:max-w-none">
             {/* Header */}
             <div className="flex items-center justify-between p-6 border-b border-slate-100 dark:border-white/5">
               <div className="flex items-center gap-3">
@@ -195,11 +197,17 @@ export default function NotificationDropdown({ className = '' }: NotificationDro
             </div>
 
             {/* Footer */}
-            <div className="p-4 border-t border-slate-100 dark:border-white/5">
-              <button className="w-full text-center text-xs font-bold text-primary hover:text-primary-hover transition-colors">
-                View all notifications
-              </button>
-            </div>
+                <button 
+                  onClick={() => {
+                    if (user?.role === 'ADMIN') {
+                      router.push('/admindashboard/requests');
+                    }
+                    setIsOpen(false);
+                  }}
+                  className="w-full text-center text-xs font-bold text-primary hover:text-primary-hover transition-colors"
+                >
+                  View all notifications
+                </button>
           </div>
         </>
       )}

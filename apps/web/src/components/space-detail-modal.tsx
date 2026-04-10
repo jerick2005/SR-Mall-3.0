@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AreaSlot } from '@srmall/database';
-import { X, ChevronLeft, ChevronRight, Square, Ruler, CreditCard, Send, MapPin } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Square, Ruler, CreditCard, Send, MapPin, Clock } from 'lucide-react';
 import { useAuth } from '@/app/providers';
 import { reserveSlotAction } from '@/app/actions/space-slot';
 import { toast } from 'sonner';
@@ -80,15 +80,15 @@ export default function SpaceDetailModal({ slot, onClose, onInquire, onLoginRequ
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 dark:bg-black/90 backdrop-blur-xl animate-in fade-in duration-500">
-      <div className="relative w-full max-w-5xl bg-white/90 dark:bg-zinc-950/50 border border-slate-200 dark:border-white/10 rounded-[3rem] overflow-hidden shadow-[0_50px_100px_-20px_rgba(0,0,0,0.15)] dark:shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] animate-in zoom-in-95 duration-500 flex flex-col md:flex-row">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 dark:bg-black/90 backdrop-blur-xl animate-in fade-in duration-500">
+      <div className="relative w-full max-w-5xl bg-white dark:bg-zinc-950 border-t sm:border border-slate-200 dark:border-white/10 rounded-t-[2rem] sm:rounded-[3rem] overflow-hidden shadow-2xl animate-in slide-in-from-bottom sm:zoom-in-95 duration-500 flex flex-col md:flex-row max-h-[96vh] sm:max-h-[90vh]">
         {/* Mall Identity Accent Line */}
-        <div className="absolute top-0 left-0 right-0 h-1.5 bg-linear-to-r from-primary via-orange-500 to-primary opacity-80" />
+        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-primary via-orange-500 to-primary opacity-80" />
         <button
           onClick={onClose}
-          className="absolute top-8 right-8 z-50 p-3 text-slate-400 dark:text-white/40 hover:text-charcoal dark:hover:text-white bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 rounded-full transition-all border border-slate-200 dark:border-white/10 backdrop-blur-md active:scale-95"
+          className="absolute top-5 right-5 sm:top-8 sm:right-8 z-50 p-2.5 sm:p-3 text-slate-400 dark:text-white/40 hover:text-charcoal dark:hover:text-white bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 rounded-full transition-all border border-slate-200 dark:border-white/10 backdrop-blur-md active:scale-95"
         >
-          <X size={20} />
+          <X size={18} className="sm:w-5 sm:h-5" />
         </button>
 
           {/* Image Carousel Section */}
@@ -105,15 +105,15 @@ export default function SpaceDetailModal({ slot, onClose, onInquire, onLoginRequ
                   <>
                     <button
                       onClick={prevImage}
-                      className="absolute left-6 top-1/2 -translate-y-1/2 w-12 h-12 flex items-center justify-center text-white bg-black/40 hover:bg-primary rounded-full transition-all border border-white/20 shadow-2xl backdrop-blur-xl"
+                      className="absolute left-4 sm:left-6 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center text-white bg-black/40 hover:bg-primary rounded-full transition-all border border-white/20 shadow-2xl backdrop-blur-xl"
                     >
-                      <ChevronLeft size={24} />
+                      <ChevronLeft size={20} className="sm:w-6 sm:h-6" />
                     </button>
                     <button
                       onClick={nextImage}
-                      className="absolute right-6 top-1/2 -translate-y-1/2 w-12 h-12 flex items-center justify-center text-white bg-black/40 hover:bg-primary rounded-full transition-all border border-white/20 shadow-2xl backdrop-blur-xl"
+                      className="absolute right-4 sm:right-6 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center text-white bg-black/40 hover:bg-primary rounded-full transition-all border border-white/20 shadow-2xl backdrop-blur-xl"
                     >
-                      <ChevronRight size={24} />
+                      <ChevronRight size={20} className="sm:w-6 sm:h-6" />
                     </button>
 
                     <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-3 bg-black/40 px-4 py-2.5 rounded-full backdrop-blur-xl border border-white/10">
@@ -138,17 +138,18 @@ export default function SpaceDetailModal({ slot, onClose, onInquire, onLoginRequ
 
             {/* Premium Status Badge */}
             <div className="absolute top-8 left-8 flex items-center gap-3 px-5 py-2.5 bg-black/60 backdrop-blur-xl rounded-full border border-white/10 shadow-2xl">
-              <div className={`w-2.5 h-2.5 rounded-full ${slot.status === 'AVAILABLE' ? 'bg-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.8)] animate-pulse' :
-                slot.status === 'OCCUPIED' ? 'bg-red-500' : 'bg-yellow-500'
-                }`} />
+              <div className={`w-2.5 h-2.5 rounded-full ${
+                slot.status === 'AVAILABLE' ? 'bg-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.8)] animate-pulse' :
+                slot.status === 'RESERVED' ? 'bg-amber-500' : 'bg-red-500'
+              }`} />
               <span className="text-[10px] font-black text-white tracking-[0.3em] uppercase">
-                {slot.status}
+                {slot.status === 'AVAILABLE' ? 'Available' : slot.status === 'RESERVED' ? 'Reserved' : 'Occupied'}
               </span>
             </div>
           </div>
 
           {/* Details Section */}
-          <div className="flex-1 p-10 sm:p-14 lg:p-16 flex flex-col justify-between overflow-y-auto max-h-[600px] md:max-h-full">
+          <div className="flex-1 p-6 sm:p-10 lg:p-14 flex flex-col justify-between overflow-y-auto">
             <div className="space-y-10">
               <div>
                 <div className="flex items-center gap-3 text-primary mb-3">
@@ -158,20 +159,20 @@ export default function SpaceDetailModal({ slot, onClose, onInquire, onLoginRequ
                 <h2 className="text-5xl sm:text-6xl font-black text-charcoal dark:text-white tracking-tighter uppercase leading-[0.8] mb-10">Unit <span className="text-slate-200 dark:text-white/20">{slot.unit_id}</span></h2>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="group bg-slate-50 dark:bg-white/5 p-6 rounded-[2rem] border border-slate-100 dark:border-white/10 hover:border-primary/20 dark:hover:border-white/20 transition-all duration-500 shadow-inner">
-                    <div className="flex items-center gap-3 text-slate-400 dark:text-white/40 mb-3 group-hover:text-primary transition-colors">
-                      <Ruler size={18} />
-                      <span className="text-[9px] uppercase font-black tracking-[0.2em]">Scale / Area</span>
+                  <div className="group bg-slate-50 dark:bg-white/5 p-4 sm:p-6 rounded-2xl sm:rounded-[2rem] border border-slate-100 dark:border-white/10 hover:border-primary/20 dark:hover:border-white/20 transition-all duration-500 shadow-inner">
+                    <div className="flex items-center gap-3 text-slate-400 dark:text-white/40 mb-2 sm:mb-3 group-hover:text-primary transition-colors">
+                      <Ruler size={16} className="sm:w-4.5 sm:h-4.5" />
+                      <span className="text-[8px] sm:text-[9px] uppercase font-black tracking-[0.2em]">Scale / Area</span>
                     </div>
-                    <p className="text-3xl font-black text-charcoal dark:text-white tracking-tight">{slot.sqm_size} <span className="text-sm font-bold text-slate-300 dark:text-white/20">SQM</span></p>
+                    <p className="text-2xl sm:text-3xl font-black text-charcoal dark:text-white tracking-tight">{slot.sqm_size} <span className="text-xs sm:text-sm font-bold text-slate-300 dark:text-white/20">SQM</span></p>
                   </div>
 
-                  <div className="group bg-slate-50 dark:bg-white/5 p-6 rounded-[2rem] border border-slate-100 dark:border-white/10 hover:border-emerald-500/20 dark:hover:border-white/20 transition-all duration-500 shadow-inner">
-                    <div className="flex items-center gap-3 text-slate-400 dark:text-white/40 mb-3 group-hover:text-emerald-500 transition-colors">
-                      <CreditCard size={18} />
-                      <span className="text-[9px] uppercase font-black tracking-[0.2em]">Base Rent</span>
+                  <div className="group bg-slate-50 dark:bg-white/5 p-4 sm:p-6 rounded-2xl sm:rounded-[2rem] border border-slate-100 dark:border-white/10 hover:border-emerald-500/20 dark:hover:border-white/20 transition-all duration-500 shadow-inner">
+                    <div className="flex items-center gap-3 text-slate-400 dark:text-white/40 mb-2 sm:mb-3 group-hover:text-emerald-500 transition-colors">
+                      <CreditCard size={16} className="sm:w-4.5 sm:h-4.5" />
+                      <span className="text-[8px] sm:text-[9px] uppercase font-black tracking-[0.2em]">Base Rent</span>
                     </div>
-                    <p className="text-3xl font-black text-charcoal dark:text-white tracking-tight">₱{slot.base_rent.toLocaleString()}</p>
+                    <p className="text-2xl sm:text-3xl font-black text-charcoal dark:text-white tracking-tight">₱{slot.base_rent.toLocaleString()}</p>
                   </div>
                 </div>
               </div>
@@ -213,8 +214,14 @@ export default function SpaceDetailModal({ slot, onClose, onInquire, onLoginRequ
                   </button>
                 </div>
               ) : (
-                <div className="w-full py-6 bg-slate-50 dark:bg-white/5 text-slate-300 dark:text-white/20 font-black rounded-2xl text-center border border-slate-100 dark:border-white/5 cursor-not-allowed uppercase tracking-[0.3em] text-[10px]">
-                  Exclusive Access Only - {slot.status}
+                <div className="w-full py-8 bg-slate-50 dark:bg-white/5 rounded-[2rem] border border-slate-100 dark:border-white/5 flex flex-col items-center gap-3 text-center">
+                   <div className="w-10 h-10 rounded-full bg-amber-500/10 flex items-center justify-center text-amber-500 mb-1">
+                      <Clock size={20} />
+                   </div>
+                   <div className="space-y-1">
+                      <p className="text-sm font-black text-charcoal dark:text-white uppercase tracking-widest">Verification Pending</p>
+                      <p className="text-[10px] text-slate-500 font-medium max-w-[200px] leading-relaxed italic mx-auto">This elite unit is currently under review for a new merchant partnership.</p>
+                   </div>
                 </div>
               )}
               <p className="text-[8px] text-slate-400 dark:text-white/20 text-center mt-6 uppercase tracking-[0.3em] font-medium leading-loose">

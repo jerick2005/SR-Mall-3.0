@@ -34,10 +34,10 @@ export default function TenantLayout({ children }: { children: React.ReactNode }
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-black font-sans selection:bg-primary selection:text-white flex border-none border-0 m-0 p-0">
+    <div className="min-h-screen bg-slate-50 dark:bg-black font-sans selection:bg-primary selection:text-white flex">
       <TenantNavbar onMenuClick={() => setIsMobileMenuOpen(true)} />
       <TenantSidebar isMobileOpen={isMobileMenuOpen} onMobileClose={() => setIsMobileMenuOpen(false)} />
-      <main className="flex-1 lg:ml-72 pt-20 flex flex-col min-h-screen w-full lg:w-[calc(100%-18rem)]">
+      <main className="flex-1 lg:ml-72 pt-16 sm:pt-20 flex flex-col min-h-screen min-w-0 lg:w-[calc(100%-18rem)] overflow-x-hidden">
         <div className="flex-1 overflow-x-hidden">
           {children}
         </div>

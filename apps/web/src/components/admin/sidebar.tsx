@@ -1,20 +1,19 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Users, Calendar, MessageSquare, ShieldAlert, Presentation, Palette } from 'lucide-react';
+import { LayoutDashboard, Users, Calendar, MessageSquare, ShieldAlert, Presentation, Palette, Receipt } from 'lucide-react';
 import clsx from 'clsx';
 
 const navItems = [
   { href: '/admindashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/admindashboard/space-manager', label: 'Space Inventory Manager', icon: Presentation },
   { href: '/admindashboard/messenger-hub', label: 'Messenger Command Hub', icon: MessageSquare },
-  { href: '/admindashboard/merchant-requests', label: 'Merchant Requests', icon: Users },
+  { href: '/admindashboard/requests', label: 'Event Inquiries/Merchant Requests', icon: Users },
   { href: '/admindashboard/tenant-monitoring', label: 'Tenant Monitoring', icon: Users },
   { href: '/admindashboard/ad-scheduler', label: 'Ad Scheduler', icon: Presentation },
   { href: '/admindashboard/reservation-queue', label: 'Reservation Queue', icon: Calendar },
   { href: '/admindashboard/user-management', label: 'User Management & Blacklist', icon: ShieldAlert },
   { href: '/admindashboard/public-view-cms', label: 'Public-View CMS', icon: Palette },
-  { href: '/admindashboard/inquiries', label: 'Event Inquiries', icon: Calendar },
 ];
 
 export const AdminSidebar = () => {

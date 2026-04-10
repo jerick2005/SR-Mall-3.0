@@ -150,33 +150,24 @@ export default function SpaceManagerPage() {
     if (!file || !activeSlot) return;
 
     if (activeSlot.space_images && activeSlot.space_images.length >= 10) {
-      alert("Maximum of 10 images allowed per space.");
+      toast.error("Limit Reached", { description: "Maximum of 10 images allowed per space." });
       return;
     }
 
     setIsUploading(true);
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('folder', 'spaces');
-
     try {
-      const response = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData,
-      });
+      const { getCloudStorageProvider } = await import('@/lib/cloud-storage');
+      const storageProvider = getCloudStorageProvider();
+      const result = await storageProvider.uploadFile(file, 'spaces');
 
-      const data = await response.json();
-      if (data.success && data.url) {
-        setActiveSlot({
-          ...activeSlot,
-          space_images: [...(activeSlot.space_images || []), data.url]
-        });
-      } else {
-        alert(data.error || "Upload failed");
-      }
+      setActiveSlot({
+        ...activeSlot,
+        space_images: [...(activeSlot.space_images || []), result.url]
+      });
+      toast.success("Media Uploaded", { description: "Asset has been successfully synchronized." });
     } catch (error) {
       console.error("Upload error:", error);
-      alert("Failed to upload image");
+      toast.error("Upload Failed", { description: "Unable to reach the storage server." });
     } finally {
       setIsUploading(false);
       if (fileInputRef.current) {

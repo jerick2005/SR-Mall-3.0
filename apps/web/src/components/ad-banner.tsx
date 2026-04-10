@@ -11,31 +11,31 @@ const DEFAULT_AD = {
   ctaText: 'View Directory',
 };
 
-export const AdBanner = ({ ads, tenantPromos }: { ads?: any[]; tenantPromos?: any[] }) => {
+export const AdBanner = ({ ads, tenantPromos, extraItems }: { ads?: any[]; tenantPromos?: any[]; extraItems?: any[] }) => {
   const [localAds, setLocalAds] = useState<any[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
 
   useEffect(() => {
-    console.log('=== AD BANNER: useEffect triggered ===');
-    console.log('=== AD BANNER: ads ===', ads);
-    console.log('=== AD BANNER: tenantPromos ===', tenantPromos);
+    // Combine Mall Ads, Tenant Promos, and Extra Carousel Items
+    const mallAds = ads || [];
+    const promos = tenantPromos || [];
+    const extras = extraItems || [];
     
-    if (ads && ads.length > 0 && tenantPromos && tenantPromos.length > 0) {
-      // Combine both mall ads and tenant promos
-      const combined = [...ads, ...tenantPromos];
-      console.log('=== AD BANNER: Combining ads ===', combined);
+    let combined = [...mallAds, ...promos, ...extras];
+    
+    // Sort by priority if available
+    combined = combined.sort((a, b) => {
+      const priorityA = typeof a.priority === 'string' ? (a.priority === 'HIGH' ? 3 : a.priority === 'MEDIUM' ? 2 : 1) : (a.priority || 0);
+      const priorityB = typeof b.priority === 'string' ? (b.priority === 'HIGH' ? 3 : b.priority === 'MEDIUM' ? 2 : 1) : (b.priority || 0);
+      return priorityB - priorityA;
+    });
+
+    if (combined.length > 0) {
       setLocalAds(combined);
-    } else if (ads && ads.length > 0) {
-      console.log('=== AD BANNER: Using mall ads only ===', ads);
-      setLocalAds(ads);
-    } else if (tenantPromos && tenantPromos.length > 0) {
-      console.log('=== AD BANNER: Using tenant promos only ===', tenantPromos);
-      setLocalAds(tenantPromos);
     } else {
-      console.log('=== AD BANNER: Fetching active ads ===');
       fetchActiveAds();
     }
-  }, [ads, tenantPromos]); // Remove localAds from dependencies
+  }, [ads, tenantPromos, extraItems]);
 
   // Separate effect for interval
   useEffect(() => {
@@ -43,79 +43,63 @@ export const AdBanner = ({ ads, tenantPromos }: { ads?: any[]; tenantPromos?: an
     
     const interval = setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % localAds.length);
-    }, 8000); // 8 seconds per ad slide
+    }, 8000); 
     return () => clearInterval(interval);
-  }, [localAds.length]); // Only depend on length, not the whole array
+  }, [localAds.length]);
 
   const fetchActiveAds = async () => {
-    console.log('=== AD BANNER: FETCHING ADS ===');
     try {
       const { getAllMallAds, getApprovedTenantPromos } = await import('@/app/actions/ads');
-      const { getSiteConfig } = await import('@/app/actions/site-config');
+      const { getPublicViewCarouselAction } = await import('@/app/actions/cms');
       
-      const config = await getSiteConfig();
-      const dynamicDefaultAd = {
-        id: 'default',
-        title: config?.defaultAdTitle || 'Elevate Your Lifestyle.',
-        description: config?.defaultAdDesc || 'Discover premium shopping and dining experiences at SR Mall.',
-        imageUrl: config?.defaultAdImage || 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&q=80&w=2000',
-        ctaText: config?.defaultAdCta || 'View Directory',
-      };
-
-      const mallAdsData = await getAllMallAds();
-      const tenantPromosData = await getApprovedTenantPromos();
-      console.log('=== AD BANNER: MALL ADS DATA ===', mallAdsData);
-      console.log('=== AD BANNER: TENANT PROMOS DATA ===', tenantPromosData);
+      const [mallAdsData, tenantPromosData, carouselData] = await Promise.all([
+        getAllMallAds(),
+        getApprovedTenantPromos(),
+        getPublicViewCarouselAction()
+      ]);
       
-      const allAds = [...mallAdsData, ...tenantPromosData];
+      const allAds = [...mallAdsData, ...tenantPromosData, ...carouselData];
       
       if (allAds && allAds.length > 0) {
-        console.log('=== AD BANNER: SETTING LOCAL ADS ===', allAds);
         setLocalAds(allAds);
       } else {
-        console.log('=== AD BANNER: USING DEFAULT AD ===');
-        setLocalAds([dynamicDefaultAd]);
+        setLocalAds([DEFAULT_AD]);
       }
     } catch (error) {
-      console.error('=== AD BANNER: ERROR ===', error);
-      if (localAds.length === 0) setLocalAds([DEFAULT_AD]); // hard fallback
+      console.error('AdBanner fetch error:', error);
+      if (localAds.length === 0) setLocalAds([DEFAULT_AD]);
     }
   };
 
-  const activeAd = (ads || localAds)[currentIndex] || DEFAULT_AD;
+  const activeAd = localAds[currentIndex] || DEFAULT_AD;
 
-  const handleAdClick = async (adId: string) => {
-    if (adId === 'default') return;
-
-    // Navigate to directory or shop profile
+  const handleAdClick = (ad: any) => {
+    if (ad.id === 'default') return;
+    if (ad.linkUrl) {
+       window.location.href = ad.linkUrl;
+       return;
+    }
     document.getElementById('directory')?.scrollIntoView({ behavior: 'smooth' });
   };
 
   return (
     <div className="relative w-full h-[280px] sm:h-[380px] md:h-[500px] overflow-hidden group">
-      {/* High-impact Image/Video with Dark Overlay */}
       {localAds.map((ad, index) => (
         <div
           key={ad.id}
           className={`absolute inset-0 transition-opacity duration-1000 ${index === currentIndex ? 'opacity-100 z-10' : 'opacity-0 z-0'}`}
         >
           {(() => {
-            console.log('=== AD BANNER: Rendering ad ===', {
-              id: ad.id,
-              title: ad.title,
-              hasPromoVideo: !!ad.promoVideo,
-              hasImageUrl: !!ad.imageUrl,
-              imageUrl: ad.imageUrl,
-              promoVideo: ad.promoVideo,
-              mediaType: ad.mediaType
-            });
-            
-            const isVideo = ad.promoVideo || ad.imageUrl?.includes('.mp4') || ad.imageUrl?.includes('.webm') || ad.imageUrl?.includes('.mov');
-            console.log('=== AD BANNER: Is video? ===', isVideo);
-            
+            // Enhanced media detection
+            const url = ad.promoVideo || ad.imageUrl;
+            const isVideo = ad.promoVideo || 
+                          ad.mediaType === 'VIDEO' || 
+                          url?.match(/\.(mp4|webm|mov|ogg)$/i) || 
+                          url?.includes('/video/upload/');
+
             return isVideo ? (
               <video
-                src={ad.promoVideo || ad.imageUrl}
+                src={url}
                 className="w-full h-full object-cover transition-transform duration-[20s] scale-105 group-hover:scale-110"
                 autoPlay
                 loop
@@ -130,11 +114,11 @@ export const AdBanner = ({ ads, tenantPromos }: { ads?: any[]; tenantPromos?: an
               />
             );
           })()}
-          <div className="absolute inset-0 bg-linear-to-r from-white via-white/80 dark:from-black/60 dark:via-black/30 to-transparent flex items-center">
+          <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent flex items-center">
             <div className="max-w-7xl mx-auto px-5 sm:px-10 w-full">
               <div className="max-w-xs sm:max-w-xl animate-fade-in-up">
                 <span className="inline-block px-3 sm:px-4 py-1 sm:py-1.5 bg-primary text-white text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.2em] mb-3 sm:mb-6 rounded-full shadow-lg shadow-primary/30">
-                  {ad.id === 'default' ? 'Featured Content' : 'Sponsored Content'}
+                  {ad.tenantId ? 'Tenant Spotlight' : 'Experience SR Mall'}
                 </span>
                 <h2 className="text-2xl sm:text-5xl md:text-7xl font-bold text-white mb-2 sm:mb-6 leading-tight tracking-tight line-clamp-2 sm:line-clamp-none">
                   {ad.title}
@@ -144,13 +128,10 @@ export const AdBanner = ({ ads, tenantPromos }: { ads?: any[]; tenantPromos?: an
                 </p>
                 <div className="flex flex-wrap gap-2 sm:gap-4">
                   <button
-                    onClick={() => handleAdClick(ad.id)}
-                    className="px-5 sm:px-10 py-3 sm:py-5 bg-primary text-white text-xs sm:text-sm font-bold rounded-full hover:bg-primary/90 transition-all active:scale-95 shadow-xl"
+                    onClick={() => handleAdClick(ad)}
+                    className="px-5 sm:px-10 py-3 sm:py-5 bg-primary text-white text-[10px] sm:text-xs font-black uppercase tracking-widest rounded-full hover:bg-white hover:text-primary transition-all active:scale-95 shadow-xl shadow-primary/20"
                   >
-                    {ad.id === 'default' ? DEFAULT_AD.ctaText : ad.tenant ? 'View Tenant Page' : 'Learn More'}
-                  </button>
-                  <button className="px-4 sm:px-8 py-3 sm:py-5 border border-white/30 text-white text-xs sm:text-sm font-bold rounded-full hover:bg-white/10 transition-all backdrop-blur-sm">
-                    Learn More
+                    {ad.linkUrl ? 'Explore Now' : 'View Directory'}
                   </button>
                 </div>
               </div>

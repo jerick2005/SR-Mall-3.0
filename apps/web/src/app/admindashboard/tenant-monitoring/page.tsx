@@ -9,8 +9,9 @@ import {
 } from 'lucide-react';
 import { RegisterTenantModal } from '@/components/admin/register-tenant-modal';
 import clsx from 'clsx';
-import { getAllTenantsAction, deleteTenantAction, approveTenantAction } from '@/app/actions/tenant';
+import { getAllTenantsAction, deleteTenantAction, approveTenantAction, updateStorefrontAction } from '@/app/actions/tenant';
 import { getAreaSlots } from '@/app/actions/space-slot';
+import { getAllInvoices, generateInvoice, updateInvoiceStatus } from '@/app/actions/finance';
 
 interface Tenant {
   id: string;
@@ -27,6 +28,7 @@ interface Tenant {
     inquiries: number;
   };
   user?: {
+    id: string;
     email: string;
     name: string;
   };
@@ -58,6 +60,7 @@ export default function TenantMonitoring() {
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
   const [isApproving, setIsApproving] = useState<string | null>(null);
+  const [allInvoices, setAllInvoices] = useState<any[]>([]);
   const [availableSlots, setAvailableSlots] = useState<any[]>([]);
   const [selectedUnitForApproval, setSelectedUnitForApproval] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -78,30 +81,56 @@ export default function TenantMonitoring() {
     setLoading(true);
     console.log('Loading tenants...');
     try {
-      const result = await getAllTenantsAction();
+      const [result, invoicesResult] = await Promise.all([
+        getAllTenantsAction(),
+        getAllInvoices()
+      ]);
+      
       console.log('getAllTenantsAction result:', result);
       if (result.success && result.data) {
         console.log('Tenants loaded:', result.data.length);
-        // Enhance tenant data with mock contract/payment data for demo
-        const enhancedTenants: Tenant[] = result.data.map((item: any, index: number) => ({
-          ...item,
-          // Use actual status from database, don't override with mock data
-          contractStart: 'Jan 1, 2023',
-          contractEnd: 'Dec 31, 2025',
-          rentCost: 3000 + (index * 500),
-          paymentStatus: (index % 5 === 0 ? 'OVERDUE' : index % 3 === 0 ? 'PENDING' : 'PAID') as Tenant['paymentStatus'],
-          violations: index % 7 === 0 ? 1 : 0,
-          metrics: {
-            clicks: 500 + (index * 200),
-            offersClaimed: 50 + (index * 20),
-            rating: 3.5 + (Math.random() * 1.5),
-            inquiries: 10 + (index * 5),
-          },
-        }));
+        
+        const enhancedTenants: Tenant[] = result.data.map((item: any, index: number) => {
+          const tenantInvoices = invoicesResult.filter((inv: any) => inv.tenantId === item.id);
+          
+          let paymentStatus: Tenant['paymentStatus'] = 'PAID';
+          let activeRentCost = 0;
+          
+          if (tenantInvoices.length > 0) {
+            activeRentCost = tenantInvoices[0].amount;
+            const hasOverdue = tenantInvoices.some((inv: any) => inv.status === 'OVERDUE');
+            const hasPending = tenantInvoices.some((inv: any) => inv.status === 'PENDING' || inv.status === 'REVIEWING');
+            if (hasOverdue) paymentStatus = 'OVERDUE';
+            else if (hasPending) paymentStatus = 'PENDING';
+          }
+
+          const createdDate = item.createdAt ? new Date(item.createdAt) : new Date();
+          const startStr = createdDate.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+          const endObj = new Date(createdDate);
+          endObj.setFullYear(endObj.getFullYear() + 1);
+          const endStr = endObj.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+
+          return {
+            ...item,
+            contractStart: startStr,
+            contractEnd: endStr,
+            description: item.description || 'No store description provided.',
+            rentCost: activeRentCost > 0 ? activeRentCost : (3000 + (index * 500)),
+            paymentStatus,
+            violations: index % 7 === 0 ? 1 : 0,
+            metrics: {
+              clicks: 500 + (index * 200),
+              offersClaimed: 50 + (index * 20),
+              rating: 3.5 + (Math.random() * 1.5),
+              inquiries: 10 + (index * 5),
+            },
+          };
+        });
+        
         console.log('Enhanced tenants:', enhancedTenants);
         setTenants(enhancedTenants);
+        setAllInvoices(invoicesResult);
         
-        // Calculate stats
         setStats({
           total: enhancedTenants.length,
           active: enhancedTenants.filter((tenant: Tenant) => tenant.status === 'ACTIVE').length,
@@ -178,8 +207,31 @@ export default function TenantMonitoring() {
     }
   };
 
-  const handleEditTenant = () => {
-    setToast({ msg: 'Edit feature coming soon!', type: 'success' });
+  const handleEditTenant = async () => {
+    if (!selectedTenant || !selectedTenant.user?.id) {
+      setToast({ msg: 'Missing authoritative user linkage for this tenant', type: 'error' });
+      return;
+    }
+    const newName = window.prompt("Authorize override for Shop Name:", selectedTenant.shopName);
+    if (!newName) return;
+    
+    const isOpen = window.confirm("Is this merchant actively operating its storefront? (OK for Yes, Cancel for Suspended/Closed)");
+
+    setToast({ msg: 'Propagating override into Global Database...', type: 'success' });
+    try {
+      const result = await updateStorefrontAction(selectedTenant.user.id, {
+        shop_name: newName,
+        is_open: isOpen
+      });
+      if (result.success) {
+        setToast({ msg: 'Storefront data cleanly synchronized!', type: 'success' });
+        loadTenants();
+      } else {
+        setToast({ msg: 'Failed: ' + result.error, type: 'error' });
+      }
+    } catch (e: any) {
+      setToast({ msg: 'Error: ' + e.message, type: 'error' });
+    }
   };
 
   const handleViewDocuments = () => {
@@ -190,8 +242,32 @@ export default function TenantMonitoring() {
     setToast({ msg: 'Messaging feature coming soon!', type: 'success' });
   };
 
-  const handleGenerateInvoice = () => {
-    setToast({ msg: 'Invoice generated!', type: 'success' });
+  const handleGenerateInvoice = async () => {
+    if (!selectedTenant) return;
+    
+    const month = window.prompt("Enter billing month (e.g. Nov 2026):", "Current Month");
+    if (!month) return;
+    
+    setToast({ msg: 'Generating invoice...', type: 'success' });
+    
+    try {
+      const res = await generateInvoice({
+        tenantId: selectedTenant.id,
+        month,
+        amount: selectedTenant.rentCost || 3000,
+        dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // Due in 7 days
+        description: `Monthly Rent for Unit ${selectedTenant.unitId}`
+      });
+      
+      if (res.success) {
+        setToast({ msg: 'Invoice successfully generated!', type: 'success' });
+        loadTenants();
+      } else {
+        setToast({ msg: 'Failed: ' + res.error, type: 'error' });
+      }
+    } catch (err: any) {
+      setToast({ msg: 'Error: ' + err.message, type: 'error' });
+    }
   };
 
   const filteredTenants = tenants
@@ -661,6 +737,9 @@ export default function TenantMonitoring() {
                   <div className="flex-1">
                     <h3 className={clsx('text-2xl', 'font-black', 'text-charcoal', 'dark:text-white')}>{selectedTenant.shopName}</h3>
                     <p className={clsx('text-sm', 'text-slate-400', 'mt-1')}>{selectedTenant.unitId}</p>
+                    {selectedTenant.description && (
+                      <p className={clsx('text-xs', 'text-slate-500', 'mt-2', 'leading-relaxed')}>{selectedTenant.description}</p>
+                    )}
                     <div className={clsx('flex', 'items-center', 'gap-2', 'mt-3')}>
                       <span className={clsx(
                         'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border',
@@ -754,6 +833,63 @@ export default function TenantMonitoring() {
                     <p className={clsx('text-2xl', 'font-black', 'text-red-600')}>{selectedTenant.violations}</p>
                   </div>
                 )}
+
+                {/* Financial Ledger Widget */}
+                <div>
+                  <h4 className={clsx('text-[10px]', 'font-black', 'uppercase', 'tracking-[0.2em]', 'text-slate-400', 'mb-4', 'flex', 'items-center', 'gap-2')}>
+                    <Receipt size={14} /> Active Invoices & Clearance
+                  </h4>
+                  <div className={clsx('bg-slate-50', 'dark:bg-zinc-900', 'rounded-2xl', 'border', 'border-slate-200', 'dark:border-white/5', 'p-2', 'space-y-2')}>
+                    {allInvoices.filter(i => i.tenantId === selectedTenant.id && i.status !== 'PAID').length === 0 ? (
+                      <div className="p-6 text-center">
+                        <CheckCircle size={24} className="mx-auto mb-2 text-emerald-500 opacity-50" />
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">No Active Payables</span>
+                      </div>
+                    ) : (
+                      allInvoices.filter(i => i.tenantId === selectedTenant.id && i.status !== 'PAID').map(inv => (
+                        <div key={inv.id} className="p-4 bg-white dark:bg-zinc-950 rounded-xl border border-slate-200 dark:border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm group">
+                          <div>
+                            <p className="text-sm font-black text-charcoal dark:text-white">₱{inv.amount.toLocaleString()}</p>
+                            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">{inv.month} • {inv.status}</p>
+                            <p className="text-[9px] font-bold text-primary uppercase tracking-widest flex items-center gap-1 mt-1.5 pt-1.5 border-t border-slate-100 dark:border-white/5">
+                              <Calendar size={10} /> 
+                              Due: {new Date(inv.dueDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+                            </p>
+                          </div>
+                          
+                          {inv.status === 'REVIEWING' && inv.depositSlipUrl ? (
+                            <div className="flex items-center gap-2 self-start sm:self-auto">
+                              <a href={inv.depositSlipUrl} target="_blank" rel="noopener noreferrer" className="px-3 py-2 bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-slate-300 hover:text-primary dark:hover:text-primary rounded-xl text-[10px] font-bold uppercase tracking-widest transition-colors flex items-center gap-1 border border-slate-200 dark:border-white/5">
+                                View Slip
+                              </a>
+                              <button 
+                                onClick={async () => {
+                                  try {
+                                    setToast({ msg: 'Processing approval...', type: 'success' });
+                                    const res = await updateInvoiceStatus(inv.id, 'PAID');
+                                    if(res.success) {
+                                      setToast({ msg: 'Payment Successfully Cleared!', type: 'success' });
+                                      loadTenants();
+                                    } else {
+                                      setToast({ msg: 'Error: ' + res.error, type: 'error' });
+                                    }
+                                  } catch (e: any) { alert(e.message); }
+                                }}
+                                className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-[10px] font-bold uppercase tracking-widest shadow-md shadow-emerald-500/20 transition-all hover:scale-105 active:scale-95"
+                              >
+                                Approve
+                              </button>
+                            </div>
+                          ) : (
+                            <span className="self-start sm:self-auto text-[9px] font-bold text-amber-600 bg-amber-50 dark:bg-amber-500/10 px-3 py-1.5 rounded-lg border border-amber-200 dark:border-amber-500/20 uppercase tracking-widest inline-flex items-center gap-1.5">
+                              <Clock size={10} /> Awaiting User
+                            </span>
+                          )}
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
               </div>
 
               {/* Approval Section for PENDING tenants */}

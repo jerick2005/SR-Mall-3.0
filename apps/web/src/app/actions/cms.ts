@@ -2,6 +2,7 @@
 
 import { prisma } from '@srmall/database';
 import { revalidatePath } from 'next/cache';
+import { getCloudStorageProvider } from '@/lib/cloud-storage';
 
 // Public View Config Actions
 export async function getPublicViewConfigAction() {
@@ -99,6 +100,7 @@ export async function createCarouselItemAction(data: {
   priority?: number;
   startDate?: Date;
   endDate?: Date;
+  storageKey?: string;
 }, adminId?: string) {
   try {
     const carouselItem = await prisma.publicViewCarousel.create({
@@ -122,6 +124,7 @@ export async function updateCarouselItemAction(id: string, data: {
   priority?: number;
   startDate?: Date;
   endDate?: Date;
+  storageKey?: string;
 }) {
   try {
     const updatedItem = await prisma.publicViewCarousel.update({
@@ -142,6 +145,12 @@ export async function updateCarouselItemAction(id: string, data: {
 
 export async function deleteCarouselItemAction(id: string) {
   try {
+    const item = await prisma.publicViewCarousel.findUnique({ where: { id } });
+    if (item?.storageKey) {
+      const storage = getCloudStorageProvider();
+      await storage.deleteFile(item.storageKey);
+    }
+
     await prisma.publicViewCarousel.delete({
       where: { id }
     });

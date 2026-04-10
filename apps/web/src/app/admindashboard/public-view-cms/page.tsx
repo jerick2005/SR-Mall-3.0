@@ -86,6 +86,7 @@ export default function PublicViewCMSPage() {
     linkUrl: '',
     priority: 0,
     isActive: true,
+    storageKey: '',
   });
 
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
@@ -142,14 +143,43 @@ export default function PublicViewCMSPage() {
     setConfig(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleImageUpload = (field: keyof PublicViewConfig, event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (field: keyof PublicViewConfig, event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        handleConfigChange(field, reader.result as string);
-      };
-      reader.readAsDataURL(file);
+    if (!file) return;
+
+    setIsLoading(true);
+    try {
+      const { getCloudStorageProvider } = await import('@/lib/cloud-storage');
+      const storageProvider = getCloudStorageProvider();
+      const result = await storageProvider.uploadFile(file, 'web-cms');
+      
+      handleConfigChange(field, result.url);
+      showToast('Media uploaded and synchronized', 'success');
+    } catch (error) {
+      console.error('Upload error:', error);
+      showToast('Failed to upload media asset', 'error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleCarouselUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setIsLoading(true);
+    try {
+      const { getCloudStorageProvider } = await import('@/lib/cloud-storage');
+      const storageProvider = getCloudStorageProvider();
+      const result = await storageProvider.uploadFile(file, 'carousel');
+      
+      setCarouselForm(prev => ({ ...prev, imageUrl: result.url, storageKey: result.key }));
+      showToast('Carousel asset ready', 'success');
+    } catch (error) {
+      console.error('Upload error:', error);
+      showToast('Failed to upload carousel media', 'error');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -175,6 +205,7 @@ export default function PublicViewCMSPage() {
       linkUrl: item?.linkUrl || '',
       priority: item?.priority || 0,
       isActive: item?.isActive ?? true,
+      storageKey: item?.storageKey || '',
     });
     setIsCarouselModalOpen(true);
   };
@@ -259,7 +290,7 @@ export default function PublicViewCMSPage() {
   }
 
   return (
-    <div className={clsx('p-8', 'lg:p-10', 'max-w-[1400px]', 'mx-auto', 'space-y-8')}>
+    <div className={clsx('p-4', 'sm:p-8', 'lg:p-12', 'space-y-12', 'animate-fade-in-up', 'w-full', 'overflow-x-hidden')}>
       {/* Background Micro-Decoration */}
       <div className={clsx('fixed', 'inset-0', 'pointer-events-none', 'opacity-20', 'dark:opacity-40', 'overflow-hidden', '-z-10')}>
         <div className={clsx('absolute', 'top-[-10%]', 'left-[-10%]', 'w-[40%]', 'h-[40%]', 'bg-primary/20', 'blur-[120px]', 'rounded-full')} />
@@ -823,14 +854,20 @@ export default function PublicViewCMSPage() {
               </div>
 
               <div className="space-y-2">
-                <label className={clsx('block', 'text-sm', 'font-bold', 'text-charcoal', 'dark:text-white', 'uppercase', 'tracking-wider')}>Image URL</label>
-                <input
-                  type="text"
-                  value={carouselForm.imageUrl}
-                  onChange={(e) => setCarouselForm(prev => ({ ...prev, imageUrl: e.target.value }))}
-                  className={clsx('w-full', 'px-4', 'py-3', 'bg-slate-50', 'dark:bg-zinc-800', 'border', 'border-slate-200', 'dark:border-white/10', 'rounded-xl', 'text-charcoal', 'dark:text-white', 'placeholder-slate-400', 'focus:outline-none', 'focus:ring-2', 'focus:ring-primary/50')}
-                  placeholder="https://example.com/image.jpg"
-                />
+                <label className={clsx('block', 'text-sm', 'font-bold', 'text-charcoal', 'dark:text-white', 'uppercase', 'tracking-wider')}>Image Asset</label>
+                <div className={clsx('flex', 'gap-3')}>
+                  <input
+                    type="text"
+                    value={carouselForm.imageUrl}
+                    onChange={(e) => setCarouselForm(prev => ({ ...prev, imageUrl: e.target.value }))}
+                    className={clsx('flex-1', 'px-4', 'py-3', 'bg-slate-50', 'dark:bg-zinc-800', 'border', 'border-slate-200', 'dark:border-white/10', 'rounded-xl', 'text-charcoal', 'dark:text-white', 'placeholder-slate-400', 'focus:outline-none', 'focus:ring-2', 'focus:ring-primary/50')}
+                    placeholder="https://..."
+                  />
+                  <label className={clsx('p-3', 'bg-primary/10', 'text-primary', 'rounded-xl', 'border', 'border-primary/20', 'cursor-pointer', 'hover:bg-primary/20', 'transition-all', 'flex', 'items-center', 'justify-center')}>
+                    <ImageIcon size={20} />
+                    <input type="file" accept="image/*" onChange={handleCarouselUpload} className="hidden" />
+                  </label>
+                </div>
               </div>
 
               <div className="space-y-2">

@@ -37,8 +37,25 @@ export async function submitInquiryAction(data: {
       }
     }
 
+    // Create notifications for all admins
+    const admins = await prisma.user.findMany({
+      where: { role: 'ADMIN' },
+      select: { id: true }
+    });
+
+    if (admins.length > 0) {
+      await prisma.notification.createMany({
+        data: admins.map(admin => ({
+          userId: admin.id,
+          type: 'NEW_BOOKING_INQUIRY',
+          title: 'Strategic Project Inquiry',
+          message: `New masterpiece inquiry: ${data.eventType} planned for ${new Date(data.eventDate).toLocaleDateString()}.`,
+        }))
+      });
+    }
+
+    revalidatePath('/admindashboard/requests');
     revalidatePath('/public-view');
-    revalidatePath('/admin/inquiry');
     return { success: true, data: inquiry };
   } catch (error) {
     console.error('Failed to submit inquiry:', error);

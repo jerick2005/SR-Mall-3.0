@@ -126,18 +126,34 @@ export default function ShopProfilePage() {
           <div className={clsx('relative', 'aspect-4/3', 'sm:aspect-video', 'rounded-3xl', 'overflow-hidden', 'bg-slate-100', 'dark:bg-zinc-900', 'shadow-2xl', 'group/slider')}>
             {(() => {
               const galleryUrls = getGalleryUrls(shop.gallery_urls);
-              return galleryUrls && galleryUrls.length > 0 ? (
-              <img 
-                src={getSafeUrl(galleryUrls[activeImageIndex], activeImageIndex)} 
-                className={clsx('w-full', 'h-full', 'object-cover', 'transition-transform', 'duration-700', 'hover:scale-110')} 
-                alt="Store Highlight" 
-              />
-            ) : (
-              <div className={clsx('w-full', 'h-full', 'flex', 'flex-col', 'items-center', 'justify-center', 'text-slate-300')}>
-                <Store size={80} />
-                <span className={clsx('text-[10px]', 'font-black', 'uppercase', 'tracking-widest', 'mt-4', 'text-center')}>No Media Provided</span>
-              </div>
-            );
+              if (!galleryUrls || galleryUrls.length === 0) {
+                return (
+                  <div className={clsx('w-full', 'h-full', 'flex', 'flex-col', 'items-center', 'justify-center', 'text-slate-300')}>
+                    <Store size={80} />
+                    <span className={clsx('text-[10px]', 'font-black', 'uppercase', 'tracking-widest', 'mt-4', 'text-center')}>No Media Provided</span>
+                  </div>
+                );
+              }
+
+              const currentUrl = getSafeUrl(galleryUrls[activeImageIndex], activeImageIndex);
+              const isVideo = currentUrl?.match(/\.(mp4|webm|mov|ogg)$/i) || currentUrl?.includes('/video/upload/');
+
+              return isVideo ? (
+                <video 
+                  src={currentUrl} 
+                  className={clsx('w-full', 'h-full', 'object-cover')}
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                />
+              ) : (
+                <img 
+                  src={currentUrl} 
+                  className={clsx('w-full', 'h-full', 'object-cover', 'transition-transform', 'duration-700', 'hover:scale-110')} 
+                  alt="Store Highlight" 
+                />
+              );
             })()}
             
             {/* Overlay Gradient */}

@@ -1,7 +1,11 @@
 'use client';
 
 import React from 'react';
-import { Users, MousePointerClick, Star, AlertCircle, TrendingUp, Store, ArrowRight } from 'lucide-react';
+import {
+  Users, MousePointerClick, Star, AlertCircle, TrendingUp,
+  Store, ArrowRight, Receipt, MessageSquare, BarChart3,
+  ChevronRight, Zap, Award, Clock, Activity
+} from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/app/providers';
 import clsx from 'clsx';
@@ -27,254 +31,254 @@ export default function TenantDashboard() {
     loadData();
   }, []);
 
-  const kpiData = [
+  const kpiCards = [
     {
       label: 'Profile Views',
       value: '8,421',
       trend: '+14%',
+      trendUp: true,
       icon: Users,
-      color: 'blue',
-      bg: 'bg-blue-500/10',
-      text: 'text-blue-500'
+      accent: 'from-blue-500/20 to-blue-600/5',
+      iconBg: 'bg-blue-500/10 text-blue-500',
+      border: 'hover:border-blue-500/30',
     },
     {
       label: 'Ad Clicks',
       value: '1,240',
       trend: '+5%',
+      trendUp: true,
       icon: MousePointerClick,
-      color: 'purple',
-      bg: 'bg-purple-500/10',
-      text: 'text-purple-500'
+      accent: 'from-purple-500/20 to-purple-600/5',
+      iconBg: 'bg-purple-500/10 text-purple-500',
+      border: 'hover:border-purple-500/30',
     },
     {
-      label: 'Rating',
-      value: isLoading ? '...' : avgRating.toString(),
-      sub: isLoading ? 'Loading...' : `${liveReviews.length} total reviews`,
+      label: 'Avg. Rating',
+      value: isLoading ? '—' : avgRating.toFixed(1),
+      sub: isLoading ? 'Loading...' : `${liveReviews.length} verified reviews`,
       trend: 'Live',
+      trendUp: true,
       icon: Star,
-      color: 'amber',
-      bg: 'bg-amber-500/10',
-      text: 'text-amber-500'
-    }
+      accent: 'from-amber-500/20 to-amber-600/5',
+      iconBg: 'bg-amber-500/10 text-amber-500',
+      border: 'hover:border-amber-500/30',
+    },
+  ];
+
+  const quickLinks = [
+    { href: '/tenantdashboard/digital-storefront', label: 'Storefront', icon: Store, color: 'bg-primary/10 text-primary', desc: 'Edit your shop profile' },
+    { href: '/tenantdashboard/ad-promo-manager', label: 'Ads & Promo', icon: TrendingUp, color: 'bg-purple-500/10 text-purple-500', desc: 'Manage promotions' },
+    { href: '/tenantdashboard/customer-messenger', label: 'Messages', icon: MessageSquare, color: 'bg-blue-500/10 text-blue-500', desc: 'Customer inquiries' },
+    { href: '/tenantdashboard/lease-payments', label: 'Payments', icon: Receipt, color: 'bg-emerald-500/10 text-emerald-500', desc: 'Billing & invoices' },
+    { href: '/tenantdashboard/feedback-reviews', label: 'Reviews', icon: Star, color: 'bg-amber-500/10 text-amber-500', desc: 'Customer feedback' },
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-black pb-20 lg:pb-0">
-      {/* Mobile-First Container */}
-      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-10 py-4 sm:py-6 lg:py-10 space-y-4 sm:space-y-6 lg:space-y-8">
-        
-        {/* Professional Header Section */}
-        <section className="space-y-3 sm:space-y-4">
-          {/* Title Row */}
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-[10px] sm:text-xs font-bold text-primary uppercase tracking-widest mb-1">Tenant Dashboard</p>
-              <h1 className="text-xl sm:text-2xl lg:text-4xl font-black text-charcoal dark:text-white tracking-tight">
-                Welcome back, <span className="text-primary">{user?.name?.split(' ')[0] || 'Store'}</span>
-              </h1>
-            </div>
-            {/* Mobile Action Button */}
-            <Link href="/tenantdashboard/digital-storefront">
-              <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white shadow-lg shadow-primary/30 lg:hidden cursor-pointer">
-                <Store size={20} />
-              </div>
-            </Link>
-          </div>
+    <div className="min-h-screen bg-slate-50 dark:bg-black pb-24 lg:pb-0">
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-10 py-6 sm:py-8 lg:py-10 space-y-6 sm:space-y-8">
 
-          {/* Quick Actions Bar - Mobile Optimized */}
-          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-            <div className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-zinc-900 rounded-xl border border-slate-200 dark:border-white/10 shadow-sm">
-              <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-              <span className="text-xs font-bold text-charcoal dark:text-white">Live</span>
-            </div>
-            <Link href="/tenantdashboard/lease-payments">
-              <div className="flex items-center gap-2 px-3 py-2 bg-primary/10 text-primary rounded-xl border border-primary/20 hover:bg-primary/20 transition-colors cursor-pointer">
-                <AlertCircle size={14} />
-                <span className="text-xs font-bold">Pay Due</span>
-              </div>
-            </Link>
-            <Link href="/tenantdashboard/customer-messenger">
-              <div className="flex items-center gap-2 px-3 py-2 bg-amber-500/10 text-amber-600 rounded-xl border border-amber-500/20 hover:bg-amber-500/20 transition-colors cursor-pointer">
-                <span className="text-xs font-bold">1 New Message</span>
-              </div>
-            </Link>
+        {/* ── Header ── */}
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-[10px] sm:text-xs font-black text-primary uppercase tracking-[0.3em] mb-1">Business Console</p>
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-charcoal dark:text-white tracking-tight leading-none">
+              Welcome, <span className="text-primary">{user?.name?.split(' ')[0] || 'Merchant'}</span>
+            </h1>
+            <p className="text-xs sm:text-sm text-slate-500 font-medium mt-1.5">Here's your store performance at a glance.</p>
           </div>
-        </section>
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
+            <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+            <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest hidden sm:inline">Store Live</span>
+          </div>
+        </div>
 
-        {/* KPI Cards - Horizontal Scroll on Mobile, Grid on Desktop */}
-        <section>
-          <div className="flex lg:grid lg:grid-cols-3 gap-3 sm:gap-4 overflow-x-auto lg:overflow-visible pb-2 lg:pb-0 -mx-4 px-4 lg:mx-0 lg:px-0 snap-x snap-mandatory">
-            {kpiData.map((kpi, idx) => (
-              <div
-                key={idx}
-                className="snap-start shrink-0 w-[140px] sm:w-[160px] lg:w-auto bg-white dark:bg-zinc-900 border border-slate-100 dark:border-white/5 p-4 sm:p-5 lg:p-6 rounded-2xl shadow-sm hover:shadow-md transition-all"
-              >
-                <div className="flex items-start justify-between mb-3">
-                  <div className={clsx('p-2 rounded-xl', kpi.bg, kpi.text)}>
-                    <kpi.icon size={18} className="sm:w-5 sm:h-5" />
-                  </div>
-                  <span className={clsx(
-                    'text-[10px] font-bold px-2 py-1 rounded-full',
-                    kpi.trend.includes('+') ? 'bg-green-100 text-green-600 dark:bg-green-900/30' : 'bg-slate-100 text-slate-500 dark:bg-white/5'
-                  )}>
-                    {kpi.trend}
-                  </span>
+        {/* ── KPI Row ── */}
+        <div className="grid grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
+          {kpiCards.map((kpi, i) => (
+            <div
+              key={i}
+              className={clsx(
+                'relative overflow-hidden bg-white dark:bg-zinc-900 border border-slate-100 dark:border-white/5 rounded-2xl sm:rounded-3xl p-4 sm:p-5 lg:p-6 shadow-sm transition-all duration-300 hover:shadow-lg',
+                kpi.border
+              )}
+            >
+              <div className={clsx('absolute inset-0 bg-gradient-to-br opacity-50 dark:opacity-30', kpi.accent)} />
+              <div className="relative">
+                <div className={clsx('w-8 h-8 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl flex items-center justify-center mb-3 sm:mb-4', kpi.iconBg)}>
+                  <kpi.icon size={16} className="sm:w-5 sm:h-5" />
+                </div>
+                <p className="text-xl sm:text-2xl lg:text-3xl font-black text-charcoal dark:text-white leading-none">{kpi.value}</p>
+                {kpi.sub && <p className="text-[9px] sm:text-[10px] text-slate-400 font-medium mt-1">{kpi.sub}</p>}
+                <p className="text-[9px] sm:text-xs text-slate-500 font-medium mt-1 sm:mt-2">{kpi.label}</p>
+                <span className={clsx(
+                  'absolute top-0 right-0 text-[9px] sm:text-[10px] font-black px-2 py-0.5 rounded-full',
+                  kpi.trendUp ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600' : 'bg-red-50 text-red-500'
+                )}>{kpi.trend}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* ── Main Grid: Storefront Card + Quick Nav ── */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+
+          {/* Storefront Preview Card */}
+          <div className="lg:col-span-2 bg-white dark:bg-zinc-900 rounded-2xl sm:rounded-3xl border border-slate-100 dark:border-white/5 shadow-sm overflow-hidden">
+            {/* Card Top Bar */}
+            <div className="px-5 sm:px-6 py-4 border-b border-slate-100 dark:border-white/5 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-primary/10 rounded-xl flex items-center justify-center text-primary">
+                  <Store size={16} />
                 </div>
                 <div>
-                  <p className="text-xl sm:text-2xl font-black text-charcoal dark:text-white">{kpi.value}</p>
-                  <p className="text-[10px] sm:text-xs font-medium text-slate-500 mt-0.5">{kpi.label}</p>
-                  {kpi.sub && <p className="text-[10px] text-slate-400">{kpi.sub}</p>}
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* Storefront Preview Card */}
-        <section className="bg-white dark:bg-zinc-900 rounded-2xl sm:rounded-3xl border border-slate-100 dark:border-white/5 overflow-hidden shadow-sm">
-          <div className="p-4 sm:p-6 lg:p-8">
-            {/* Card Header */}
-            <div className="flex items-center justify-between mb-4 sm:mb-6">
-              <div className="flex items-center gap-2 sm:gap-3">
-                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary">
-                  <Store size={18} className="sm:w-5 sm:h-5" />
-                </div>
-                <div>
-                  <h2 className="font-bold text-base sm:text-lg text-charcoal dark:text-white">Your Storefront</h2>
-                  <p className="text-[10px] sm:text-xs text-slate-500">Live on SR Mall Directory</p>
+                  <h2 className="font-black text-sm text-charcoal dark:text-white">Your Storefront</h2>
+                  <p className="text-[10px] text-slate-400 font-medium">Live on SR Mall Directory</p>
                 </div>
               </div>
               <Link href="/tenantdashboard/digital-storefront">
-                <span className="text-xs font-bold text-primary hover:underline cursor-pointer hidden sm:inline">Edit Store</span>
+                <span className="flex items-center gap-1 text-[10px] font-black text-primary hover:underline uppercase tracking-widest">
+                  Edit <ChevronRight size={12} />
+                </span>
               </Link>
             </div>
 
-            {/* Store Preview */}
-            <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
-              {/* Store Icon */}
-              <div className="relative w-20 h-20 sm:w-24 sm:h-24 shrink-0">
-                <div className="absolute inset-0 bg-primary/20 blur-2xl rounded-full" />
-                <div className="relative w-full h-full bg-slate-100 dark:bg-zinc-800 rounded-2xl border-2 border-white dark:border-zinc-700 shadow-xl flex items-center justify-center">
-                  <Store size={32} className="sm:w-10 sm:h-10 text-slate-400" />
+            {/* Store Info */}
+            <div className="p-5 sm:p-6 flex items-center gap-4 sm:gap-6">
+              <div className="relative shrink-0">
+                <div className="w-16 h-16 sm:w-20 sm:h-20 bg-slate-100 dark:bg-zinc-800 rounded-2xl flex items-center justify-center border-2 border-white dark:border-zinc-700 shadow-lg">
+                  <Store size={28} className="text-slate-300 sm:w-8 sm:h-8" />
+                </div>
+                <span className="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 border-2 border-white dark:border-zinc-900 rounded-full" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="font-black text-lg sm:text-xl text-charcoal dark:text-white truncate">{user?.name || 'Your Store'}</h3>
+                <p className="text-xs text-slate-500 font-medium mt-0.5">Retail & Lifestyle · SR Mall</p>
+                <div className="flex items-center gap-3 mt-3">
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <Star key={i} size={12} className={i < Math.round(avgRating) ? 'fill-amber-500 text-amber-500' : 'text-slate-200 dark:text-zinc-700 fill-current'} />
+                    ))}
+                    <span className="text-xs font-black text-charcoal dark:text-white ml-1">{isLoading ? '...' : avgRating}</span>
+                  </div>
+                  <span className="text-slate-300 dark:text-zinc-700">·</span>
+                  <span className="text-xs text-slate-500">{liveReviews.length} reviews</span>
                 </div>
               </div>
+            </div>
 
-              {/* Store Info */}
-              <div className="text-center sm:text-left flex-1">
-                <h3 className="text-lg sm:text-xl font-bold text-charcoal dark:text-white">{user?.name || 'Your Premium Store'}</h3>
-                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 sm:gap-3 mt-2 text-xs text-slate-500">
-                  <span>Level 1, Unit 105</span>
-                  <span className="hidden sm:inline">•</span>
-                  <span className="text-primary font-medium">Retail & Lifestyle</span>
+            {/* Stats Row */}
+            <div className="grid grid-cols-3 border-t border-slate-100 dark:border-white/5">
+              {[
+                { label: 'Views', value: '8.4K', icon: Activity },
+                { label: 'Rating', value: isLoading ? '...' : avgRating.toString(), icon: Award },
+                { label: 'Reviews', value: liveReviews.length.toString(), icon: MessageSquare },
+              ].map((s, i) => (
+                <div key={i} className={clsx('p-4 text-center', i < 2 && 'border-r border-slate-100 dark:border-white/5')}>
+                  <p className="text-base sm:text-lg font-black text-charcoal dark:text-white">{s.value}</p>
+                  <p className="text-[10px] text-slate-400 font-medium mt-0.5">{s.label}</p>
                 </div>
-                {/* Mobile Edit Button */}
-                <Link href="/tenantdashboard/digital-storefront">
-                  <span className="text-xs font-bold text-primary cursor-pointer sm:hidden mt-3 inline-block">Edit Storefront →</span>
+              ))}
+            </div>
+          </div>
+
+          {/* Quick Actions */}
+          <div className="bg-white dark:bg-zinc-900 rounded-2xl sm:rounded-3xl border border-slate-100 dark:border-white/5 shadow-sm overflow-hidden">
+            <div className="px-5 py-4 border-b border-slate-100 dark:border-white/5">
+              <h2 className="font-black text-sm text-charcoal dark:text-white">Quick Access</h2>
+              <p className="text-[10px] text-slate-400 font-medium mt-0.5">Navigate to any module</p>
+            </div>
+            <div className="p-3 space-y-1">
+              {quickLinks.map((link) => (
+                <Link key={link.href} href={link.href}>
+                  <div className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-white/5 transition-all group cursor-pointer">
+                    <div className={clsx('w-9 h-9 rounded-xl flex items-center justify-center shrink-0', link.color)}>
+                      <link.icon size={16} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold text-charcoal dark:text-white leading-none">{link.label}</p>
+                      <p className="text-[10px] text-slate-400 mt-0.5">{link.desc}</p>
+                    </div>
+                    <ChevronRight size={14} className="text-slate-300 group-hover:text-primary transition-colors" />
+                  </div>
                 </Link>
-              </div>
+              ))}
             </div>
           </div>
+        </div>
 
-          {/* Quick Stats Row */}
-          <div className="grid grid-cols-3 border-t border-slate-100 dark:border-white/5">
-            <div className="p-3 sm:p-4 text-center border-r border-slate-100 dark:border-white/5">
-              <p className="text-sm sm:text-base font-bold text-charcoal dark:text-white">8.4K</p>
-              <p className="text-[10px] text-slate-500">Views</p>
-            </div>
-            <div className="p-3 sm:p-4 text-center border-r border-slate-100 dark:border-white/5">
-              <p className="text-sm sm:text-base font-bold text-charcoal dark:text-white">{avgRating}</p>
-              <p className="text-[10px] text-slate-500">Rating</p>
-            </div>
-            <div className="p-3 sm:p-4 text-center">
-              <p className="text-sm sm:text-base font-bold text-charcoal dark:text-white">{liveReviews.length}</p>
-              <p className="text-[10px] text-slate-500">Reviews</p>
-            </div>
-          </div>
-        </section>
-
-        {/* Recent Reviews Section */}
-        <section className="bg-white dark:bg-zinc-900 rounded-2xl sm:rounded-3xl border border-slate-100 dark:border-white/5 p-4 sm:p-6 shadow-sm">
-          {/* Section Header */}
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-amber-500/10 rounded-lg flex items-center justify-center text-amber-500">
+        {/* ── Recent Reviews ── */}
+        <div className="bg-white dark:bg-zinc-900 rounded-2xl sm:rounded-3xl border border-slate-100 dark:border-white/5 shadow-sm overflow-hidden">
+          <div className="px-5 sm:px-6 py-4 border-b border-slate-100 dark:border-white/5 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-amber-500/10 rounded-xl flex items-center justify-center text-amber-500">
                 <Star size={16} />
               </div>
-              <h2 className="font-bold text-base sm:text-lg text-charcoal dark:text-white">Recent Reviews</h2>
+              <div>
+                <h2 className="font-black text-sm text-charcoal dark:text-white">Recent Reviews</h2>
+                <p className="text-[10px] text-slate-400 font-medium">Latest verified customer feedback</p>
+              </div>
             </div>
             <Link href="/tenantdashboard/feedback-reviews">
-              <span className="text-xs font-bold text-slate-400 hover:text-primary transition-colors">View All</span>
+              <span className="text-[10px] font-black text-slate-400 hover:text-primary transition-colors uppercase tracking-widest">View All</span>
             </Link>
           </div>
 
-          {/* Reviews List */}
+          <div className="divide-y divide-slate-50 dark:divide-white/5">
             {isLoading ? (
-               <div className="text-center py-10">
-                 <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
-                 <p className="mt-4 text-xs text-slate-500">Syncing reviews...</p>
-               </div>
+              <div className="py-12 text-center">
+                <div className="inline-block w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                <p className="text-xs text-slate-400 font-medium mt-3">Loading reviews...</p>
+              </div>
             ) : liveReviews.length > 0 ? (
               liveReviews.slice(0, 3).map((review, i) => (
-                <div
-                  key={i}
-                  className="p-3 sm:p-4 bg-slate-50 dark:bg-white/5 rounded-xl border border-transparent hover:border-slate-200 dark:hover:border-white/10 transition-all"
-                >
-                  <div className="flex items-start justify-between gap-2 mb-2">
-                    <div className="flex items-center gap-2">
-                      <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-bold">
-                        {review.user?.name?.[0] || 'U'}
-                      </div>
-                      <div>
-                        <p className="text-xs sm:text-sm font-bold text-charcoal dark:text-white">{review.user?.name || 'Anonymous'}</p>
-                        <p className="text-[10px] text-slate-500">{new Date(review.createdAt).toLocaleDateString()}</p>
-                      </div>
+                <div key={i} className="px-5 sm:px-6 py-4 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-primary/10 text-primary flex items-center justify-center font-black text-sm shrink-0">
+                      {review.user?.name?.[0]?.toUpperCase() || 'U'}
                     </div>
-                    <div className="flex gap-0.5 shrink-0">
-                      {Array.from({ length: 5 }).map((_, rIdx) => (
-                        <Star
-                          key={rIdx}
-                          size={10}
-                          className={clsx(
-                            rIdx < review.rating ? 'fill-amber-500 text-amber-500' : 'text-slate-200 dark:text-zinc-700'
-                          )}
-                        />
-                      ))}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-sm font-black text-charcoal dark:text-white">{review.user?.name || 'Anonymous'}</p>
+                        <div className="flex gap-0.5 shrink-0">
+                          {Array.from({ length: 5 }).map((_, ri) => (
+                            <Star key={ri} size={10} className={ri < review.rating ? 'fill-amber-500 text-amber-500' : 'text-slate-200 dark:text-zinc-700 fill-current'} />
+                          ))}
+                        </div>
+                      </div>
+                      <p className="text-xs text-slate-500 mt-1 leading-relaxed line-clamp-2">"{review.comment || 'No comment provided.'}"</p>
+                      <p className="text-[10px] text-slate-400 font-medium mt-1.5">{new Date(review.createdAt).toLocaleDateString()}</p>
                     </div>
                   </div>
-                  <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-                    "{review.comment || 'No comment provided.'}"
-                  </p>
                 </div>
               ))
             ) : (
-              <div className="text-center py-10 bg-slate-50 dark:bg-black/20 rounded-2xl border-2 border-dashed border-slate-200 dark:border-white/5">
-                <p className="text-xs text-slate-500 font-medium tracking-tight">No approved reviews yet.</p>
+              <div className="py-16 text-center">
+                <div className="w-12 h-12 bg-slate-100 dark:bg-zinc-800 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                  <Star size={24} className="text-slate-300" />
+                </div>
+                <p className="text-sm font-bold text-charcoal dark:text-white">No Reviews Yet</p>
+                <p className="text-xs text-slate-400 font-medium mt-1">Approved customer feedback will appear here.</p>
               </div>
             )}
-        </section>
-
-        {/* Quick Navigation Grid - Mobile Only */}
-        <section className="lg:hidden">
-          <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Quick Actions</h3>
-          <div className="grid grid-cols-2 gap-3">
-            <Link href="/tenantdashboard/ad-promo-manager">
-              <div className="p-3 bg-white dark:bg-zinc-900 rounded-xl border border-slate-200 dark:border-white/10 text-center">
-                <div className="w-10 h-10 bg-purple-500/10 rounded-xl flex items-center justify-center text-purple-500 mx-auto mb-2">
-                  <TrendingUp size={20} />
-                </div>
-                <p className="text-xs font-bold text-charcoal dark:text-white">Promotions</p>
-              </div>
-            </Link>
-            <Link href="/tenantdashboard/lease-payments">
-              <div className="p-3 bg-white dark:bg-zinc-900 rounded-xl border border-slate-200 dark:border-white/10 text-center">
-                <div className="w-10 h-10 bg-green-500/10 rounded-xl flex items-center justify-center text-green-500 mx-auto mb-2">
-                  <ArrowRight size={20} />
-                </div>
-                <p className="text-xs font-bold text-charcoal dark:text-white">Payments</p>
-              </div>
-            </Link>
           </div>
-        </section>
+        </div>
+
+        {/* ── Mobile: Due Payments Alert ── */}
+        <div className="lg:hidden">
+          <Link href="/tenantdashboard/lease-payments">
+            <div className="flex items-center gap-3 p-4 bg-primary/5 border border-primary/20 rounded-2xl cursor-pointer hover:bg-primary/10 transition-colors">
+              <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary shrink-0">
+                <Receipt size={18} />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-black text-charcoal dark:text-white">Lease Payments</p>
+                <p className="text-xs text-slate-500 font-medium">View billing & submit deposit slips</p>
+              </div>
+              <ChevronRight size={16} className="text-primary" />
+            </div>
+          </Link>
+        </div>
+
       </div>
     </div>
   );

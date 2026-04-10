@@ -163,7 +163,8 @@ export default function PublicDigitalConcierge() {
     const matchesSearch = slot.unit_id.toLowerCase().includes(searchQuery.toLowerCase()) ||
       isGenericSpaceSearch;
 
-    return matchesSearch && slot.status === 'AVAILABLE';
+    // Show both Available and Reserved slots per user request
+    return matchesSearch && (slot.status === 'AVAILABLE' || slot.status === 'RESERVED');
   });
 
   const handleSearchClick = () => {
@@ -207,8 +208,7 @@ export default function PublicDigitalConcierge() {
 
       {/* High Impact Hero Carousel */}
       <section className={clsx('w-full', 'relative', 'bg-black', 'pt-20')}>
-        <AdBanner ads={ads} tenantPromos={tenantPromos} />
-
+        <AdBanner ads={ads} tenantPromos={tenantPromos} extraItems={carouselItems} />
       </section>
 
       {/* Hero Content Section */}
@@ -232,7 +232,7 @@ export default function PublicDigitalConcierge() {
                 opacity: 1 - (config?.heroOverlayDark || 40) / 100
               }}
             />
-            <div className={clsx('absolute', 'inset-0', 'bg-linear-to-b', 'from-white', 'via-white/20', 'to-white', 'dark:from-black/80', 'dark:to-black/80')}></div>
+            <div className={clsx('absolute', 'inset-0', 'bg-gradient-to-b', 'from-white', 'via-white/20', 'to-white', 'dark:from-black/80', 'dark:to-black/80')}></div>
           </div>
 
           <div className={clsx('max-w-7xl', 'mx-auto', 'px-4', 'sm:px-6', 'relative', 'z-10', 'flex', 'flex-col', 'items-center', 'text-center')}>
@@ -250,7 +250,7 @@ export default function PublicDigitalConcierge() {
               </div>
 
               <div className={clsx('relative', 'max-w-xl', 'sm:max-w-2xl', 'mx-auto', 'group', 'animate-fade-in-up', 'delay-200', 'px-2', 'sm:px-0')}>
-                <div className={clsx('absolute', '-inset-1', 'bg-linear-to-r', 'from-primary', 'to-blue-600', 'rounded-3xl', 'blur', 'opacity-25', 'group-hover:opacity-40', 'transition', 'duration-1000', 'group-hover:duration-200')}></div>
+                <div className={clsx('absolute', '-inset-1', 'bg-gradient-to-r', 'from-primary', 'to-blue-600', 'rounded-3xl', 'blur', 'opacity-25', 'group-hover:opacity-40', 'transition', 'duration-1000', 'group-hover:duration-200')}></div>
                 <div className={clsx('relative', 'flex', 'flex-col', 'sm:flex-row', 'items-center', 'bg-slate-100/95', 'dark:bg-zinc-900/95', 'backdrop-blur-xl', 'rounded-2xl', 'shadow-2xl', 'p-2', 'border', 'border-white/20')}>
                   <Search size={22} className={clsx('ml-5', 'text-slate-400')} />
                   <input
@@ -299,7 +299,7 @@ export default function PublicDigitalConcierge() {
                 <span className={clsx('text-[10px]', 'font-black', 'text-primary', 'uppercase', 'tracking-[0.4em]', 'bg-primary/5', 'px-6', 'py-2', 'rounded-full', 'border', 'border-primary/10')}>Top Picks</span>
                 <h2 className={clsx('text-4xl', 'sm:text-6xl', 'font-black', 'text-charcoal', 'dark:text-white', 'tracking-tighter', 'leading-none')}>Featured <span className="text-slate-300 dark:text-zinc-800">Products.</span></h2>
               </div>
-              <p className={clsx('max-w-sm', 'text-sm', 'text-slate-500', 'font-medium', 'leading-relaxed')}>Handpicked collections from our premier tenants, refreshed daily for your convenience.</p>
+              <p className={clsx('max-w-sm', 'text-sm', 'text-slate-500', 'font-medium', 'leading-relaxed')}>{config?.productsDescription || "Handpicked collections from our premier tenants, refreshed daily for your convenience."}</p>
             </div>
 
             <div className={clsx('grid', 'grid-cols-2', 'md:grid-cols-4', 'gap-4', 'sm:gap-8')}>
@@ -402,13 +402,13 @@ export default function PublicDigitalConcierge() {
 
           <div className={clsx('w-full', 'md:w-1/2', 'space-y-6')}>
             <span className={clsx('text-xs', 'uppercase', 'tracking-[0.2em]', 'text-primary', 'dark:text-[#BE1E2D]', 'font-black', 'bg-primary/10', 'dark:bg-[#BE1E2D]/10', 'px-4', 'py-1.5', 'rounded-full', 'inline-block', 'border', 'border-primary/20', 'dark:border-[#BE1E2D]/20', 'shadow-sm')}>
-              Featured Campaign
+              {config?.videoBadge || "Featured Campaign"}
             </span>
             <h2 className={clsx('text-2xl sm:text-3xl md:text-4xl lg:text-5xl', 'font-black', 'text-charcoal', 'dark:text-white', 'tracking-tight', 'leading-tight', 'drop-shadow-lg')}>
-              Elevate Your <span className={clsx('text-transparent', 'bg-clip-text', 'bg-linear-to-r', 'from-primary', 'dark:from-[#BE1E2D]', 'to-orange-500')}>Lifestyle.</span>
+              {config?.videoTitle || "Elevate Your Lifestyle."}
             </h2>
             <p className={clsx('text-slate-600', 'dark:text-slate-400', 'font-medium', 'text-base', 'sm:text-lg', 'leading-relaxed', 'max-w-lg')}>
-              Watch our latest visual showcase highlighting the premier shopping and dining experiences waiting for you at SR Mall. Immerse yourself in the extraordinary.
+              {config?.videoDescription || "Watch our latest visual showcase highlighting the premier shopping and dining experiences waiting for you at SR Mall. Immerse yourself in the extraordinary."}
             </p>
             <button
               onClick={() => setIsVideoModalOpen(true)}
@@ -419,23 +419,23 @@ export default function PublicDigitalConcierge() {
           </div>
 
           <div className={clsx('w-full', 'md:w-1/2', 'relative', 'group')}>
-            <div className={clsx('absolute', '-inset-4', 'bg-linear-to-r', 'from-primary', 'dark:from-[#BE1E2D]', 'to-blue-600', 'rounded-[3rem]', 'blur-xl', 'opacity-20', 'group-hover:opacity-40', 'transition', 'duration-1000')}></div>
+            <div className={clsx('absolute', '-inset-4', 'bg-gradient-to-r', 'from-primary', 'dark:from-[#BE1E2D]', 'to-blue-600', 'rounded-[3rem]', 'blur-xl', 'opacity-20', 'group-hover:opacity-40', 'transition', 'duration-1000')}></div>
             <div className={clsx('relative', 'aspect-video', 'bg-black', 'rounded-4xl', 'overflow-hidden', 'border', 'border-slate-200', 'dark:border-white/10', 'shadow-2xl')}>
               <video
-                src="/vid/Download.mp4"
+                src={config?.featuredVideoUrl || "/vid/Download.mp4"}
                 className={clsx('w-full', 'h-full', 'object-cover', 'opacity-80', 'group-hover:opacity-100', 'transition-opacity', 'duration-700')}
                 autoPlay
                 loop
                 muted
                 playsInline
               />
-              <div className={clsx('absolute', 'inset-0', 'bg-linear-to-t', 'from-black/90', 'via-black/20', 'to-transparent', 'flex', 'items-end', 'p-4', 'sm:p-8')}>
+              <div className={clsx('absolute', 'inset-0', 'bg-gradient-to-t', 'from-black/90', 'via-black/20', 'to-transparent', 'flex', 'items-end', 'p-4', 'sm:p-8')}>
                 <div className={clsx('flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4')}>
                   <div className={clsx('w-10 h-10 sm:w-12 sm:h-12 bg-primary dark:bg-[#BE1E2D] text-white rounded-full flex items-center justify-center shadow-lg border-2 border-white/20 animate-pulse cursor-pointer hover:scale-110 transition-transform flex-shrink-0')}>
                     <svg className={clsx('w-4 h-4 sm:w-5 sm:h-5 translate-x-0.5')} fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
                   </div>
                   <div>
-                    <h4 className={clsx('text-sm sm:text-base text-white font-bold tracking-wide')}>SR Mall Cinematic Experience</h4>
+                    <h4 className={clsx('text-sm sm:text-base text-white font-bold tracking-wide')}>{config?.featuredVideoTitle || "SR Mall Cinematic Experience"}</h4>
                     <p className={clsx('text-slate-300 text-[9px] sm:text-[10px] uppercase tracking-[0.15em] sm:tracking-[0.2em] font-bold')}>Now Playing</p>
                   </div>
                 </div>
@@ -484,7 +484,7 @@ export default function PublicDigitalConcierge() {
           {/* Icon-based Category Switcher */}
           <div className={clsx('flex', 'items-center', 'gap-3', 'sm:gap-4', 'mb-10', 'sm:mb-16', 'pb-4', 'overflow-x-auto', 'no-scrollbar', 'touch-pan-x', 'relative')}>
             {/* Scroll Indication for Mobile */}
-            <div className="lg:hidden absolute right-0 top-0 bottom-4 w-8 bg-linear-to-l from-slate-100 dark:from-zinc-950 to-transparent pointer-events-none z-20"></div>
+            <div className="lg:hidden absolute right-0 top-0 bottom-4 w-8 bg-gradient-to-l from-slate-100 dark:from-zinc-950 to-transparent pointer-events-none z-20"></div>
             {[
               { id: 'All Categories', label: 'Everything', icon: <ShoppingBag size={16} /> },
               { id: 'Food', label: 'Gastronomy', icon: <Coffee size={16} /> },
@@ -511,28 +511,50 @@ export default function PublicDigitalConcierge() {
             ))}
           </div>
 
-          <div className={clsx('grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 lg:gap-10')}>
-            {loadingShops ? (
-              <div className={clsx('col-span-full', 'py-20', 'text-center', 'space-y-4')}>
-                <Loader2 size={40} className={clsx('animate-spin', 'text-primary', 'mx-auto')} />
-                <p className={clsx('text-sm', 'font-bold', 'text-slate-400', 'uppercase', 'tracking-widest')}>Loading Premium Collection...</p>
-              </div>
-            ) : visibleShopsArray.length > 0 ? (
-              visibleShopsArray.map((shop, index) => (
-                <div key={shop.id} className="animate-fade-in-up" style={{ animationDelay: `${index * 50}ms` }}>
-                  <ShopCard
-                    shop={shop}
-                    onMessage={(name) => {
-                      setChatInitialShopName(name);
-                      setChatRecipient('shop');
-                      setIsChatOpen(true);
-                    }}
-                  />
+          <div className="relative group/carousel">
+            {/* Carousel Container */}
+            <div 
+              id="directory-carousel"
+              className={clsx(
+                'flex overflow-x-auto scroll-smooth no-scrollbar snap-x snap-mandatory gap-6 px-4',
+                'cursor-grab active:cursor-grabbing pb-12'
+              )}
+            >
+              {loadingShops ? (
+                <div className={clsx('w-full shrink-0', 'py-20', 'text-center', 'space-y-4', 'snap-center')}>
+                  <Loader2 size={40} className={clsx('animate-spin', 'text-primary', 'mx-auto')} />
+                  <p className={clsx('text-sm', 'font-bold', 'text-slate-400', 'uppercase', 'tracking-widest')}>Loading Premium Collection...</p>
                 </div>
-              ))
-            ) : (
-              <div className={clsx('col-span-full', 'py-20', 'text-center', 'bg-zinc-50', 'dark:bg-zinc-900', 'rounded-[3rem]', 'border', 'border-dashed', 'border-slate-200', 'dark:border-white/10')}>
-                <p className={clsx('text-slate-500', 'font-bold', 'uppercase', 'tracking-widest', 'text-sm')}>No storefronts matching your search found.</p>
+              ) : visibleShopsArray.length > 0 ? (
+                visibleShopsArray.map((shop, index) => (
+                  <div 
+                    key={shop.id} 
+                    className="w-[85%] sm:w-[450px] md:w-[500px] shrink-0 snap-center animate-fade-in-up" 
+                    style={{ animationDelay: `${index * 50}ms` }}
+                  >
+                    <ShopCard
+                      shop={shop}
+                      onMessage={(name) => {
+                        setChatInitialShopName(name);
+                        setChatRecipient('shop');
+                        setIsChatOpen(true);
+                      }}
+                    />
+                  </div>
+                ))
+              ) : (
+                <div className={clsx('w-full shrink-0 snap-center', 'py-20', 'text-center', 'bg-zinc-50', 'dark:bg-zinc-900', 'rounded-[3rem]', 'border', 'border-dashed', 'border-slate-200', 'dark:border-white/10')}>
+                  <p className={clsx('text-slate-500', 'font-bold', 'uppercase', 'tracking-widest', 'text-sm')}>No storefronts matching your search found.</p>
+                </div>
+              )}
+            </div>
+
+            {/* Pagination Dots */}
+            {!loadingShops && visibleShopsArray.length > 1 && (
+              <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-3">
+                 {visibleShopsArray.slice(0, 10).map((_, idx) => (
+                    <div key={idx} className="w-2 h-2 rounded-full bg-slate-200 dark:bg-zinc-800 transition-all"></div>
+                 ))}
               </div>
             )}
           </div>
@@ -561,87 +583,149 @@ export default function PublicDigitalConcierge() {
       </section>
 
       {/* Available Spaces Section */}
-      <section id="availability" className={clsx('py-12', 'sm:py-20', 'lg:py-24', 'bg-gradient-to-b', 'from-slate-200', 'to-slate-100', 'dark:from-zinc-950', 'dark:to-zinc-900')}>
-        <div className={clsx('max-w-7xl', 'mx-auto', 'px-4', 'sm:px-6', 'lg:px-8')}>
+      <section id="availability" className={clsx('py-20', 'sm:py-24', 'lg:py-32', 'bg-gradient-to-b', 'from-slate-50', 'to-slate-100', 'dark:from-black', 'dark:to-zinc-950', 'relative', 'overflow-hidden')}>
+        {/* Subtle background accents */}
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
+        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-blue-500/5 rounded-full blur-[100px] translate-y-1/2 -translate-x-1/2 pointer-events-none"></div>
+
+        <div className={clsx('max-w-7xl', 'mx-auto', 'px-4', 'sm:px-6', 'lg:px-8', 'relative', 'z-10')}>
           {/* Section Header */}
-          <div className={clsx('text-center', 'mb-8', 'sm:mb-14')}>
-            <span className={clsx('inline-flex', 'items-center', 'gap-2', 'text-[10px]', 'uppercase', 'tracking-[0.2em]', 'text-primary', 'font-black', 'bg-primary/10', 'px-4', 'py-1.5', 'rounded-full', 'mb-4')}>
-              Leasing Opportunities
-            </span>
-            <h2 className={clsx('text-3xl', 'sm:text-4xl', 'lg:text-5xl', 'font-black', 'text-charcoal', 'dark:text-white', 'tracking-tight', 'mb-4')}>
-              Available Spaces
-            </h2>
-            <p className={clsx('text-xs', 'sm:text-base', 'text-slate-500', 'font-medium', 'max-w-xl', 'mx-auto', 'mb-6', 'sm:mb-8', 'leading-relaxed')}>
-              Join our premium retail ecosystem. Explore available slots and start your journey at SR Mall.
-            </p>
-            <button
-              className={clsx('inline-flex', 'items-center', 'gap-2', 'px-5', 'sm:px-8', 'py-3', 'sm:py-4', 'bg-primary', 'text-white', 'rounded-full', 'text-[10px]', 'sm:text-sm', 'font-bold', 'uppercase', 'tracking-wider', 'hover:bg-primary-hover', 'transition-all', 'active:scale-95', 'shadow-xl', 'shadow-primary/30', 'w-full', 'sm:w-auto', 'justify-center')}
-              onClick={() => {
-                setChatInitialShopName("Leasing Inquiry");
-                setChatRecipient('admin');
-                setChatInquirySlotId(null);
-                setIsChatOpen(true);
-              }}
-            >
-              <MessageCircle size={16} />
-              Talk to Leasing Agent
-            </button>
+          <div className={clsx('flex', 'flex-col', 'lg:flex-row', 'items-start', 'lg:items-end', 'justify-between', 'gap-8', 'mb-12', 'sm:mb-20')}>
+            <div className="max-w-2xl space-y-6">
+              <span className={clsx('inline-flex', 'items-center', 'gap-2', 'text-[10px]', 'sm:text-[11px]', 'uppercase', 'tracking-[0.3em]', 'text-primary', 'font-black', 'bg-primary/10', 'px-5', 'py-2', 'rounded-full', 'border', 'border-primary/20')}>
+                Leasing Opportunities
+              </span>
+              <h2 className={clsx('text-4xl', 'sm:text-5xl', 'lg:text-7xl', 'font-black', 'text-charcoal', 'dark:text-white', 'tracking-tighter', 'leading-[0.95]')}>
+                Available <br />
+                <span className="text-slate-300 dark:text-zinc-800">Spaces.</span>
+              </h2>
+              <p className={clsx('text-sm', 'sm:text-lg', 'text-slate-500', 'dark:text-slate-400', 'font-medium', 'max-w-xl', 'leading-relaxed')}>
+                Join our premium retail ecosystem. Explore high-visibility slots designed for modern brands and start your journey at SR Mall.
+              </p>
+            </div>
+            
+            <div className="flex flex-col sm:flex-row gap-4 w-full lg:w-auto">
+              <button
+                className={clsx('inline-flex', 'items-center', 'gap-3', 'px-8', 'py-5', 'bg-primary', 'text-white', 'rounded-2xl', 'text-xs', 'font-black', 'uppercase', 'tracking-[0.2em]', 'hover:bg-primary-hover', 'hover:scale-105', 'transition-all', 'active:scale-95', 'shadow-[0_20px_40px_-10px_rgba(190,30,45,0.4)]', 'justify-center')}
+                onClick={() => {
+                  setChatInitialShopName("Leasing Inquiry");
+                  setChatRecipient('admin');
+                  setChatInquirySlotId(null);
+                  setIsChatOpen(true);
+                }}
+              >
+                <MessageCircle size={18} />
+                Talk to Leasing Agent
+              </button>
+            </div>
           </div>
 
-          <div className={clsx('grid', 'grid-cols-1', 'sm:grid-cols-2', 'lg:grid-cols-4', 'gap-4', 'sm:gap-6')}>
-            {loadingSlots ? (
-              <div className={clsx('col-span-full', 'py-20', 'text-center')}>
-                <Loader2 size={40} className={clsx('animate-spin', 'text-primary', 'mx-auto')} />
-                <p className={clsx('mt-4', 'text-[10px]', 'font-black', 'uppercase', 'tracking-widest', 'text-slate-400')}>Syncing Physical Inventory...</p>
-              </div>
-            ) : visibleSlotsArray.length > 0 ? (
-              visibleSlotsArray.map((slot) => (
-                <div
-                  key={slot.id}
-                  onClick={() => setSelectedSlot(slot)}
-                  className={clsx('group', 'relative', 'bg-white', 'dark:bg-zinc-950', 'rounded-[2rem]', 'sm:rounded-[3rem]', 'border-2', 'border-slate-200/60', 'dark:border-white/5', 'overflow-hidden', 'hover:border-primary/40', 'transition-all', 'duration-500', 'cursor-pointer', 'shadow-lg', 'hover:shadow-[0_40px_80px_-15px_rgba(190,30,45,0.25)]')}
-                >
-                  <div className={clsx('aspect-[4/3]', 'sm:aspect-4/5', 'relative', 'overflow-hidden', 'bg-charcoal')}>
-                    {slot.space_images[0] ? (
-                      <img
-                        src={slot.space_images[0]}
-                        className={clsx('w-full', 'h-full', 'object-cover', 'opacity-90', 'group-hover:opacity-100', 'group-hover:scale-105', 'transition-all', 'duration-1000')}
-                      />
-                    ) : (
-                      <div className={clsx('w-full', 'h-full', 'flex', 'items-center', 'justify-center', 'text-white/10')}>
-                        <MapPin size={48} strokeWidth={1} />
-                      </div>
-                    )}
-                    
-                    {/* Hover Overlay */}
-                    <div className="absolute inset-0 bg-primary/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                    
-                    <div className={clsx('absolute', 'inset-0', 'bg-linear-to-t', 'from-black/90', 'via-black/20', 'to-transparent', 'opacity-80')} />
-
-                    <div className={clsx('absolute', 'bottom-8', 'left-8', 'right-8')}>
-                      <div className={clsx('flex', 'items-center', 'gap-2', 'mb-2')}>
-                        <div className={clsx('w-2', 'h-2', 'rounded-full', 'bg-emerald-500', 'shadow-[0_0_12px_rgba(16,185,129,0.8)]', 'animate-pulse')} />
-                        <span className={clsx('text-[10px]', 'font-black', 'uppercase', 'tracking-[0.3em]', 'text-emerald-400')}>Prime Unit</span>
-                      </div>
-                      <h4 className={clsx('text-3xl', 'font-black', 'text-white', 'tracking-tighter', 'uppercase')}>Unit {slot.unit_id}</h4>
-                      <p className="text-[10px] font-bold text-white/50 uppercase tracking-widest mt-1">Ready for Occupancy</p>
-                    </div>
+          <div className="relative group/carousel-spaces">
+            {/* Carousel Container */}
+            <div 
+              id="spaces-carousel"
+              className={clsx(
+                'flex overflow-x-auto scroll-smooth no-scrollbar snap-x snap-mandatory gap-8 px-4',
+                'cursor-grab active:cursor-grabbing pb-12'
+              )}
+            >
+              {loadingSlots ? (
+                <div className={clsx('w-full shrink-0 snap-center', 'py-20', 'text-center', 'space-y-6')}>
+                  <div className="relative w-16 h-16 mx-auto">
+                    <div className="absolute inset-0 border-4 border-primary/20 rounded-full"></div>
+                    <div className="absolute inset-0 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
                   </div>
-
-                  <div className={clsx('p-8', 'flex', 'items-center', 'justify-between', 'bg-white', 'dark:bg-zinc-950')}>
-                    <div className="space-y-1">
-                      <p className={clsx('text-[10px]', 'font-bold', 'text-slate-400', 'dark:text-zinc-600', 'uppercase', 'tracking-[0.2em]')}>Total Floor Area</p>
-                      <p className={clsx('text-2xl', 'font-black', 'text-charcoal', 'dark:text-white', 'tracking-tight')}>{slot.sqm_size} <span className="text-sm font-bold text-slate-300">SQM</span></p>
-                    </div>
-                    <div className={clsx('w-14', 'h-14', 'rounded-2xl', 'bg-slate-50', 'dark:bg-zinc-900', 'border', 'border-slate-100', 'dark:border-white/5', 'flex', 'items-center', 'justify-center', 'text-slate-400', 'group-hover:bg-primary', 'group-hover:text-white', 'group-hover:border-primary', 'group-hover:rotate-12', 'transition-all', 'duration-500', 'shadow-inner')}>
-                      <ArrowRight size={24} />
-                    </div>
-                  </div>
+                  <p className={clsx('text-xs', 'font-black', 'uppercase', 'tracking-widest', 'text-slate-400')}>Synchronizing Inventory...</p>
                 </div>
-              ))
-            ) : (
-              <div className={clsx('col-span-full', 'py-20', 'text-center', 'bg-slate-100', 'dark:bg-zinc-900', 'border', 'border-dashed', 'border-slate-300', 'dark:border-white/10', 'rounded-[3rem]')}>
-                <p className={clsx('text-sm', 'font-bold', 'text-slate-500', 'uppercase', 'tracking-widest')}>No spaces currently available for lease.</p>
+              ) : visibleSlotsArray.length > 0 ? (
+                visibleSlotsArray.map((slot, idx) => (
+                  <div
+                    key={slot.id}
+                    onClick={() => setSelectedSlot(slot)}
+                    className={clsx(
+                      'w-[85%] sm:w-[450px] md:w-[500px] lg:w-[550px]',
+                      'shrink-0 snap-center group relative bg-white dark:bg-zinc-900 rounded-[2.5rem] border-2 border-slate-100 dark:border-white/5 overflow-hidden hover:border-primary/20 transition-all duration-500 cursor-pointer shadow-[0_10px_40px_-15px_rgba(0,0,0,0.05)] hover:shadow-[0_40px_80px_-20px_rgba(190,30,45,0.15)] animate-fade-in-up'
+                    )}
+                    style={{ animationDelay: `${idx * 100}ms` }}
+                  >
+                    <div className={clsx('aspect-[4/3]', 'relative', 'overflow-hidden', 'bg-slate-100', 'dark:bg-black')}>
+                      {slot.space_images && slot.space_images[0] ? (
+                        <img
+                          src={slot.space_images[0]}
+                          alt={`Space ${slot.unit_id}`}
+                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000"
+                        />
+                      ) : (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center p-8 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-zinc-900 dark:to-black">
+                           <ShoppingBag className="w-16 h-16 text-slate-200 dark:text-zinc-800 mb-4" />
+                           <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest text-center">Architectural Render <br />Coming Soon</p>
+                        </div>
+                      )}
+                      
+                      {/* Visual Overlay Indicators */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent group-hover:from-primary/90 transition-all duration-700"></div>
+                      <div className={clsx('absolute', 'top-4', 'right-4')}>
+                        <div className={clsx(
+                          "backdrop-blur-md px-4 py-2 rounded-full border text-[8px] font-black uppercase tracking-widest transition-all shadow-xl",
+                          slot.status === 'AVAILABLE' 
+                            ? "bg-emerald-500/80 border-emerald-400/50 text-white shadow-emerald-500/20" 
+                            : "bg-amber-500/80 border-amber-400/50 text-white shadow-amber-500/20"
+                        )}>
+                          {slot.status === 'AVAILABLE' ? 'Selection Open' : 'Interest Registered'}
+                        </div>
+                      </div>
+                      
+                      <div className={clsx('absolute', 'bottom-6', 'left-6', 'right-6')}>
+                        <div className={clsx('flex', 'items-center', 'gap-2', 'mb-2')}>
+                          <div className={clsx(
+                            'w-2', 'h-2', 'rounded-full scale-110 shadow-lg',
+                            slot.status === 'AVAILABLE' 
+                              ? 'bg-emerald-400 shadow-emerald-400/50 animate-pulse' 
+                              : 'bg-amber-400 shadow-amber-400/50'
+                          )} />
+                          <span className={clsx(
+                            'text-[9px] font-black uppercase tracking-[0.2em]',
+                            slot.status === 'AVAILABLE' ? 'text-emerald-400' : 'text-amber-400'
+                          )}>
+                            {slot.status === 'AVAILABLE' ? 'Premier Unit' : 'Verification Pending'}
+                          </span>
+                        </div>
+                        <h4 className={clsx('text-3xl font-black text-white tracking-tighter uppercase')}>Unit {slot.unit_id}</h4>
+                        <p className="text-[10px] font-bold text-white/50 uppercase tracking-widest mt-1">
+                          {slot.status === 'AVAILABLE' ? 'Ready for Occupancy' : 'Reserved for Approval'}
+                        </p>
+                      </div>
+
+                      {/* Hover Call to Action */}
+                      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                         <span className="bg-white text-primary px-6 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest shadow-2xl transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">View Details</span>
+                      </div>
+                    </div>
+
+                    <div className={clsx('p-6', 'flex', 'items-center', 'justify-between', 'bg-white', 'dark:bg-zinc-900')}>
+                      <div className="space-y-1">
+                        <p className={clsx('text-[9px]', 'font-bold', 'text-slate-400', 'dark:text-zinc-500', 'uppercase', 'tracking-[0.2em]')}>Floor Area</p>
+                        <p className={clsx('text-2xl', 'font-black', 'text-charcoal', 'dark:text-white', 'tracking-tight')}>{slot.sqm_size} <span className="text-[10px] font-bold text-slate-300">SQM</span></p>
+                      </div>
+                      <div className={clsx('w-12', 'h-12', 'rounded-2xl', 'bg-slate-50', 'dark:bg-black', 'border', 'border-slate-100', 'dark:border-white/5', 'flex', 'items-center', 'justify-center', 'text-slate-400', 'group-hover:bg-primary', 'group-hover:text-white', 'group-hover:border-primary', 'group-hover:rotate-12', 'transition-all', 'duration-500')}>
+                        <ArrowRight size={20} />
+                      </div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className={clsx('w-full shrink-0 snap-center', 'py-20', 'text-center', 'bg-slate-50', 'dark:bg-zinc-900', 'border-2', 'border-dashed', 'border-slate-200', 'dark:border-white/5', 'rounded-[3rem]')}>
+                  <p className={clsx('text-sm', 'font-bold', 'text-slate-500', 'uppercase', 'tracking-widest')}>No spaces currently available for lease.</p>
+                </div>
+              )}
+            </div>
+
+            {/* Pagination Dots */}
+            {!loadingSlots && visibleSlotsArray.length > 1 && (
+              <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-3">
+                 {visibleSlotsArray.slice(0, 10).map((_, idx) => (
+                    <div key={idx} className="w-2 h-2 rounded-full bg-slate-200 dark:bg-zinc-800 transition-all"></div>
+                 ))}
               </div>
             )}
           </div>
@@ -672,7 +756,7 @@ export default function PublicDigitalConcierge() {
       {/* Space Detail Modal */}
       {selectedSlot && (
         <SpaceDetailModal
-          slot={selectedSlot}
+          slot={selectedSlot as any}
           onClose={() => setSelectedSlot(null)}
           onLoginRequired={() => setIsLoginModalOpen(true)}
           onInquire={(unitId) => {
@@ -691,23 +775,23 @@ export default function PublicDigitalConcierge() {
       />
 
       {/* High-Impact Event Inquiry Section */}
-      <section id="event-inquiry" className={clsx('py-16 sm:py-24 lg:py-40 bg-zinc-50 dark:bg-zinc-950 relative overflow-hidden')}>
+      <section id="event-inquiry" className={clsx('py-12 sm:py-20 bg-zinc-50 dark:bg-zinc-950 relative overflow-hidden')}>
         {/* Background Visual Elements */}
-        <div className="absolute top-0 left-0 w-full h-full opacity-5 dark:opacity-10 pointer-events-none">
-          <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-primary rounded-full blur-[200px] -translate-y-1/2 translate-x-1/2"></div>
-          <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-blue-600 rounded-full blur-[150px] translate-y-1/2 -translate-x-1/2"></div>
+        <div className="absolute inset-0 opacity-5 dark:opacity-10 pointer-events-none">
+          <div className="absolute top-1/4 right-0 w-[400px] sm:w-[800px] h-[400px] sm:h-[800px] bg-primary rounded-full blur-[100px] sm:blur-[200px] translate-x-1/2"></div>
+          <div className="absolute bottom-1/4 left-0 w-[300px] sm:w-[600px] h-[300px] sm:h-[600px] bg-blue-600 rounded-full blur-[100px] sm:blur-[150px] -translate-x-1/2"></div>
         </div>
 
-        <div className={clsx('max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10')}>
-           <div className="text-center mb-16 sm:mb-24">
-             <span className="inline-block px-4 py-1.5 bg-primary/10 text-primary text-[10px] font-black uppercase tracking-[0.3em] rounded-full mb-6 border border-primary/20">
-               Venue Booking
+        <div className={clsx('max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 relative z-10')}>
+           <div className="text-center mb-8 sm:mb-16">
+             <span className="inline-block px-4 py-1 bg-primary/10 text-primary text-[10px] font-black uppercase tracking-[0.3em] rounded-full mb-4 border border-primary/20">
+               Elite Venue Booking
              </span>
-             <h2 className="text-4xl sm:text-5xl lg:text-7xl font-black text-black dark:text-white tracking-tighter leading-none mb-6">
-               Plan Your Next <br />Masterpiece.
+             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-black dark:text-white tracking-tighter leading-tight mb-4">
+               Plan Your Next <span className="text-slate-300 dark:text-zinc-800">Masterpiece.</span>
              </h2>
-             <p className="max-w-2xl mx-auto text-sm sm:text-lg text-slate-500 dark:text-slate-400 font-medium leading-relaxed">
-               Whether it's a corporate exhibit or a regional esports final, our digital-ready spaces provide the ultimate canvas for your event.
+             <p className="max-w-xl mx-auto text-xs sm:text-base text-slate-500 font-medium leading-relaxed">
+               Digital-ready spaces for corporate exhibits or regional finals.
              </p>
            </div>
            

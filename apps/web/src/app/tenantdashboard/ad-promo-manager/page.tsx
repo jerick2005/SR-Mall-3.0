@@ -1,280 +1,377 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Presentation, UploadCloud, Calendar, Clock, CheckCircle, ShieldAlert, MousePointerClick, Loader2, Tag, Trash2 } from 'lucide-react';
+import {
+  Presentation, UploadCloud, Calendar, Clock, CheckCircle,
+  ShieldAlert, Loader2, Tag, Trash2, Plus, X, Megaphone,
+  TrendingUp, Eye, BarChart3, ImageIcon, Video
+} from 'lucide-react';
 import { useAuth } from '@/app/providers';
-import { createTenantPromo, getPromosByTenant, deleteTenantPromo, getTenantByUserId } from '@/app/actions/ads';
+import { createTenantPromo, getPromosByTenant, deletePromo, getTenantByUserId } from '@/app/actions/ads';
 import { getCloudStorageProvider } from '@/lib/cloud-storage';
 import clsx from 'clsx';
+
+const CATEGORIES = ['Fashion', 'Electronics', 'Food & Dining', 'Health & Beauty', 'Others'];
+
+function Toast({ toast, onClose }: { toast: { msg: string; type: 'success' | 'error' } | null; onClose: () => void }) {
+  if (!toast) return null;
+  return (
+    <div className={`fixed top-6 right-4 sm:right-8 z-[300] flex items-center gap-3 px-4 py-3 rounded-2xl shadow-2xl text-white text-xs font-bold animate-fade-in-up max-w-xs ${toast.type === 'success' ? 'bg-emerald-500 shadow-emerald-500/30' : 'bg-red-500 shadow-red-500/30'}`}>
+      {toast.type === 'success' ? <CheckCircle size={14} /> : <ShieldAlert size={14} />}
+      <span className="flex-1">{toast.msg}</span>
+      <button onClick={onClose} className="opacity-70 hover:opacity-100 ml-1"><X size={13} /></button>
+    </div>
+  );
+}
 
 export default function AdPromoManager() {
   const { user } = useAuth();
   const [promos, setPromos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  
-  // Form State
+  const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
+
+  // Form state
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('Fashion');
-  
-  // Set default dates: today to 30 days from now
   const today = new Date().toISOString().split('T')[0];
   const futureDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
   const [startDate, setStartDate] = useState(today);
   const [endDate, setEndDate] = useState(futureDate);
-  
   const [promoImage, setPromoImage] = useState('');
   const [promoVideo, setPromoVideo] = useState('');
   const [mediaType, setMediaType] = useState<'IMAGE' | 'VIDEO'>('IMAGE');
+  const [storageKey, setStorageKey] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
 
-  useEffect(() => {
-    if (user?.id) fetchPromos();
-  }, [user?.id]);
+  const showToast = (msg: string, type: 'success' | 'error') => {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 4500);
+  };
+
+  useEffect(() => { if (user?.id) fetchPromos(); }, [user?.id]);
 
   const fetchPromos = async () => {
     if (!user?.id) return;
     try {
       const tenant = await getTenantByUserId(user.id);
-      if (!tenant) {
-        console.error('No tenant found for user:', user.id);
-        return;
-      }
-      const data = await getPromosByTenant(tenant.id);
-      setPromos(data);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
+      if (!tenant) return;
+      setPromos(await getPromosByTenant(tenant.id));
+    } catch (e) { console.error(e); }
+    finally { setLoading(false); }
   };
 
   const handleMediaUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
-    setIsSubmitting(true);
-    setUploadProgress(0);
-
-    try {
-      const storageProvider = getCloudStorageProvider();
-      const result = await storageProvider.uploadFile(file, 'tenant-promos');
-      
-      const fileType = file.type.startsWith('video/') ? 'VIDEO' : 'IMAGE';
-      setMediaType(fileType);
-      
-      if (fileType === 'VIDEO') {
-        setPromoVideo(result.url);
-        setPromoImage('');
-      } else {
-        setPromoImage(result.url);
-        setPromoVideo('');
-      }
-      
-      setUploadProgress(100);
-    } catch (error) {
-      console.error('Upload error:', error);
-    } finally {
-      setIsSubmitting(false);
-      setTimeout(() => setUploadProgress(0), 1000);
+    const maxSize = 50 * 1024 * 1024;
+    if (file.size > maxSize) {
+      showToast(`File must be under 50MB (${(file.size / 1024 / 1024).toFixed(1)}MB)`, 'error');
+      return;
     }
+    setIsSubmitting(true);
+    try {
+      const result = await getCloudStorageProvider().uploadFile(file, 'tenant-promos');
+      const type = file.type.startsWith('video/') ? 'VIDEO' : 'IMAGE';
+      setMediaType(type);
+      if (type === 'VIDEO') { setPromoVideo(result.url); setPromoImage(''); }
+      else { setPromoImage(result.url); setPromoVideo(''); }
+      setStorageKey(result.key);
+      showToast('Media uploaded successfully!', 'success');
+    } catch (err: any) {
+      showToast(err.message || 'Upload failed. Please try again.', 'error');
+    } finally { setIsSubmitting(false); }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user?.id || !title || !startDate || !endDate || (!promoImage && !promoVideo)) return;
-    
     setIsSubmitting(true);
     try {
       const tenant = await getTenantByUserId(user.id);
-      if (!tenant) {
-        console.error('No tenant found for user:', user.id);
-        alert('No tenant profile found. Please contact admin.');
-        return;
-      }
-      
+      if (!tenant) { showToast('No tenant profile found. Contact admin.', 'error'); return; }
       await createTenantPromo({
-        tenantId: tenant.id,
-        title,
-        description,
-        category,
-        startDate: new Date(startDate),
-        endDate: new Date(endDate),
+        tenantId: tenant.id, title, description, category,
+        startDate: new Date(startDate), endDate: new Date(endDate),
         promoImage: mediaType === 'IMAGE' ? promoImage : undefined,
         promoVideo: mediaType === 'VIDEO' ? promoVideo : undefined,
-        mediaType
+        mediaType, storageKey
       });
-      
-      // Reset form
-      setTitle('');
-      setDescription('');
-      setCategory('Fashion');
-      setStartDate(today); // Use today instead of empty string
-      setEndDate(futureDate); // Use futureDate instead of empty string
-      setPromoImage('');
-      setPromoVideo('');
-      setMediaType('IMAGE');
-      
-      // Refresh promos list
+      setTitle(''); setDescription(''); setCategory('Fashion');
+      setStartDate(today); setEndDate(futureDate);
+      setPromoImage(''); setPromoVideo(''); setStorageKey('');
       fetchPromos();
-    } catch (error) {
-      console.error('Submit error:', error);
-    } finally {
-      setIsSubmitting(false);
-    }
+      showToast('Promotion submitted! Awaiting admin review.', 'success');
+    } catch (e) { console.error(e); }
+    finally { setIsSubmitting(false); }
   };
 
+  const handleDelete = async (id: string) => {
+    if (!window.confirm('Delete this promotion? The uploaded media will also be removed.')) return;
+    await deletePromo(id);
+    fetchPromos();
+    showToast('Promotion deleted.', 'success');
+  };
+
+  // Stats
+  const live = promos.filter(p => p.status === 'APPROVED').length;
+  const pending = promos.filter(p => p.status === 'PENDING').length;
+  const rejected = promos.filter(p => p.status === 'REJECTED').length;
+
+  const hasMedia = !!(promoImage || promoVideo);
+
   return (
-    <div className={clsx('min-h-screen', 'bg-slate-50', 'dark:bg-black', 'pb-20', 'lg:pb-0')}>
-      <div className={clsx('max-w-[1400px]', 'mx-auto', 'px-4', 'sm:px-6', 'lg:px-10', 'py-4', 'sm:py-6', 'lg:py-10', 'space-y-4', 'sm:space-y-6', 'lg:space-y-8')}>
-        {/* Header Section */}
-        <div className={clsx('flex', 'flex-col', 'sm:flex-row', 'sm:items-end', 'justify-between', 'gap-3')}>  
-          <div>
-            <p className={clsx('text-[10px]', 'sm:text-xs', 'font-bold', 'text-primary', 'uppercase', 'tracking-widest', 'mb-1')}>Marketing</p>
-            <h1 className={clsx('text-xl', 'sm:text-2xl', 'lg:text-3xl', 'font-black', 'text-charcoal', 'dark:text-white', 'tracking-tight')}>Ad & Promo Manager</h1>
-            <p className={clsx('text-xs', 'sm:text-sm', 'text-slate-500', 'font-medium', 'mt-1')}>Submit visual banners for your storefront</p>
-          </div>
+    <div className="min-h-screen bg-slate-50 dark:bg-black pb-24 lg:pb-0">
+      <Toast toast={toast} onClose={() => setToast(null)} />
+
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-10 py-6 sm:py-8 lg:py-10 space-y-6">
+
+        {/* ── Header ── */}
+        <div>
+          <p className="text-[10px] sm:text-xs font-black text-primary uppercase tracking-[0.3em] mb-1">Marketing</p>
+          <h1 className="text-2xl sm:text-3xl font-black text-charcoal dark:text-white tracking-tight leading-none">Ad &amp; Promo Manager</h1>
+          <p className="text-xs sm:text-sm text-slate-500 font-medium mt-1.5">Submit promotional banners for display across SR Mall.</p>
         </div>
 
-        <div className={clsx('grid', 'grid-cols-1', 'lg:grid-cols-3', 'gap-4', 'sm:gap-6', 'lg:gap-8')}>
-        
-        {/* Ad Submission Form */}
-        <form onSubmit={handleSubmit} className={clsx('bg-white', 'dark:bg-zinc-900', 'border', 'border-slate-100', 'dark:border-white/5', 'rounded-[2.5rem]', 'shadow-sm', 'p-8', 'h-fit', 'space-y-6')}>
-          <div className={clsx('flex', 'items-center', 'gap-2', 'mb-2')}>
-            <div className={clsx('p-2', 'bg-primary/10', 'rounded-lg')}>
-               <UploadCloud size={20} className="text-primary" />
+        {/* ── Stats Row ── */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+          {[
+            { label: 'Total Campaigns', value: promos.length, icon: BarChart3, iconBg: 'bg-slate-100 dark:bg-zinc-800 text-slate-500' },
+            { label: 'Live Now', value: live, icon: Megaphone, iconBg: 'bg-emerald-500/10 text-emerald-500' },
+            { label: 'Pending Review', value: pending, icon: Clock, iconBg: 'bg-amber-500/10 text-amber-500' },
+            { label: 'Rejected', value: rejected, icon: ShieldAlert, iconBg: 'bg-red-500/10 text-primary' },
+          ].map((s, i) => (
+            <div key={i} className="bg-white dark:bg-zinc-900 border border-slate-100 dark:border-white/5 rounded-2xl p-4 shadow-sm flex items-center gap-3">
+              <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center shrink-0 ${s.iconBg}`}>
+                <s.icon size={16} />
+              </div>
+              <div>
+                <p className="text-xl sm:text-2xl font-black text-charcoal dark:text-white leading-none">{loading ? '—' : s.value}</p>
+                <p className="text-[10px] text-slate-400 font-medium mt-0.5">{s.label}</p>
+              </div>
             </div>
-            <h2 className={clsx('font-bold', 'text-charcoal', 'dark:text-white')}>New Promo Request</h2>
-          </div>
+          ))}
+        </div>
 
-          <div className="space-y-4">
-            <div>
-              <label className={clsx('text-[10px]', 'font-bold', 'text-slate-400', 'uppercase', 'tracking-widest', 'block', 'mb-1.5', 'px-1')}>Promo Title</label>
-              <input required value={title} onChange={e => setTitle(e.target.value)} type="text" placeholder="e.g. 50% Off Flash Sale" className={clsx('w-full', 'px-5', 'py-4', 'bg-slate-50', 'dark:bg-zinc-800/50', 'border', 'border-slate-200', 'dark:border-white/5', 'rounded-2xl', 'focus:border-primary', 'focus:outline-none', 'transition-all', 'text-sm', 'font-medium')} />
+        {/* ── Main Grid: Form + History ── */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+          {/* Submit Form */}
+          <form onSubmit={handleSubmit} className="lg:col-span-4 bg-white dark:bg-zinc-900 border border-slate-100 dark:border-white/5 rounded-2xl sm:rounded-3xl shadow-sm overflow-hidden h-fit">
+            <div className="px-5 sm:px-6 py-4 border-b border-slate-100 dark:border-white/5 flex items-center gap-3">
+              <div className="w-8 h-8 bg-primary/10 rounded-xl flex items-center justify-center text-primary">
+                <Plus size={16} />
+              </div>
+              <div>
+                <h2 className="font-black text-sm text-charcoal dark:text-white">New Promo Request</h2>
+                <p className="text-[10px] text-slate-400 font-medium">Submit for admin approval</p>
+              </div>
             </div>
 
-            <div>
-              <label className={clsx('text-[10px]', 'font-bold', 'text-slate-400', 'uppercase', 'tracking-widest', 'block', 'mb-1.5', 'px-1')}>Category Targeting</label>
-              <select 
-                value={category} 
-                onChange={e => setCategory(e.target.value)}
-                className={clsx('w-full', 'px-5', 'py-4', 'bg-slate-50', 'dark:bg-zinc-800/50', 'border', 'border-slate-200', 'dark:border-white/5', 'rounded-2xl', 'focus:border-primary', 'focus:outline-none', 'transition-all', 'text-sm', 'font-medium', 'appearance-none')}
+            <div className="p-5 sm:p-6 space-y-4">
+              {/* Title */}
+              <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1.5">Promo Title *</label>
+                <input
+                  required
+                  value={title}
+                  onChange={e => setTitle(e.target.value)}
+                  type="text"
+                  placeholder="e.g. 50% Off Flash Sale"
+                  className="w-full px-4 py-3 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-white/10 rounded-xl text-sm font-medium text-charcoal dark:text-white focus:outline-none focus:border-primary transition-all"
+                />
+              </div>
+
+              {/* Description */}
+              <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1.5">Description</label>
+                <textarea
+                  rows={2}
+                  value={description}
+                  onChange={e => setDescription(e.target.value)}
+                  placeholder="Brief description of your promotion..."
+                  className="w-full px-4 py-3 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-white/10 rounded-xl text-sm font-medium text-charcoal dark:text-white focus:outline-none focus:border-primary transition-all resize-none"
+                />
+              </div>
+
+              {/* Category */}
+              <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1.5">Category</label>
+                <select
+                  value={category}
+                  onChange={e => setCategory(e.target.value)}
+                  className="w-full px-4 py-3 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-white/10 rounded-xl text-sm font-medium text-charcoal dark:text-white focus:outline-none focus:border-primary transition-all appearance-none"
+                >
+                  {CATEGORIES.map(c => <option key={c}>{c}</option>)}
+                </select>
+              </div>
+
+              {/* Date Range */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1 mb-1.5">
+                    <Calendar size={10} /> Start
+                  </label>
+                  <input required type="date" value={startDate} onChange={e => setStartDate(e.target.value)}
+                    className="w-full px-3 py-2.5 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-white/10 rounded-xl text-xs font-medium text-charcoal dark:text-white focus:outline-none focus:border-primary transition-all" />
+                </div>
+                <div>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1 mb-1.5">
+                    <Calendar size={10} /> End
+                  </label>
+                  <input required type="date" value={endDate} onChange={e => setEndDate(e.target.value)}
+                    className="w-full px-3 py-2.5 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-white/10 rounded-xl text-xs font-medium text-charcoal dark:text-white focus:outline-none focus:border-primary transition-all" />
+                </div>
+              </div>
+
+              {/* Media Upload */}
+              <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1.5">Banner Media *</label>
+                <div className="relative border-2 border-dashed border-slate-200 dark:border-white/10 rounded-2xl overflow-hidden min-h-[140px] group hover:border-primary transition-all cursor-pointer">
+                  <input
+                    type="file"
+                    accept="image/*,video/*"
+                    onChange={handleMediaUpload}
+                    className="absolute inset-0 opacity-0 cursor-pointer z-10"
+                  />
+                  {hasMedia ? (
+                    <div className="relative w-full h-full min-h-[140px]">
+                      {mediaType === 'VIDEO' ? (
+                        <video src={promoVideo} className="absolute inset-0 w-full h-full object-cover" autoPlay muted loop />
+                      ) : (
+                        <img src={promoImage} alt="Preview" className="absolute inset-0 w-full h-full object-cover" />
+                      )}
+                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="text-center text-white">
+                          <UploadCloud size={22} className="mx-auto mb-1" />
+                          <p className="text-[10px] font-black uppercase tracking-widest">Change Media</p>
+                        </div>
+                      </div>
+                      <div className="absolute top-2 left-2 flex items-center gap-1.5 bg-black/60 text-white text-[9px] font-black px-2 py-1 rounded-md uppercase tracking-widest">
+                        {mediaType === 'VIDEO' ? <Video size={10} /> : <ImageIcon size={10} />} {mediaType}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center py-8 text-center">
+                      <div className="w-10 h-10 bg-slate-100 dark:bg-zinc-800 rounded-xl flex items-center justify-center text-slate-400 group-hover:text-primary mb-2 transition-colors">
+                        <UploadCloud size={20} />
+                      </div>
+                      <p className="text-xs font-bold text-charcoal dark:text-white">Click to upload</p>
+                      <p className="text-[10px] text-slate-400 font-medium mt-0.5">Image or Video · Max 50MB</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Submit Button */}
+              <button
+                type="submit"
+                disabled={isSubmitting || !hasMedia || !title}
+                className="w-full py-3.5 bg-primary text-white rounded-xl font-black text-xs uppercase tracking-widest shadow-lg shadow-primary/20 hover:bg-primary/90 active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
               >
-                <option>Fashion</option>
-                <option>Electronics</option>
-                <option>Food & Dining</option>
-                <option>Health & Beauty</option>
-                <option>Others</option>
-              </select>
+                {isSubmitting ? <Loader2 size={15} className="animate-spin" /> : <Megaphone size={15} />}
+                {isSubmitting ? 'Submitting...' : 'Submit Promotion'}
+              </button>
+
+              <p className="text-[9px] text-slate-400 font-medium text-center leading-relaxed">
+                Your promotion will go live after admin approval. Usually reviewed within 24 hours.
+              </p>
+            </div>
+          </form>
+
+          {/* Campaign History */}
+          <div className="lg:col-span-8 space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="font-black text-sm text-charcoal dark:text-white">Campaign History</h2>
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{promos.length} total</span>
             </div>
 
-            <div className={clsx('grid', 'grid-cols-2', 'gap-4')}>
-               <div>
-                  <label className={clsx('text-[10px]', 'font-bold', 'text-slate-400', 'uppercase', 'tracking-widest', 'block', 'mb-1.5', 'px-1', 'flex', 'items-center', 'gap-1.5')}><Calendar size={12}/> Start Date</label>
-                  <input required value={startDate} onChange={e => setStartDate(e.target.value)} type="date" className={clsx('w-full', 'px-5', 'py-4', 'bg-slate-50', 'dark:bg-zinc-800/50', 'border', 'border-slate-200', 'dark:border-white/5', 'rounded-2xl', 'focus:border-primary', 'focus:outline-none', 'transition-all', 'text-sm', 'font-medium')} />
-               </div>
-               <div>
-                  <label className={clsx('text-[10px]', 'font-bold', 'text-slate-400', 'uppercase', 'tracking-widest', 'block', 'mb-1.5', 'px-1', 'flex', 'items-center', 'gap-1.5')}><Calendar size={12}/> End Date</label>
-                  <input required value={endDate} onChange={e => setEndDate(e.target.value)} type="date" className={clsx('w-full', 'px-5', 'py-4', 'bg-slate-50', 'dark:bg-zinc-800/50', 'border', 'border-slate-200', 'dark:border-white/5', 'rounded-2xl', 'focus:border-primary', 'focus:outline-none', 'transition-all', 'text-sm', 'font-medium')} />
-               </div>
-            </div>
+            {loading ? (
+              <div className="bg-white dark:bg-zinc-900 border border-slate-100 dark:border-white/5 rounded-2xl p-12 text-center">
+                <Loader2 className="mx-auto text-primary animate-spin mb-3" size={28} />
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Loading campaigns...</p>
+              </div>
+            ) : promos.length === 0 ? (
+              <div className="bg-white dark:bg-zinc-900 border border-slate-100 dark:border-white/5 rounded-2xl p-14 text-center">
+                <div className="w-14 h-14 bg-slate-100 dark:bg-zinc-800 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <Presentation className="text-slate-300" size={28} />
+                </div>
+                <p className="font-black text-charcoal dark:text-white text-sm">No promotions yet</p>
+                <p className="text-xs text-slate-400 font-medium mt-1 max-w-xs mx-auto">Submit your first promotional banner using the form. It will appear here after submission.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {promos.map((promo) => {
+                  const isExpired = new Date(promo.endDate) < new Date();
+                  return (
+                    <div key={promo.id} className="bg-white dark:bg-zinc-900 border border-slate-100 dark:border-white/5 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all group">
+                      <div className="flex gap-4 p-4 sm:p-5">
+                        {/* Thumbnail */}
+                        <div className="w-20 h-16 sm:w-28 sm:h-20 rounded-xl bg-slate-100 dark:bg-zinc-800 overflow-hidden shrink-0 border border-slate-100 dark:border-white/5">
+                          {promo.mediaType === 'VIDEO' ? (
+                            <video src={promo.promoVideo} className="w-full h-full object-cover" autoPlay muted loop />
+                          ) : (
+                            <img src={promo.promoImage} alt={promo.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                          )}
+                        </div>
 
-            <div className={clsx('relative', 'border-2', 'border-dashed', 'border-slate-200', 'dark:border-white/10', 'bg-slate-50', 'dark:bg-zinc-800/20', 'rounded-2xl', 'flex', 'flex-col', 'items-center', 'justify-center', 'p-8', 'text-center', 'min-h-[160px]', 'group', 'cursor-pointer', 'hover:border-primary', 'transition-all', 'overflow-hidden')}>
-               <input type="file" accept="image/*,video/*" onChange={handleMediaUpload} className={clsx('absolute', 'inset-0', 'opacity-0', 'cursor-pointer', 'z-10')} />
-               {promoImage || promoVideo ? (
-                 mediaType === 'VIDEO' ? (
-                   <video 
-                     src={promoVideo} 
-                     className={clsx('absolute', 'inset-0', 'w-full', 'h-full', 'object-cover')} 
-                     autoPlay 
-                     muted 
-                     loop 
-                   />
-                 ) : (
-                   <img src={promoImage} alt="Preview" className={clsx('absolute', 'inset-0', 'w-full', 'h-full', 'object-cover')} />
-                 )
-               ) : (
-                 <>
-                   <UploadCloud size={24} className={clsx('text-slate-400', 'group-hover:text-primary', 'mb-3', 'transition-colors')} />
-                   <h4 className={clsx('text-sm', 'font-bold', 'text-charcoal', 'dark:text-white', 'mb-1')}>Click to Upload Banner</h4>
-                   <p className={clsx('text-[9px]', 'font-black', 'text-slate-400', 'uppercase', 'tracking-widest')}>Recommended: 1200x800 px (Image/Video)</p>
-                 </>
-               )}
-            </div>
+                        {/* Info */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between gap-2 mb-1">
+                            <div className="min-w-0">
+                              <h4 className="font-black text-sm text-charcoal dark:text-white truncate">{promo.title}</h4>
+                              {promo.description && (
+                                <p className="text-[10px] text-slate-400 font-medium mt-0.5 line-clamp-1">{promo.description}</p>
+                              )}
+                            </div>
+                            <span className="shrink-0 text-[9px] font-black text-slate-400 bg-slate-50 dark:bg-zinc-800 px-2 py-1 rounded-lg uppercase tracking-wide">
+                              {promo.category}
+                            </span>
+                          </div>
 
-            <button disabled={isSubmitting || (!promoImage && !promoVideo)} type="submit" className={clsx('w-full', 'py-4', 'bg-primary', 'text-white', 'rounded-2xl', 'font-black', 'text-[10px]', 'uppercase', 'tracking-widest', 'transition-all', 'hover:scale-[1.02]', 'active:scale-95', 'disabled:opacity-50', 'shadow-xl', 'shadow-primary/20')}>
-              {isSubmitting ? <Loader2 size={16} className={clsx('animate-spin', 'mx-auto')} /> : 'Request Promotion'}
-            </button>
+                          <p className="text-[10px] text-slate-400 font-medium flex items-center gap-1 mt-1">
+                            <Calendar size={9} />
+                            {new Date(promo.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} — {new Date(promo.endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                            {isExpired && <span className="ml-1 text-[9px] bg-slate-100 dark:bg-zinc-800 text-slate-500 px-1.5 py-0.5 rounded-md font-black uppercase">Expired</span>}
+                          </p>
+
+                          {/* Status + Actions */}
+                          <div className="flex items-center gap-2 mt-3">
+                            {promo.status === 'APPROVED' && (
+                              <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 border border-emerald-100 dark:border-emerald-800/30 text-[9px] font-black uppercase tracking-widest">
+                                <CheckCircle size={10} /> Live
+                              </span>
+                            )}
+                            {promo.status === 'PENDING' && (
+                              <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-amber-50 dark:bg-amber-900/20 text-amber-600 border border-amber-100 dark:border-amber-900/30 text-[9px] font-black uppercase tracking-widest animate-pulse">
+                                <Clock size={10} /> Under Review
+                              </span>
+                            )}
+                            {promo.status === 'REJECTED' && (
+                              <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-red-50 dark:bg-red-900/20 text-primary border border-red-100 dark:border-red-800/30 text-[9px] font-black uppercase tracking-widest">
+                                <ShieldAlert size={10} /> Rejected
+                              </span>
+                            )}
+                            <div className="flex-1" />
+                            <button
+                              onClick={() => handleDelete(promo.id)}
+                              className="p-2 text-slate-300 hover:text-primary hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all"
+                              title="Delete promotion"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
-        </form>
 
-        {/* Live Ad Status */}
-        <div className={clsx('lg:col-span-2', 'space-y-6')}>
-           <div className={clsx('flex', 'items-center', 'justify-between', 'border-b', 'border-slate-200', 'dark:border-white/10', 'pb-4', 'px-2')}>
-              <h2 className={clsx('font-bold', 'text-charcoal', 'dark:text-white', 'tracking-tight', 'flex', 'items-center', 'gap-2')}><Clock size={16} className="text-primary"/> Promotion History & Status</h2>
-           </div>
-
-           <div className={clsx('grid', 'gap-4')}>
-             {loading ? (
-               <div className={clsx('p-8', 'text-center', 'text-slate-400', 'uppercase', 'tracking-widest', 'text-xs', 'font-bold', 'animate-pulse')}>Loading Your Campaigns...</div>
-             ) : promos.length === 0 ? (
-               <div className={clsx('p-16', 'text-center', 'bg-slate-50', 'dark:bg-zinc-900/40', 'rounded-[2.5rem]', 'border', 'border-dashed', 'border-slate-200', 'dark:border-white/10')}>
-                 <Presentation className={clsx('mx-auto', 'text-slate-300', 'mb-4')} size={48} />
-                 <h4 className={clsx('text-slate-500', 'font-bold', 'mb-1')}>No Active Promotions</h4>
-                 <p className={clsx('text-xs', 'text-slate-400')}>Your submitted ads will appear here once you request them.</p>
-               </div>
-             ) : (
-               promos.map((promo) => (
-                  <div key={promo.id} className={clsx('bg-white', 'dark:bg-zinc-900', 'border', 'border-slate-100', 'dark:border-white/5', 'rounded-3xl', 'p-5', 'flex', 'items-center', 'gap-6', 'shadow-sm', 'group', 'hover:border-primary/30', 'transition-all')}>
-                    <div className={clsx('w-40', 'h-24', 'rounded-2xl', 'bg-slate-100', 'dark:bg-zinc-800', 'flex', 'items-center', 'justify-center', 'overflow-hidden', 'shrink-0', 'border', 'border-slate-100', 'dark:border-white/5')}>
-                       <img src={promo.promoImage} alt={promo.title} className={clsx('w-full', 'h-full', 'object-cover', 'group-hover:scale-110', 'transition-all', 'duration-500')} />
-                    </div>
-                    
-                    <div className={clsx('flex-1', 'space-y-1')}>
-                       <div className={clsx('flex', 'items-start', 'justify-between')}>
-                          <h4 className={clsx('font-bold', 'text-charcoal', 'dark:text-white', 'text-lg')}>{promo.title}</h4>
-                          <span className={clsx('text-[10px]', 'font-black', 'text-slate-400', 'bg-slate-50', 'dark:bg-zinc-800', 'px-2', 'py-1', 'rounded-md', 'uppercase', 'tracking-tight')}>
-                            {promo.category}
-                          </span>
-                       </div>
-                       
-                       <p className={clsx('text-[10px]', 'text-slate-500', 'font-medium')}>
-                         Schedule: {new Date(promo.startDate).toLocaleDateString()} — {new Date(promo.endDate).toLocaleDateString()}
-                       </p>
-
-                       <div className={clsx('flex', 'items-center', 'gap-4', 'mt-3')}>
-                          {promo.status === 'APPROVED' && (
-                             <span className={clsx('flex', 'items-center', 'gap-1.5', 'px-3', 'py-1.5', 'rounded-xl', 'bg-green-50', 'dark:bg-green-900/20', 'text-green-600', 'border', 'border-green-100', 'dark:border-green-800/40', 'text-[9px]', 'font-black', 'uppercase', 'tracking-widest')}><CheckCircle size={12}/> Live in Public-View</span>
-                          )}
-                          {promo.status === 'PENDING' && (
-                             <span className={clsx('flex', 'items-center', 'gap-1.5', 'px-3', 'py-1.5', 'rounded-xl', 'bg-amber-50', 'dark:bg-amber-900/20', 'text-amber-600', 'border', 'border-amber-100', 'dark:border-amber-900/40', 'text-[9px]', 'font-black', 'uppercase', 'tracking-widest', 'animate-pulse')}><Clock size={12}/> Review in Progress</span>
-                          )}
-                          {promo.status === 'REJECTED' && (
-                             <span className={clsx('flex', 'items-center', 'gap-1.5', 'px-3', 'py-1.5', 'rounded-xl', 'bg-red-50', 'dark:bg-red-900/20', 'text-primary', 'border', 'border-red-100', 'dark:border-red-800/40', 'text-[9px]', 'font-black', 'uppercase', 'tracking-widest')}><ShieldAlert size={12}/> Rejected</span>
-                          )}
-
-                          <div className="flex-1" />
-                          <button 
-                            onClick={async () => {
-                              const { deletePromo } = await import('@/app/actions/ads');
-                              await deletePromo(promo.id);
-                              fetchPromos();
-                            }}
-                            className={clsx('p-2', 'text-slate-400', 'hover:text-primary', 'transition-colors', 'hover:bg-red-50', 'dark:hover:bg-red-900/20', 'rounded-lg')}
-                          >
-                             <Trash2 size={16} />
-                          </button>
-                       </div>
-                    </div>
-                  </div>
-               ))
-             )}
-           </div>
         </div>
-
       </div>
-    </div>
     </div>
   );
 }

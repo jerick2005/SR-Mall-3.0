@@ -3,30 +3,35 @@
 @tailwind utilities;
 
 :root {
-  --background: #f8fafc;
-  --foreground: #0f172a;
-  --crimson: #be1e2d;
-  --crimson-hover: #a31a26;
-  --slate: #64748b;
-  --charcoal: #1e293b;
+  --background-rgb: 248 250 252;
+  --foreground-rgb: 15 23 42;
+  --crimson-rgb: 190 30 45;
+  --crimson-hover-rgb: 163 26 38;
+  --slate-rgb: 100 116 139;
+  --charcoal-rgb: 30 41 59;
+  
+  --background: rgb(var(--background-rgb));
+  --foreground: rgb(var(--foreground-rgb));
   --radius-xl: 1rem;
   --radius-2xl: 1.5rem;
 }
 
 .dark {
-  --background: #0a0a0a;
-  --foreground: #f8fafc;
+  --background-rgb: 10 10 10;
+  --foreground-rgb: 248 250 252;
+  --background: rgb(var(--background-rgb));
+  --foreground: rgb(var(--foreground-rgb));
 }
 
 @layer base {
   :root {
-    --color-primary: var(--crimson);
-    --color-primary-hover: var(--crimson-hover);
-    --color-secondary: var(--slate);
-    --color-accent: var(--charcoal);
-    --color-background: var(--background);
-    --color-foreground: var(--foreground);
-    --color-charcoal: var(--charcoal);
+    --color-primary: var(--crimson-rgb);
+    --color-primary-hover: var(--crimson-hover-rgb);
+    --color-secondary: var(--slate-rgb);
+    --color-accent: var(--charcoal-rgb);
+    --color-background: var(--background-rgb);
+    --color-foreground: var(--foreground-rgb);
+    --color-charcoal: var(--charcoal-rgb);
   }
   
   body {

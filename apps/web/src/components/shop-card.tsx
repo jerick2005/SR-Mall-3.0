@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Heart, MapPin, Tag, ChevronRight, MessageCircle } from 'lucide-react';
+import { Heart, MapPin, Tag, ChevronRight, MessageCircle, Eye } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { DigitalStorefront } from '@/types/storefront';
@@ -68,7 +68,7 @@ export const ShopCard = ({ shop, onClick, onMessage }: ShopCardProps) => {
           onClick();
         }
       }}
-      className={`group relative bg-white dark:bg-zinc-950 rounded-[2.5rem] overflow-hidden shadow-[0_10px_40px_-10px_rgba(0,0,0,0.08)] dark:shadow-none hover:shadow-[0_30px_70px_-10px_rgba(190,30,45,0.2)] transition-all duration-700 border border-slate-100 dark:border-white/5 cursor-pointer block ${!is_open ? 'opacity-85' : ''
+      className={`group relative bg-white dark:bg-zinc-950 rounded-[2.5rem] overflow-hidden shadow-[0_10px_40px_-10px_rgba(0,0,0,0.08)] dark:shadow-none hover:shadow-[0_40px_80px_-15px_rgba(190,30,45,0.25)] transition-all duration-700 border-2 border-slate-100 dark:border-white/5 hover:border-primary/20 cursor-pointer block ${!is_open ? 'opacity-85' : ''
         }`}
     >
       {/* Image Container with Hover Zoom & Grayscale Logic */}
@@ -81,7 +81,11 @@ export const ShopCard = ({ shop, onClick, onMessage }: ShopCardProps) => {
         />
         
         {/* Dark Overlay on Hover */}
-        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-700 pointer-events-none" />
+        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all duration-700 pointer-events-none flex items-center justify-center">
+            <div className="w-16 h-16 bg-white/20 backdrop-blur-xl rounded-full flex items-center justify-center text-white opacity-0 group-hover:opacity-100 scale-50 group-hover:scale-100 transition-all duration-500 shadow-2xl">
+               <Eye size={28} />
+            </div>
+        </div>
 
         {/* Status Badge */}
         <div className={`absolute top-5 left-5 flex items-center gap-2 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-[0.2em] backdrop-blur-xl transition-all duration-500 border border-white/20 shadow-xl ${is_open
@@ -104,49 +108,55 @@ export const ShopCard = ({ shop, onClick, onMessage }: ShopCardProps) => {
         </button>
 
         {/* Floating Unit ID Tag */}
-        <div className="absolute bottom-5 left-5 flex items-center gap-2 bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/10 opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-500">
-           <MapPin size={12} className="text-primary" />
-           <span className="text-[10px] font-black text-white uppercase tracking-widest">{unit_id}</span>
+        <div className="absolute bottom-5 left-5 flex items-center gap-2 bg-charcoal/80 backdrop-blur-md px-4 py-2 rounded-2xl border border-white/10 opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-500">
+           <MapPin size={14} className="text-primary" />
+           <span className="text-[10px] font-black text-white uppercase tracking-widest leading-none">{unit_id}</span>
         </div>
       </div>
 
       {/* Info Section */}
-      <div className="p-5 sm:p-8 relative">
+      <div className="p-6 sm:p-10 relative">
         {/* Mall Theme Accent */}
-        <div className="absolute top-0 right-10 w-12 h-1 bg-primary transform origin-right scale-x-0 group-hover:scale-x-100 transition-transform duration-500 rounded-b-full"></div>
+        <div className="absolute top-0 right-10 w-16 h-1 bg-primary transform origin-right scale-x-0 group-hover:scale-x-100 transition-transform duration-500 rounded-b-full shadow-[0_0_10px_rgba(190,30,45,0.5)]"></div>
         
         <div className="flex flex-col gap-2 mb-6">
           <div className="flex justify-between items-start">
              <div>
-                <h3 className="text-2xl font-black text-charcoal dark:text-white tracking-tighter group-hover:text-primary transition-colors leading-none mb-2 uppercase">
+                <h3 className="text-3xl font-black text-charcoal dark:text-white tracking-tighter group-hover:text-primary transition-colors leading-none mb-3 uppercase">
                   {shop_name}
                 </h3>
-                <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
-                   <Tag size={12} className="text-primary/40" />
-                   {shop.id === 'preview' ? 'Sample Store' : 'Official Tenant'}
+                <div className="flex items-center gap-3">
+                   <div className="px-3 py-1 bg-primary/5 border border-primary/20 rounded-md flex items-center gap-2">
+                      <Tag size={12} className="text-primary" />
+                      <span className="text-[10px] font-black text-primary uppercase tracking-widest">Fashion</span>
+                   </div>
+                   <div className="flex items-center gap-1.5 text-[9px] font-bold text-slate-400 uppercase tracking-widest">
+                      <div className="w-1 h-1 rounded-full bg-slate-300"></div>
+                      Official Tenant
+                   </div>
                 </div>
              </div>
           </div>
-          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium leading-relaxed line-clamp-2 mt-4">
-            {shop.description || 'Discover a premium selection of high-quality products and bespoke services curated just for you at SR Mall.'}
+          <p className="text-sm text-slate-500 dark:text-slate-400 font-medium leading-relaxed line-clamp-2 mt-4 italic">
+            "{shop.description || 'Step into a world of curated style and premium experiences.'}"
           </p>
         </div>
 
-        <div className="flex items-center gap-4 pt-6 mt-2 border-t border-slate-100 dark:border-white/10">
+        <div className="flex items-center gap-4 pt-8 mt-4 border-t border-slate-100 dark:border-white/10">
           <button
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
               if (onMessage) onMessage(shop_name);
             }}
-            className="flex-1 py-4 bg-slate-50 dark:bg-zinc-900/50 hover:bg-primary/5 hover:text-primary text-slate-900 dark:text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all border border-slate-200 dark:border-white/5 flex items-center justify-center gap-3 shadow-xs hover:border-primary/20 active:scale-95"
+            className="flex-1 py-4.5 bg-slate-50 dark:bg-zinc-900 border-2 border-slate-100 dark:border-white/5 hover:border-primary/40 hover:bg-primary/5 hover:text-primary text-slate-900 dark:text-white rounded-[1.5rem] text-[10px] font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3 active:scale-95 group/btn"
           >
-            <MessageCircle size={16} className="text-primary" />
+            <MessageCircle size={18} className="text-primary group-hover/btn:scale-125 transition-transform" />
             Live Inquiry
           </button>
           
-          <div className="w-12 h-12 rounded-2xl bg-charcoal dark:bg-zinc-800 text-white flex items-center justify-center transition-all shadow-xl group-hover:bg-primary group-hover:shadow-[0_15px_30px_-5px_rgba(190,30,45,0.5)] active:scale-95 group-hover:scale-110">
-             <ChevronRight size={20} />
+          <div className="w-14 h-14 rounded-[1.5rem] bg-charcoal dark:bg-zinc-900 text-white flex items-center justify-center transition-all shadow-xl group-hover:bg-primary group-hover:shadow-[0_20px_40px_-5px_rgba(190,30,45,0.4)] active:scale-95 group-hover:scale-110 border border-white/5">
+             <ChevronRight size={24} />
           </div>
         </div>
       </div>

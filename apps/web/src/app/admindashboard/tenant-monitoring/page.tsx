@@ -9,7 +9,8 @@ import {
 } from 'lucide-react';
 import { RegisterTenantModal } from '@/components/admin/register-tenant-modal';
 import clsx from 'clsx';
-import { getAllTenantsAction, deleteTenantAction, approveTenantAction, updateStorefrontAction } from '@/app/actions/tenant';
+import { getAllTenantsAction, deleteTenantAction, approveTenantAction, updateStorefrontAction, getTenantReportDataAction, adminUpdateTenantAction } from '@/app/actions/tenant';
+// Dynamic import used in handler to prevent SSR issues
 import { getAreaSlots } from '@/app/actions/space-slot';
 import { getAllInvoices, generateInvoice, updateInvoiceStatus } from '@/app/actions/finance';
 
@@ -75,6 +76,16 @@ export default function TenantMonitoring() {
     pending: 0,
     overdue: 0,
     totalRevenue: 0,
+  });
+  const [isExporting, setIsExporting] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingTenant, setEditingTenant] = useState<Tenant | null>(null);
+  const [editFormData, setEditFormData] = useState({
+    shopName: '',
+    unitId: '',
+    status: '',
+    rentCost: 0,
+    description: ''
   });
 
   const loadTenants = async () => {
@@ -207,30 +218,36 @@ export default function TenantMonitoring() {
     }
   };
 
-  const handleEditTenant = async () => {
-    if (!selectedTenant || !selectedTenant.user?.id) {
-      setToast({ msg: 'Missing authoritative user linkage for this tenant', type: 'error' });
-      return;
-    }
-    const newName = window.prompt("Authorize override for Shop Name:", selectedTenant.shopName);
-    if (!newName) return;
-    
-    const isOpen = window.confirm("Is this merchant actively operating its storefront? (OK for Yes, Cancel for Suspended/Closed)");
+  const handleEditTenant = () => {
+    if (!selectedTenant) return;
+    setEditingTenant(selectedTenant);
+    setEditFormData({
+      shopName: selectedTenant.shopName || '',
+      unitId: selectedTenant.unitId || '',
+      status: selectedTenant.status || '',
+      rentCost: selectedTenant.rentCost || 0,
+      description: selectedTenant.description || ''
+    });
+    setIsEditModalOpen(true);
+  };
 
-    setToast({ msg: 'Propagating override into Global Database...', type: 'success' });
+  const handleSaveEdit = async () => {
+    if (!editingTenant) return;
+    setLoading(true);
     try {
-      const result = await updateStorefrontAction(selectedTenant.user.id, {
-        shop_name: newName,
-        is_open: isOpen
-      });
-      if (result.success) {
-        setToast({ msg: 'Storefront data cleanly synchronized!', type: 'success' });
+      const res = await adminUpdateTenantAction(editingTenant.id, editFormData);
+      if (res.success) {
+        setToast({ msg: 'Tenant updated successfully!', type: 'success' });
+        setIsEditModalOpen(false);
+        setSelectedTenant(null);
         loadTenants();
       } else {
-        setToast({ msg: 'Failed: ' + result.error, type: 'error' });
+        setToast({ msg: res.error || 'Failed to update', type: 'error' });
       }
     } catch (e: any) {
       setToast({ msg: 'Error: ' + e.message, type: 'error' });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -267,6 +284,25 @@ export default function TenantMonitoring() {
       }
     } catch (err: any) {
       setToast({ msg: 'Error: ' + err.message, type: 'error' });
+    }
+  };
+
+  const handleExportReport = async () => {
+    setIsExporting(true);
+    try {
+      const { generateTenantPDF } = await import('@/utils/report-generator');
+      const result = await getTenantReportDataAction();
+      if (result.success && result.data) {
+        await generateTenantPDF(result.data);
+        setToast({ msg: 'Report generated successfully!', type: 'success' });
+      } else {
+        setToast({ msg: result.error || 'Failed to generate report', type: 'error' });
+      }
+    } catch (error) {
+      console.error('Export error:', error);
+      setToast({ msg: 'Error generating report', type: 'error' });
+    } finally {
+      setIsExporting(false);
     }
   };
 
@@ -348,6 +384,107 @@ export default function TenantMonitoring() {
         onClose={() => setIsRegisterOpen(false)}
         onSuccess={handleRegistrationSuccess}
       />
+
+      {/* Edit Tenant Modal */}
+      {isEditModalOpen && editingTenant && (
+        <div className={clsx('fixed', 'inset-0', 'z-[250]', 'flex', 'items-center', 'justify-center', 'p-4')}>
+          <div className={clsx('absolute', 'inset-0', 'bg-black/60', 'backdrop-blur-sm')} onClick={() => setIsEditModalOpen(false)} />
+          <div className={clsx('relative', 'w-full', 'max-w-lg', 'bg-white', 'dark:bg-zinc-950', 'rounded-[2rem]', 'shadow-2xl', 'overflow-hidden', 'animate-fade-in-up')}>
+            <div className={clsx('bg-primary', 'p-8', 'text-white', 'relative')}>
+               <div className="flex items-center gap-4">
+                 <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-md">
+                   <Edit size={24} />
+                 </div>
+                 <div>
+                   <h2 className="text-xl font-black uppercase tracking-tight">Edit Tenant</h2>
+                   <p className="text-xs text-white/70 font-bold uppercase tracking-widest">Admin Authorization Required</p>
+                 </div>
+               </div>
+               <button onClick={() => setIsEditModalOpen(false)} className="absolute top-8 right-8 text-white/60 hover:text-white transition-colors">
+                 <X size={20} />
+               </button>
+            </div>
+            
+            <div className="p-8 space-y-5">
+              <div>
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-2">Shop Name</label>
+                <input 
+                  type="text" 
+                  value={editFormData.shopName}
+                  onChange={(e) => setEditFormData({...editFormData, shopName: e.target.value})}
+                  className="w-full px-4 py-3 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-white/5 rounded-xl text-sm font-bold focus:border-primary focus:outline-none transition-all"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-2">Unit ID</label>
+                  <select 
+                    value={editFormData.unitId}
+                    onChange={(e) => setEditFormData({...editFormData, unitId: e.target.value})}
+                    className="w-full px-4 py-3 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-white/5 rounded-xl text-sm font-bold focus:border-primary focus:outline-none transition-all"
+                  >
+                    <option value={editingTenant.unitId}>{editingTenant.unitId} (Current)</option>
+                    {availableSlots.map(s => (
+                      <option key={s.unit_id} value={s.unit_id}>{s.unit_id}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-2">Status</label>
+                  <select 
+                    value={editFormData.status}
+                    onChange={(e) => setEditFormData({...editFormData, status: e.target.value})}
+                    className="w-full px-4 py-3 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-white/5 rounded-xl text-sm font-bold focus:border-primary focus:outline-none transition-all"
+                  >
+                    <option value="ACTIVE">ACTIVE</option>
+                    <option value="PENDING">PENDING</option>
+                    <option value="INACTIVE">INACTIVE</option>
+                    <option value="SUSPENDED">SUSPENDED</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-2">Monthly Rent (₱)</label>
+                <input 
+                  type="number" 
+                  value={editFormData.rentCost}
+                  onChange={(e) => setEditFormData({...editFormData, rentCost: Number(e.target.value)})}
+                  className="w-full px-4 py-3 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-white/5 rounded-xl text-sm font-black text-emerald-500 focus:border-primary focus:outline-none transition-all"
+                />
+              </div>
+
+              <div>
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-2">Description / Store Type</label>
+                <textarea 
+                  value={editFormData.description}
+                  onChange={(e) => setEditFormData({...editFormData, description: e.target.value})}
+                  rows={3}
+                  className="w-full px-4 py-3 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-white/5 rounded-xl text-sm font-medium focus:border-primary focus:outline-none transition-all resize-none"
+                  placeholder="e.g. Luxury Footwear Provider"
+                />
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button 
+                  onClick={() => setIsEditModalOpen(false)}
+                  className="flex-1 py-3.5 bg-slate-100 dark:bg-zinc-900 text-slate-600 dark:text-slate-400 font-bold text-xs uppercase tracking-widest rounded-xl hover:bg-slate-200 transition-all"
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={handleSaveEdit}
+                  disabled={loading}
+                  className="flex-[2] py-3.5 bg-primary text-white font-black text-xs uppercase tracking-widest rounded-xl shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2"
+                >
+                  {loading ? <RefreshCw size={16} className="animate-spin" /> : <><CheckCircle size={16} /> Save Changes</>}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className={clsx('min-h-screen', 'bg-transparent', 'p-4', 'lg:p-8', 'animate-fade-in-up', 'max-w-[1600px]', 'mx-auto')}>
         {/* Background Decor */}
@@ -489,9 +626,24 @@ export default function TenantMonitoring() {
           </div>
 
           {/* Export */}
-          <button className={clsx('flex', 'items-center', 'gap-2', 'px-4', 'py-3', 'bg-slate-50', 'dark:bg-zinc-950/50', 'border', 'border-slate-200', 'dark:border-white/5', 'rounded-2xl', 'text-slate-600', 'dark:text-slate-300', 'font-bold', 'hover:bg-slate-100', 'dark:hover:bg-white/10', 'transition-all')}>
-            <Download size={18} />
-            Export
+          <button 
+            onClick={handleExportReport}
+            disabled={isExporting}
+            className={clsx(
+              'flex', 'items-center', 'gap-2', 'px-6', 'py-3', 
+              'bg-[#BE1E2D]/5', 'hover:bg-[#BE1E2D]/10', 
+              'border', 'border-[#BE1E2D]/20', 'rounded-2xl', 
+              'text-[#BE1E2D]', 'font-bold', 'transition-all',
+              'active:scale-95',
+              isExporting && 'opacity-50 cursor-not-allowed'
+            )}
+          >
+            {isExporting ? (
+              <RefreshCw size={18} className="animate-spin" />
+            ) : (
+              <FileText size={18} />
+            )}
+            {isExporting ? 'Generating Report...' : 'Download Report'}
           </button>
         </div>
 

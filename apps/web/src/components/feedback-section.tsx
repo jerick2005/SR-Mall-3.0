@@ -190,27 +190,21 @@ export const FeedbackSection = ({ isAuthenticated }: FeedbackSectionProps) => {
             </p>
           </div>
 
-          <div className={clsx('grid', 'grid-cols-1', 'lg:grid-cols-2', 'gap-8', 'lg:gap-12')}>
+          <div className={clsx('flex', 'flex-row', 'overflow-x-auto', 'no-scrollbar', 'snap-x', 'snap-mandatory', 'gap-4', 'sm:gap-8', 'lg:grid', 'lg:grid-cols-2', 'lg:gap-12', 'pb-4')}>
             {/* Left Column: Reviews List */}
-            <div className={clsx('space-y-4', 'max-h-[500px]', 'sm:max-h-[600px]', 'overflow-y-auto', 'pr-2', 'sm:pr-4', 'custom-scrollbar')}>
+            <div className={clsx('w-[85%] sm:w-[500px] lg:w-auto', 'shrink-0', 'snap-center', 'space-y-3 sm:space-y-4', 'max-h-[400px]', 'sm:max-h-[600px]', 'overflow-y-auto', 'pr-1 sm:pr-4', 'custom-scrollbar')}>
               {/* Pending review notice for logged-in user */}
               {myPendingReview && (
-                <div className={clsx('p-4', 'sm:p-5', 'bg-amber-50', 'dark:bg-amber-950/20', 'rounded-xl', 'sm:rounded-2xl', 'border', 'border-amber-200', 'dark:border-amber-800/50')}>
-                  <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <CheckCircle size={16} className="text-amber-600" />
+                <div className={clsx('p-3', 'sm:p-5', 'bg-amber-50', 'dark:bg-amber-950/20', 'rounded-xl', 'sm:rounded-2xl', 'border', 'border-amber-200', 'dark:border-amber-800/50')}>
+                  <div className="flex items-start gap-2 sm:gap-3">
+                    <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <CheckCircle size={14} className="text-amber-600 sm:size-4" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-bold uppercase tracking-widest text-amber-700 dark:text-amber-400 mb-1">Your review is pending approval</p>
-                      <p className="text-xs text-amber-600 dark:text-amber-500 font-medium">
-                        {myPendingReview.comment ? `"${myPendingReview.comment}"` : `${myPendingReview.rating}-star review submitted.`}
+                      <p className="text-[10px] font-black uppercase tracking-widest text-amber-700 dark:text-amber-400 mb-0.5">Review Pending</p>
+                      <p className="text-[10px] sm:text-xs text-amber-600 dark:text-amber-500 font-medium line-clamp-2">
+                        {myPendingReview.comment ? `"${myPendingReview.comment}"` : `${myPendingReview.rating}-star review.`}
                       </p>
-                      <p className="text-[10px] text-amber-500/70 mt-1">It will appear here once approved by our team.</p>
-                    </div>
-                    <div className="flex gap-0.5 flex-shrink-0">
-                      {[...Array(5)].map((_: any, i: number) => (
-                        <Star key={i} size={10} className={i < myPendingReview.rating ? "fill-amber-400 text-amber-400" : "text-amber-200"} />
-                      ))}
                     </div>
                   </div>
                 </div>
@@ -218,100 +212,91 @@ export const FeedbackSection = ({ isAuthenticated }: FeedbackSectionProps) => {
               {isLoading ? (
                 <div className={clsx('text-center', 'py-12')}>
                   <div className={clsx('inline-block', 'animate-spin', 'rounded-full', 'h-8', 'w-8', 'border-b-2', 'border-primary')}></div>
-                  <p className={clsx('mt-4', 'text-sm', 'text-slate-500')}>Loading experiences...</p>
                 </div>
               ) : reviews.length > 0 ? (
                 reviews.map((review) => (
-                  <div key={review.id} className={clsx('p-4', 'sm:p-6', 'bg-white', 'dark:bg-zinc-900', 'rounded-xl', 'sm:rounded-2xl', 'shadow-sm', 'border', 'border-slate-100', 'dark:border-white/5', 'hover:shadow-md', 'transition-shadow')}>
-                    <div className={clsx('flex', 'justify-between', 'items-start', 'mb-3', 'sm:mb-4')}>
-                      <div className={clsx('flex', 'items-center', 'gap-3')}>
-                        <div className={clsx('w-10', 'h-10', 'sm:w-12', 'sm:h-12', 'bg-gradient-to-br', 'from-primary/20', 'to-primary/5', 'dark:from-zinc-800', 'dark:to-zinc-700', 'rounded-full', 'flex', 'items-center', 'justify-center', 'font-bold', 'text-primary', 'text-sm', 'sm:text-base', 'shadow-inner')}>
+                  <div key={review.id} className={clsx('p-3', 'sm:p-6', 'bg-white', 'dark:bg-zinc-900', 'rounded-xl', 'sm:rounded-2xl', 'shadow-sm', 'border', 'border-slate-100', 'dark:border-white/5', 'hover:shadow-md', 'transition-shadow')}>
+                    <div className={clsx('flex', 'justify-between', 'items-start', 'mb-2', 'sm:mb-4')}>
+                      <div className={clsx('flex', 'items-center', 'gap-2 sm:gap-3')}>
+                        <div className={clsx('w-8', 'h-8', 'sm:w-12', 'sm:h-12', 'bg-gradient-to-br', 'from-primary/20', 'to-primary/5', 'dark:from-zinc-800', 'dark:to-zinc-700', 'rounded-full', 'flex', 'items-center', 'justify-center', 'font-black', 'text-primary', 'text-[10px]', 'sm:text-base')}>
                           {review.user?.name ? review.user.name.charAt(0).toUpperCase() : 'U'}
                         </div>
                         <div>
-                          <h4 className={clsx('font-bold', 'text-charcoal', 'dark:text-white', 'text-sm', 'sm:text-base')}>{review.user?.name || 'Anonymous Customer'}</h4>
-                          <p className={clsx('text-[10px]', 'sm:text-xs', 'text-slate-400', 'font-medium')}>{formatDate(review.createdAt)}</p>
+                          <h4 className={clsx('font-black', 'text-charcoal', 'dark:text-white', 'text-[10px]', 'sm:text-base', 'uppercase', 'tracking-tighter')}>{review.user?.name || 'Anonymous'}</h4>
+                          <p className={clsx('text-[8px]', 'sm:text-xs', 'text-slate-400', 'font-bold')}>{formatDate(review.createdAt)}</p>
                         </div>
                       </div>
-                      <div className="flex flex-col items-end gap-2">
+                      <div className="flex flex-col items-end gap-1">
                         <div className={clsx('flex', 'gap-0.5')}>
                           {[...Array(5)].map((_, i) => (
-                            <Star key={i} size={12} className={i < review.rating ? "fill-primary text-primary" : "text-slate-200"} />
+                            <Star key={i} size={8} className={i < review.rating ? "fill-primary text-primary" : "text-slate-200"} />
                           ))}
                         </div>
                         {user && user.email === review.user?.email && (
-                          <div className="flex items-center gap-2 mt-1">
-                             <a href="#feedback-form" onClick={() => { setRating(review.rating); setComment(review.comment || ""); }} className="text-[10px] text-primary font-bold uppercase tracking-widest hover:underline cursor-pointer">Edit</a>
-                             <span className="text-slate-300">|</span>
-                             <button onClick={handleDelete} disabled={isSubmitting} className="text-[10px] text-red-500 font-bold uppercase tracking-widest hover:underline cursor-pointer">Delete</button>
+                          <div className="flex items-center gap-2 mt-0.5">
+                             <a href="#feedback-form" onClick={() => { setRating(review.rating); setComment(review.comment || ""); }} className="text-[8px] text-primary font-black uppercase tracking-widest hover:underline cursor-pointer">Edit</a>
+                             <button onClick={handleDelete} disabled={isSubmitting} className="text-[8px] text-red-500 font-black uppercase tracking-widest hover:underline cursor-pointer">Del</button>
                           </div>
                         )}
                       </div>
                     </div>
                     {review.comment && (
-                      <p className={clsx('text-xs', 'sm:text-sm', 'text-slate-600', 'dark:text-slate-300', 'leading-relaxed', 'font-medium')}>
+                      <p className={clsx('text-[10px]', 'sm:text-sm', 'text-slate-600', 'dark:text-slate-300', 'leading-snug', 'font-medium')}>
                         "{review.comment}"
                       </p>
                     )}
                   </div>
                 ))
               ) : (
-                <div className={clsx('text-center', 'py-12', 'bg-white', 'dark:bg-zinc-900', 'rounded-2xl', 'border', 'border-dashed', 'border-slate-200', 'dark:border-white/10')}>
-                  <MessageSquare size={40} className={clsx('mx-auto', 'text-slate-300', 'mb-3')} />
-                  <p className={clsx('text-slate-500', 'font-medium', 'text-sm')}>No reviews yet. Be the first to share your experience!</p>
+                <div className={clsx('text-center', 'py-8', 'bg-white', 'dark:bg-zinc-900', 'rounded-xl', 'border', 'border-dashed', 'border-slate-200', 'dark:border-white/10')}>
+                  <MessageSquare size={24} className={clsx('mx-auto', 'text-slate-300', 'mb-2')} />
+                  <p className={clsx('text-slate-500', 'font-bold', 'text-[10px]')}>Be the first to share.</p>
                 </div>
               )}
             </div>
 
-          {/* Right Column: Submit Form */}
-          <div id="feedback-form" className={clsx('lg:sticky', 'lg:top-24', 'h-fit')}>
-            <div className={clsx('p-4', 'sm:p-6', 'lg:p-8', 'bg-white', 'dark:bg-zinc-900', 'rounded-2xl', 'sm:rounded-3xl', 'shadow-xl', 'border', 'border-slate-100', 'dark:border-white/5')}>
-              <div className={clsx('flex', 'items-center', 'gap-3', 'mb-6')}>
-                <div className={clsx('w-10', 'h-10', 'sm:w-12', 'sm:h-12', 'bg-primary/10', 'rounded-xl', 'sm:rounded-2xl', 'flex', 'items-center', 'justify-center')}>
-                  <MessageSquare size={20} className={clsx('text-primary', 'sm:w-6', 'sm:h-6')} />
+            {/* Right Column: Submit Form */}
+            <div id="feedback-form" className={clsx('w-[85%] sm:w-[500px] lg:w-auto', 'shrink-0', 'snap-center', 'lg:sticky', 'lg:top-24', 'h-fit')}>
+              <div className={clsx('p-4', 'sm:p-6', 'lg:p-8', 'bg-white', 'dark:bg-zinc-900', 'rounded-xl', 'sm:rounded-3xl', 'shadow-xl', 'border', 'border-slate-100', 'dark:border-white/5')}>
+                <div className={clsx('flex', 'items-center', 'gap-2 sm:gap-3', 'mb-4 sm:mb-6')}>
+                  <div className={clsx('w-8 h-8 sm:w-12 sm:h-12', 'bg-primary/10', 'rounded-lg sm:rounded-2xl', 'flex', 'items-center', 'justify-center')}>
+                    <MessageSquare size={16} className={clsx('text-primary', 'sm:w-6', 'sm:h-6')} />
+                  </div>
+                  <h3 className={clsx('text-[14px]', 'sm:text-xl', 'lg:text-2xl', 'font-black', 'text-charcoal', 'dark:text-white', 'tracking-tighter', 'uppercase')}>
+                    Experience
+                  </h3>
                 </div>
-                <h3 className={clsx('text-lg', 'sm:text-xl', 'lg:text-2xl', 'font-bold', 'text-charcoal', 'dark:text-white', 'tracking-tight')}>
-                  Share Your Experience
-                </h3>
-              </div>
 
                 {!isAuthenticated ? (
-                  <div className={clsx('flex', 'flex-col', 'items-center', 'text-center', 'p-6', 'sm:p-10', 'bg-zinc-50', 'dark:bg-zinc-800/50', 'rounded-xl', 'sm:rounded-2xl', 'border-2', 'border-dashed', 'border-slate-200', 'dark:border-zinc-700')}>
-                    <div className={clsx('w-14', 'h-14', 'sm:w-16', 'sm:h-16', 'bg-primary/10', 'rounded-full', 'flex', 'items-center', 'justify-center', 'mb-4', 'sm:mb-6')}>
-                      <LogIn size={24} className={clsx('text-primary', 'sm:w-7', 'sm:h-7')} />
-                    </div>
-                    <h4 className={clsx('text-base', 'sm:text-lg', 'font-bold', 'text-charcoal', 'dark:text-white', 'mb-2')}>Join the community</h4>
-                    <p className={clsx('text-xs', 'sm:text-sm', 'text-slate-500', 'font-medium', 'leading-relaxed', 'mb-6')}>
-                      Sign in to leave a review and share your experience with us.
+                  <div className={clsx('flex', 'flex-col', 'items-center', 'text-center', 'p-4', 'sm:p-10', 'bg-zinc-50', 'dark:bg-zinc-800/50', 'rounded-xl', 'sm:rounded-2xl', 'border-2', 'border-dashed', 'border-slate-200', 'dark:border-zinc-700')}>
+                    <LogIn size={20} className={clsx('text-primary', 'mb-3', 'sm:w-7', 'sm:h-7')} />
+                    <h4 className={clsx('text-[12px]', 'sm:text-lg', 'font-black', 'text-charcoal', 'dark:text-white', 'mb-1 uppercase tracking-widest')}>Community Auth</h4>
+                    <p className={clsx('text-[9px]', 'sm:text-sm', 'text-slate-500', 'font-medium', 'leading-snug', 'mb-4 sm:mb-6')}>
+                      Sign in to share your journey.
                     </p>
                     <button 
                       onClick={() => setIsLoginModalOpen(true)}
-                      className={clsx('w-full', 'flex', 'items-center', 'justify-center', 'gap-2', 'px-6', 'py-3', 'sm:py-4', 'bg-primary', 'text-white', 'font-bold', 'text-sm', 'rounded-xl', 'hover:bg-primary-hover', 'transition-all', 'active:scale-95', 'shadow-lg', 'shadow-primary/30')}
+                      className={clsx('w-full', 'px-6', 'py-2.5', 'sm:py-4', 'bg-primary', 'text-white', 'font-black', 'text-[10px] sm:text-xs', 'rounded-lg sm:rounded-xl', 'hover:bg-primary-hover', 'transition-all', 'active:scale-95', 'shadow-lg', 'shadow-primary/30', 'uppercase', 'tracking-[0.15em]')}
                     >
-                      <LogIn size={18} />
-                      Sign In to Review
+                      Auth Identity
                     </button>
                   </div>
                 ) : (
-                  <div className="space-y-6">
+                  <div className="space-y-4 sm:space-y-6">
                     {submitMessage && (
-                      <div className={`p-3 sm:p-4 rounded-xl flex items-center gap-2 sm:gap-3 ${
+                      <div className={`p-2 sm:p-4 rounded-lg flex items-center gap-2 ${
                         submitMessage.type === 'success' 
                           ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800' 
                           : 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800'
                       }`}>
-                        {submitMessage.type === 'success' ? (
-                          <CheckCircle size={18} className={clsx('sm:w-5', 'sm:h-5')} />
-                        ) : (
-                          <AlertCircle size={18} className={clsx('sm:w-5', 'sm:h-5')} />
-                        )}
-                        <p className={clsx('text-xs', 'sm:text-sm', 'font-medium')}>{submitMessage.message}</p>
+                        <AlertCircle size={14} />
+                        <p className={clsx('text-[9px] sm:text-sm', 'font-black', 'uppercase')}>{submitMessage.message}</p>
                       </div>
                     )}
 
-                    <div className="space-y-2">
-                      <label className={clsx('text-xs', 'font-bold', 'text-slate-400', 'uppercase', 'tracking-widest')}>How would you rate us?</label>
-                      <div className={clsx('flex', 'gap-2')}>
+                    <div className="space-y-1.5 sm:space-y-2">
+                      <label className={clsx('text-[9px]', 'font-black', 'text-slate-400', 'uppercase', 'tracking-widest')}>Rating Selection</label>
+                      <div className={clsx('flex', 'gap-1.5')}>
                         {[1, 2, 3, 4, 5].map((star) => (
                           <button
                             key={star}
@@ -320,8 +305,8 @@ export const FeedbackSection = ({ isAuthenticated }: FeedbackSectionProps) => {
                             className={clsx('transition-all', 'active:scale-90', 'disabled:opacity-50')}
                           >
                             <Star
-                              size={28}
-                              className={`transition-colors sm:w-8 sm:h-8 ${
+                              size={20}
+                              className={`transition-colors sm:size-8 ${
                                 star <= rating ? "fill-primary text-primary" : "text-slate-200"
                               }`}
                             />
@@ -330,36 +315,24 @@ export const FeedbackSection = ({ isAuthenticated }: FeedbackSectionProps) => {
                       </div>
                     </div>
 
-                    <div className="space-y-2">
-                      <label className={clsx('text-xs', 'font-bold', 'text-slate-400', 'uppercase', 'tracking-widest')}>Your review</label>
+                    <div className="space-y-1.5 sm:space-y-2">
+                      <label className={clsx('text-[9px]', 'font-black', 'text-slate-400', 'uppercase', 'tracking-widest')}>Protocol Detail</label>
                       <textarea
                         value={comment}
                         onChange={(e) => setComment(e.target.value)}
-                        placeholder="Tell us about your experience..."
+                        placeholder="Detail your experience..."
                         disabled={isSubmitting}
-                        className={clsx('w-full', 'px-4', 'sm:px-6', 'py-3', 'sm:py-4', 'bg-zinc-50', 'dark:bg-zinc-800', 'rounded-xl', 'sm:rounded-2xl', 'text-charcoal', 'dark:text-white', 'focus:outline-none', 'focus:ring-2', 'focus:ring-primary/20', 'focus:border-primary', 'border', 'border-transparent', 'transition-all', 'min-h-[120px]', 'sm:min-h-[160px]', 'text-sm', 'font-medium', 'disabled:opacity-50', 'resize-none')}
+                        className={clsx('w-full', 'px-3', 'sm:px-6', 'py-2.5', 'sm:py-4', 'bg-zinc-50', 'dark:bg-zinc-800', 'rounded-lg sm:rounded-2xl', 'text-[10px] sm:text-sm', 'font-bold', 'text-black', 'dark:text-white', 'focus:ring-2', 'focus:ring-primary/20', 'outline-none', 'border', 'border-transparent', 'transition-all', 'min-h-[80px]', 'sm:min-h-[160px]', 'resize-none')}
                       />
                     </div>
 
-                    <div className="flex flex-col sm:flex-row gap-3">
-                      <button 
-                        onClick={handleSubmit}
-                        disabled={isSubmitting || rating === 0}
-                        className={clsx('w-full', 'flex', 'items-center', 'justify-center', 'gap-2', 'py-3', 'sm:py-4', 'bg-primary', 'text-white', 'font-bold', 'text-sm', 'rounded-xl', 'hover:bg-primary-hover', 'transition-all', 'active:scale-95', 'shadow-lg', 'shadow-primary/30', 'disabled:opacity-50', 'disabled:scale-100')}
-                      >
-                        {isSubmitting ? (
-                          <>
-                            <div className={clsx('inline-block', 'animate-spin', 'rounded-full', 'h-4', 'w-4', 'border-b-2', 'border-white')}></div>
-                            Processing...
-                          </>
-                        ) : (
-                          <>
-                            <Send size={16} />
-                            {myReview ? 'Update Review' : 'Submit Review'}
-                          </>
-                        )}
-                      </button>
-                    </div>
+                    <button 
+                      onClick={handleSubmit}
+                      disabled={isSubmitting || rating === 0}
+                      className={clsx('w-full', 'py-3 sm:py-4', 'bg-primary', 'text-white', 'font-black', 'text-[10px] sm:text-xs', 'rounded-lg sm:rounded-xl', 'hover:bg-primary-hover', 'transition-all', 'active:scale-95', 'shadow-lg', 'shadow-primary/30', 'uppercase', 'tracking-widest')}
+                    >
+                      {isSubmitting ? 'Syncing...' : 'Log Experience'}
+                    </button>
                   </div>
                 )}
               </div>

@@ -441,3 +441,134 @@ export async function getTenantStatusAction(userId: string) {
     return { success: false, error: error.message };
   }
 }
+export async function getTenantReportDataAction() {
+  try {
+    const tenants = await prisma.tenant.findMany({
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            name: true,
+          }
+        },
+        invoices: {
+          orderBy: { createdAt: 'desc' },
+          take: 1
+        }
+      }
+    });
+
+    const slots = await prisma.areaSlot.findMany();
+
+    const data = tenants.map(t => {
+      const slot = slots.find(s => s.unit_id === t.unitId);
+      
+      // Calculate lease expiry: 1 year from createdAt
+      const expiryDate = new Date(t.createdAt);
+      expiryDate.setFullYear(expiryDate.getFullYear() + 1);
+
+      // Extract floor level from unitId (e.g., "L1-101" -> "Level 1")
+      let floorLevel = 'Ground Floor';
+      if (t.unitId && t.unitId.includes('-')) {
+        const floorPart = t.unitId.split('-')[0];
+        if (floorPart.startsWith('L')) {
+          floorLevel = `Level ${floorPart.substring(1)}`;
+        }
+      }
+
+      // Try to extract category from description ("Premier [category] provider...")
+      let category = 'Retail';
+      if (t.description && t.description.includes('provider')) {
+        const parts = t.description.split(' ');
+        const providerIndex = parts.indexOf('provider');
+        if (providerIndex > 0) {
+          category = parts[providerIndex - 1];
+        }
+      }
+
+      return {
+        id: t.id,
+        shopName: t.shopName,
+        tenantOwner: t.user?.name || t.user?.email || 'N/A',
+        unitId: t.unitId,
+        sqmSize: slot?.sqm_size || 0,
+        monthlyRent: slot?.base_rent || 0,
+        leaseExpiryDate: expiryDate,
+        category: category,
+        status: t.invoices[0]?.status === 'PAID' ? 'PAID' : 'PENDING',
+        floorLevel
+      };
+    });
+
+    // Solve "Organize the list by Floor Level"
+    data.sort((a, b) => a.floorLevel.localeCompare(b.floorLevel));
+
+    return { success: true, data };
+  } catch (error: any) {
+    console.error('[GET_TENANT_REPORT_DATA_ERROR]:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+export async function adminUpdateTenantAction(tenantId: string, data: {
+  shopName?: string;
+  unitId?: string;
+  status?: string;
+  description?: string;
+  rentCost?: number;
+}) {
+  try {
+    const currentTenant = await prisma.tenant.findUnique({
+      where: { id: tenantId }
+    });
+
+    if (!currentTenant) return { success: false, error: 'Tenant not found' };
+
+    const targetUnitId = data.unitId || currentTenant.unitId;
+
+    // Handle Unit ID change logic
+    if (data.unitId && data.unitId !== currentTenant.unitId) {
+      // 1. Free old slot
+      if (currentTenant.unitId && currentTenant.unitId !== 'PENDING_ASSIGNMENT') {
+        try {
+          await prisma.areaSlot.update({
+            where: { unit_id: currentTenant.unitId },
+            data: { status: 'AVAILABLE', tenant_id: null }
+          });
+        } catch (e) {
+          console.warn(`Could not free unit ${currentTenant.unitId}`, e);
+        }
+      }
+      // 2. Occupy new slot
+      await occupySlot(data.unitId);
+    }
+
+    // Handle Rent update if provided
+    if (data.rentCost !== undefined && targetUnitId && targetUnitId !== 'PENDING_ASSIGNMENT') {
+      await prisma.areaSlot.update({
+        where: { unit_id: targetUnitId },
+        data: { base_rent: data.rentCost }
+      });
+    }
+
+    const updated = await prisma.tenant.update({
+      where: { id: tenantId },
+      data: {
+        shopName: data.shopName,
+        unitId: data.unitId,
+        status: data.status,
+        description: data.description,
+      }
+    });
+
+    revalidatePath('/admindashboard/tenant-monitoring');
+    revalidatePath('/public-view');
+
+    return { success: true, data: updated };
+  } catch (error: any) {
+    console.error('[ADMIN_UPDATE_TENANT_ERROR]:', error);
+    return { success: false, error: error.message || 'Failed to update tenant' };
+  }
+}
+

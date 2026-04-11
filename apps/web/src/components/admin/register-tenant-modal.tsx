@@ -11,138 +11,7 @@ import { getAvailableSlots } from '@/app/actions/space-slot';
 import clsx from 'clsx';
 
 // ── PDF Voucher Generator (browser-native, zero-dependency) ──────────────────
-function generateCredentialsPDF(data: {
-  shopName: string;
-  category: string;
-  email: string;
-  tempPass: string;
-  slotId: string;
-  slotLabel: string;
-  rentCost: number;
-  startDate: string;
-  endDate: string;
-  phone?: string;
-}) {
-  const now = new Date().toLocaleString('en-PH', { timeZone: 'Asia/Manila' });
-  const filename = `${data.shopName.replace(/\s+/g, '_')}_Credentials_${data.slotId}`;
-
-  const html = `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8"/>
-  <title>${filename}</title>
-  <style>
-    * { margin:0; padding:0; box-sizing:border-box; }
-    body { font-family: 'Helvetica Neue', Arial, sans-serif; background:#fff; color:#1e1e28; }
-    .page { width:794px; min-height:1123px; margin:0 auto; display:flex; flex-direction:column; }
-    .header { background:#BE1E2D; padding:28px 40px; display:flex; align-items:center; justify-content:space-between; }
-    .logo-row { display:flex; align-items:center; gap:14px; }
-    .logo-box { width:44px; height:44px; background:#fff; border-radius:10px; display:flex; align-items:center; justify-content:center; font-weight:900; font-size:22px; color:#BE1E2D; }
-    .brand h1 { color:#fff; font-size:20px; font-weight:900; letter-spacing:0.05em; }
-    .brand p  { color:rgba(255,255,255,0.7); font-size:10px; font-weight:600; letter-spacing:0.12em; text-transform:uppercase; margin-top:2px; }
-    .voucher-badge { color:rgba(255,255,255,0.85); font-size:9px; font-weight:700; letter-spacing:0.15em; text-transform:uppercase; text-align:right; }
-    .body { flex:1; padding:40px; }
-    .section-header { background:#f5f6f8; border-radius:6px; padding:6px 12px; margin-bottom:12px; margin-top:24px; }
-    .section-header span { font-size:9px; font-weight:800; letter-spacing:0.18em; text-transform:uppercase; color:#BE1E2D; }
-    .row { display:flex; align-items:baseline; padding:7px 4px; border-bottom:1px solid #e8eaed; }
-    .row:last-child { border-bottom:none; }
-    .row .lbl { min-width:160px; font-size:10px; color:#6468748; font-weight:500; }
-    .row .val { font-size:11px; font-weight:700; color:#1e1e28; }
-    .row .val.mono { font-family:'Courier New', Courier, monospace; letter-spacing:0.06em; }
-    .cred-box { margin-top:28px; border:2px solid #BE1E2D; border-radius:10px; overflow:hidden; }
-    .cred-title { background:#BE1E2D; color:#fff; text-align:center; font-size:10px; font-weight:800; letter-spacing:0.2em; text-transform:uppercase; padding:8px; }
-    .cred-body { padding:20px 24px; background:#fff5f5; }
-    .cred-row { display:flex; align-items:center; padding:8px 0; border-bottom:1px solid #fde8e8; }
-    .cred-row:last-child { border-bottom:none; }
-    .cred-row .lbl { min-width:160px; font-size:10px; color:#9e4040; font-weight:600; text-transform:uppercase; letter-spacing:0.08em; }
-    .cred-row .val { font-size:13px; font-weight:800; color:#1e1e28; font-family:'Courier New', Courier, monospace; letter-spacing:0.05em; }
-    .warning { margin-top:24px; background:#fffbeb; border:1.5px solid #f59e0b; border-radius:8px; padding:14px 18px; }
-    .warning .wt { font-size:10px; font-weight:800; color:#78500; margin-bottom:4px; }
-    .warning .wb { font-size:10px; font-weight:500; color:#78500; line-height:1.6; }
-    .chips { display:flex; flex-wrap:wrap; gap:8px; margin-top:24px; }
-    .chip { font-size:8px; font-weight:800; letter-spacing:0.14em; text-transform:uppercase; padding:4px 10px; border-radius:999px; border:1.5px solid; }
-    .chip.blue   { background:#eff6ff; color:#2563eb; border-color:#bfdbfe; }
-    .chip.red    { background:#fff1f2; color:#BE1E2D; border-color:#fecdd3; }
-    .chip.green  { background:#f0fdf4; color:#16a34a; border-color:#bbf7d0; }
-    .chip.purple { background:#faf5ff; color:#7c3aed; border-color:#e9d5ff; }
-    .signature { margin-top:40px; display:flex; justify-content:space-between; padding:0 20px; }
-    .sig-line { text-align:center; }
-    .sig-line .line { border-top:1.5px solid #ccc; width:180px; margin:0 auto; }
-    .sig-line p { font-size:9px; color:#888; margin-top:6px; font-weight:600; text-transform:uppercase; letter-spacing:0.1em; }
-    .footer { background:#BE1E2D; padding:12px 40px; display:flex; justify-content:center; align-items:center; }
-    .footer p { color:rgba(255,255,255,0.8); font-size:8px; font-weight:600; letter-spacing:0.1em; text-transform:uppercase; }
-    @media print {
-      body { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
-      .page { width:100%; }
-    }
-  </style>
-</head>
-<body>
-<div class="page">
-  <div class="header">
-    <div class="logo-row">
-      <div class="logo-box">S</div>
-      <div class="brand">
-        <h1>SR-MANAGE</h1>
-        <p>SR Mall Management System &nbsp;—&nbsp; Official Tenant Document</p>
-      </div>
-    </div>
-    <div class="voucher-badge">Confidential<br/>Credential Voucher</div>
-  </div>
-  <div class="body">
-    <div class="section-header"><span>Tenant Business Information</span></div>
-    <div class="row"><span class="lbl">Shop Name</span><span class="val">${data.shopName}</span></div>
-    <div class="row"><span class="lbl">Business Category</span><span class="val">${data.category}</span></div>
-    <div class="row"><span class="lbl">Owner Contact</span><span class="val">${data.phone || 'N/A'}</span></div>
-    <div class="section-header"><span>Space &amp; Lease Details</span></div>
-    <div class="row"><span class="lbl">Assigned Unit</span><span class="val">${data.slotId} &nbsp;<span style="font-weight:500;color:#666;">(${data.slotLabel})</span></span></div>
-    <div class="row"><span class="lbl">Monthly Rent Cost</span><span class="val" style="color:#16a34a;">&#8369;${Number(data.rentCost).toLocaleString()}.00</span></div>
-    <div class="row"><span class="lbl">Lease Start Date</span><span class="val">${data.startDate}</span></div>
-    <div class="row"><span class="lbl">Lease End Date</span><span class="val">${data.endDate}</span></div>
-    <div class="cred-box">
-      <div class="cred-title">&#8212; Secure Login Details &#8212;</div>
-      <div class="cred-body">
-        <div class="cred-row"><span class="lbl">Gmail / Login ID</span><span class="val">${data.email}</span></div>
-        <div class="cred-row"><span class="lbl">Temporary Password</span><span class="val">${data.tempPass}</span></div>
-      </div>
-    </div>
-    <div class="chips">
-      <span class="chip blue">&#10003; Auth Account Created</span>
-      <span class="chip red">&#10003; Slot ${data.slotId} &rarr; Occupied</span>
-      <span class="chip green">&#10003; Revenue KPI Updated</span>
-      <span class="chip purple">&#10003; Welcome Thread Sent</span>
-    </div>
-    <div class="warning">
-      <div class="wt">&#9888;&nbsp; Important Notice</div>
-      <div class="wb">Provide this voucher directly to the tenant. They are required to change their password upon first login.
-      Keep a signed copy for your mall office records. This document is confidential.</div>
-    </div>
-    <div class="signature">
-      <div class="sig-line">
-        <div class="line"></div>
-        <p>Tenant Signature &amp; Date</p>
-      </div>
-      <div class="sig-line">
-        <div class="line"></div>
-        <p>Mall Administrator Signature</p>
-      </div>
-    </div>
-  </div>
-  <div class="footer">
-    <p>Generated: ${now} &nbsp;|&nbsp; SR Mall Management System &nbsp;|&nbsp; Confidential</p>
-  </div>
-</div>
-<script>window.onload = function(){ window.print(); window.onafterprint = function(){ window.close(); }; };</script>
-</body>
-</html>`;
-
-  const win = window.open('', '_blank', 'width=900,height=1100');
-  if (win) {
-    win.document.write(html);
-    win.document.close();
-  }
-  return win;
-}
+// Registration Voucher PDF utility is now managed in @/utils/report-generator.ts
 
 // ── Mock available slots ────────────────────────────────────────
 const AVAILABLE_SLOTS = [
@@ -298,18 +167,12 @@ export function RegisterTenantModal({ isOpen, onClose, onSuccess }: Props) {
       // PDF Generation with better error handling
       try {
         console.log('Generating PDF...');
-        const pdfWindow = generateCredentialsPDF({
+        const { generateVoucherPDF } = await import('@/utils/report-generator');
+        await generateVoucherPDF({
           shopName, category, email, tempPass, slotId,
-          slotLabel: selectedSlot?.unit_id ?? slotId,
-          rentCost: Number(rentCost), startDate, endDate, phone,
+          rentCost: Number(rentCost), startDate, endDate
         });
-        
-        if (!pdfWindow || pdfWindow.closed || typeof pdfWindow.closed === 'undefined') {
-          setErrorMsg('Popup blocked! Please allow popups for this site to download the voucher.');
-          setIsLoading(false);
-          return;
-        }
-        console.log('PDF opened successfully');
+        console.log('PDF generated successfully');
       } catch (e) { 
         console.warn('PDF generation failed', e);
         setErrorMsg('Could not generate PDF voucher. Tenant was registered successfully.');

@@ -30,7 +30,7 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  serverExternalPackages: ['@prisma/client', '@srmall/database'],
+  serverExternalPackages: ['@prisma/client', '@srmall/database', 'jspdf', 'jspdf-autotable'],
   experimental: {
     serverActions: {
       allowedOrigins: ['*'],

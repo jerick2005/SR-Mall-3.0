@@ -249,7 +249,7 @@ export default function PublicDigitalConcierge() {
                 </p>
               </div>
 
-              <div className={clsx('relative', 'max-w-xl', 'sm:max-w-2xl', 'mx-auto', 'group', 'animate-fade-in-up', 'delay-200', 'px-2', 'sm:px-0')}>
+              <div className={clsx('relative', 'max-w-xl', 'sm:max-w-2xl', 'mx-auto', 'group', 'animate-fade-in-up', 'delay-200', 'px-2', 'sm:px-0', 'z-40')}>
                 <div className={clsx('absolute', '-inset-1', 'bg-gradient-to-r', 'from-primary', 'to-blue-600', 'rounded-3xl', 'blur', 'opacity-25', 'group-hover:opacity-40', 'transition', 'duration-1000', 'group-hover:duration-200')}></div>
                 <div className={clsx('relative', 'flex', 'flex-col', 'sm:flex-row', 'items-center', 'bg-slate-100/95', 'dark:bg-zinc-900/95', 'backdrop-blur-xl', 'rounded-2xl', 'shadow-2xl', 'p-2', 'border', 'border-white/20')}>
                   <Search size={22} className={clsx('ml-5', 'text-slate-400')} />
@@ -267,6 +267,72 @@ export default function PublicDigitalConcierge() {
                     {config?.primaryBtnText || "Explore Now"}
                   </button>
                 </div>
+
+                {/* Global Mall Predictive Search Panel */}
+                {searchQuery && (
+                   <div className="absolute top-full left-0 w-full mt-3 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-[2rem] shadow-3xl z-[100] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300">
+                      <div className="p-4 border-b border-slate-50 dark:border-white/5 flex items-center justify-between">
+                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Mall Predictions</span>
+                         <button onClick={() => setSearchQuery('')}><X size={14} className="text-slate-300" /></button>
+                      </div>
+                      <div className="max-h-[70vh] overflow-y-auto no-scrollbar">
+                         {/* Shop Suggestions */}
+                         <div className="p-3">
+                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-3 mb-2 block">Shops & Boutiques</span>
+                            {shops.filter(s => s.shop_name.toLowerCase().includes(searchQuery.toLowerCase())).slice(0, 3).map(s => (
+                               <Link 
+                                 key={s.id} 
+                                 href={`/shop/${s.id}`}
+                                 className="flex items-center gap-4 p-3 hover:bg-slate-50 dark:hover:bg-white/5 rounded-2xl transition-all group/item"
+                               >
+                                  <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-zinc-800 overflow-hidden shrink-0 border border-slate-200 dark:border-white/10">
+                                     <img src={s.logo_url || '/images/logo/logoshop.jpg'} className="w-full h-full object-cover" alt="Shop" />
+                                  </div>
+                                  <div className="flex-1">
+                                     <p className="text-xs font-black text-charcoal dark:text-white uppercase">{s.shop_name}</p>
+                                     <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{s.unit_id} — Plaza Wing</p>
+                                  </div>
+                                  <Navigation size={12} className="text-slate-300 group-hover/item:text-primary transition-colors" />
+                               </Link>
+                            ))}
+                         </div>
+
+                         {/* Product Suggestions */}
+                         <div className="p-3 bg-slate-50/50 dark:bg-white/5 border-t border-slate-100 dark:border-white/5">
+                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-3 mb-2 block">Trending Products</span>
+                            {allFeaturedProducts.filter(p => (p.name || '').toLowerCase().includes(searchQuery.toLowerCase())).slice(0, 4).map(p => (
+                               <button 
+                                 key={p.id}
+                                 onClick={() => setSelectedProduct(p)}
+                                 className="w-full flex items-center gap-4 p-3 hover:bg-white dark:hover:bg-zinc-800 rounded-2xl transition-all group/item text-left"
+                               >
+                                  <div className="w-10 h-10 rounded-xl bg-white dark:bg-black overflow-hidden shrink-0 border border-slate-100 dark:border-white/10">
+                                     <img src={p.image_url} className="w-full h-full object-cover" alt="Product" />
+                                  </div>
+                                  <div className="flex-1">
+                                     <p className="text-xs font-black text-charcoal dark:text-white">{p.name}</p>
+                                     <div className="flex items-center gap-2">
+                                        <p className="text-[9px] font-bold text-primary uppercase">{p.price}</p>
+                                        <div className="w-1 h-1 rounded-full bg-slate-300"></div>
+                                        <p className="text-[9px] font-bold text-slate-400 uppercase">{p.shopName}</p>
+                                     </div>
+                                  </div>
+                                  <Tag size={12} className="text-slate-300 group-hover/item:text-primary transition-colors" />
+                               </button>
+                            ))}
+                         </div>
+
+                         {/* No Results */}
+                         {shops.filter(s => s.shop_name.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 && 
+                          allFeaturedProducts.filter(p => (p.name || '').toLowerCase().includes(searchQuery.toLowerCase())).length === 0 && (
+                             <div className="py-12 text-center text-slate-400">
+                                <Search size={24} className="mx-auto mb-2 opacity-20" />
+                                <p className="text-[10px] font-bold uppercase tracking-widest">No Mall Matches for "{searchQuery}"</p>
+                             </div>
+                          )}
+                      </div>
+                   </div>
+                )}
               </div>
 
               <div className={clsx('flex', 'flex-row', 'items-center', 'justify-center', 'gap-4', 'sm:gap-6', 'lg:gap-12', 'pt-4', 'sm:pt-6')}>

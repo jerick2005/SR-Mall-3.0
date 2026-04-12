@@ -61,7 +61,7 @@ export async function createMallAd(data: {
 // Debug function to get all ads without date filtering
 export async function getAllMallAds() {
   try {
-    return await prisma.mallAd.findMany({
+    return await (prisma as any).mallAd.findMany({
       where: {
         isGlobal: true,
       },
@@ -79,7 +79,7 @@ export async function getAllMallAds() {
 export async function getActiveMallAds() {
   try {
     const now = new Date();
-    return await prisma.mallAd.findMany({
+    return await (prisma as any).mallAd.findMany({
       where: {
         startDate: { lte: now },
         endDate: { gte: now },
@@ -100,7 +100,7 @@ export async function getActiveMallAds() {
 export async function getAllActiveMallAds() {
   try {
     const now = new Date();
-    return await prisma.mallAd.findMany({
+    return await (prisma as any).mallAd.findMany({
       where: {
         startDate: { lte: now },
         endDate: { gte: now },
@@ -161,7 +161,7 @@ export async function createTenantPromo(data: {
 
 export async function updatePromoStatus(promoId: string, status: 'APPROVED' | 'REJECTED') {
   try {
-    await prisma.tenantPromo.update({
+    await (prisma as any).tenantPromo.update({
       where: { id: promoId },
       data: { status }
     });
@@ -178,7 +178,7 @@ export async function updatePromoStatus(promoId: string, status: 'APPROVED' | 'R
 
 export async function getPendingPromos() {
   try {
-    return await prisma.tenantPromo.findMany({
+    return await (prisma as any).tenantPromo.findMany({
       where: { status: 'PENDING' },
       include: { tenant: true },
       orderBy: { createdAt: 'desc' }
@@ -191,7 +191,7 @@ export async function getPendingPromos() {
 export async function getActivePromos(category?: string) {
   try {
     const now = new Date();
-    return await prisma.tenantPromo.findMany({
+    return await (prisma as any).tenantPromo.findMany({
       where: {
         status: 'APPROVED',
         startDate: { lte: now },
@@ -213,7 +213,7 @@ export async function deletePromo(id: string) {
       await storage.deleteFile(promo.storageKey);
     }
     
-    await prisma.tenantPromo.delete({ where: { id } });
+    await (prisma as any).tenantPromo.delete({ where: { id } });
     revalidatePath('/tenantdashboard/ad-promo-manager');
     return { success: true };
   } catch (error) {
@@ -254,7 +254,7 @@ export async function deleteMallAd(id: string) {
       await storage.deleteFile(ad.storageKey);
     }
 
-    await prisma.mallAd.delete({
+    await (prisma as any).mallAd.delete({
       where: { id }
     });
 
@@ -269,7 +269,7 @@ export async function deleteMallAd(id: string) {
 
 export async function getTenantByUserId(userId: string) {
   try {
-    const tenant = await prisma.tenant.findUnique({
+    const tenant = await (prisma as any).tenant.findUnique({
       where: { userId }
     });
     return tenant;
@@ -281,7 +281,7 @@ export async function getTenantByUserId(userId: string) {
 
 export async function getPromosByTenant(tenantId: string) {
   try {
-    return await prisma.tenantPromo.findMany({
+    return await (prisma as any).tenantPromo.findMany({
       where: { tenantId },
       orderBy: { createdAt: 'desc' }
     });
@@ -292,7 +292,7 @@ export async function getPromosByTenant(tenantId: string) {
 
 export async function updateTenantPromoStatus(id: string, status: 'APPROVED' | 'REJECTED') {
   try {
-    await prisma.tenantPromo.update({
+    await (prisma as any).tenantPromo.update({
       where: { id },
       data: { status }
     });
@@ -316,7 +316,7 @@ export async function deleteTenantPromo(id: string) {
       await storage.deleteFile(promo.storageKey);
     }
 
-    await prisma.tenantPromo.delete({
+    await (prisma as any).tenantPromo.delete({
       where: { id }
     });
 
@@ -332,7 +332,7 @@ export async function deleteTenantPromo(id: string) {
 export async function getApprovedTenantPromos() {
   try {
     const now = new Date();
-    return await prisma.tenantPromo.findMany({
+    return await (prisma as any).tenantPromo.findMany({
       where: {
         status: 'APPROVED',
         startDate: { lte: now },

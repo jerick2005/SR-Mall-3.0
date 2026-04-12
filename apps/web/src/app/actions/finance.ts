@@ -71,6 +71,24 @@ export async function updateInvoiceStatus(invoiceId: string, status: string) {
   }
 }
 
+export async function recordManualPaymentAction(invoiceId: string, referenceNo: string) {
+  try {
+    const invoice = await (prisma as any).invoice.update({
+      where: { id: invoiceId },
+      data: { 
+        status: 'PAID',
+        referenceNo: referenceNo 
+      }
+    });
+    revalidatePath('/tenantdashboard/lease-payments');
+    revalidatePath('/admindashboard/tenant-monitoring');
+    return { success: true, invoice };
+  } catch (error: any) {
+    console.error('Failed to record manual payment:', error);
+    return { success: false, error: error.message };
+  }
+}
+
 export async function generateInvoice(data: { tenantId: string; month: string; amount: number; dueDate: Date; description?: string }) {
   try {
     const invoiceNumber = `#INV-${Date.now().toString().slice(-6)}`;

@@ -102,9 +102,11 @@ export const TenantNavbar = ({ onMenuClick }: TenantNavbarProps) => {
                 <div className="px-4 py-2 border-b border-slate-50 dark:border-white/5 mb-1">
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Menu</p>
                 </div>
-                <button className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium hover:bg-slate-50 dark:hover:bg-white/5 transition-colors text-charcoal dark:text-slate-300">
-                  <User size={16} /> Profile
-                </button>
+                <Link href="/tenantdashboard/profile-settings" onClick={() => setIsProfileOpen(false)}>
+                  <div className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium hover:bg-slate-50 dark:hover:bg-white/5 transition-colors text-charcoal dark:text-slate-300 cursor-pointer">
+                    <User size={16} /> Profile
+                  </div>
+                </Link>
                 <Link href="/public-view">
                   <div className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium hover:bg-slate-50 dark:hover:bg-white/5 transition-colors text-charcoal dark:text-slate-300 cursor-pointer">
                     <Search size={16} /> Directory

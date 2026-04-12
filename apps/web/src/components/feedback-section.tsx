@@ -9,6 +9,7 @@ import { useAuth } from '@/app/providers';
 
 interface FeedbackSectionProps {
   isAuthenticated: boolean;
+  tenantId?: string;
 }
 
 interface Review {
@@ -22,7 +23,7 @@ interface Review {
   };
 }
 
-export const FeedbackSection = ({ isAuthenticated }: FeedbackSectionProps) => {
+export const FeedbackSection = ({ isAuthenticated, tenantId }: FeedbackSectionProps) => {
   const { user } = useAuth();
 
   // ── State ──────────────────────────────────────────────
@@ -38,7 +39,7 @@ export const FeedbackSection = ({ isAuthenticated }: FeedbackSectionProps) => {
   // ── Data Loaders ───────────────────────────────────────
   const loadReviews = async () => {
     try {
-      const result = await getApprovedReviewsAction();
+      const result = await getApprovedReviewsAction(tenantId);
       if (result.success && result.data) {
         setReviews(result.data as Review[]);
       }
@@ -51,7 +52,7 @@ export const FeedbackSection = ({ isAuthenticated }: FeedbackSectionProps) => {
 
   const loadMyPendingReview = async (userId: string) => {
     try {
-      const result = await getMyReviewAction(userId);
+      const result = await getMyReviewAction(userId, tenantId);
       if (result.success && result.data && !(result.data as any).isApproved) {
         setMyPendingReview(result.data);
       } else {
@@ -129,7 +130,7 @@ export const FeedbackSection = ({ isAuthenticated }: FeedbackSectionProps) => {
     try {
       const result = myReview 
         ? await editMyReviewAction(user.id, rating, comment)
-        : await submitReviewAction(user.id, rating, comment);
+        : await submitReviewAction(user.id, rating, comment, tenantId);
       
       if (result.success) {
         setSubmitMessage({

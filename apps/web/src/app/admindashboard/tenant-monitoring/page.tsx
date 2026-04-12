@@ -5,14 +5,16 @@ import {
   Search, Filter, MoreVertical, Store, Calendar, FileText, AlertTriangle, Zap, 
   MessageSquare, Receipt, Edit, X, Star, TrendingUp, UserPlus, CheckCircle,
   Building, Phone, Mail, MapPin, CreditCard, Clock, BarChart3, PieChart,
-  Download, Trash2, Eye, RefreshCw, ArrowUpDown, ChevronDown, LayoutGrid, List
+  Download, Trash2, Eye, RefreshCw, ArrowUpDown, ChevronDown, LayoutGrid, List,
+  DollarSign, Activity, PieChart as PieChartIcon, ArrowUpRight, ArrowDownRight,
+  ShieldCheck, ShieldAlert, CreditCard as PaymentIcon
 } from 'lucide-react';
 import { RegisterTenantModal } from '@/components/admin/register-tenant-modal';
 import clsx from 'clsx';
 import { getAllTenantsAction, deleteTenantAction, approveTenantAction, updateStorefrontAction, getTenantReportDataAction, adminUpdateTenantAction } from '@/app/actions/tenant';
 // Dynamic import used in handler to prevent SSR issues
 import { getAreaSlots } from '@/app/actions/space-slot';
-import { getAllInvoices, generateInvoice, updateInvoiceStatus } from '@/app/actions/finance';
+import { getAllInvoices, generateInvoice, updateInvoiceStatus, recordManualPaymentAction } from '@/app/actions/finance';
 
 interface Tenant {
   id: string;
@@ -36,8 +38,11 @@ interface Tenant {
   contractStart?: string;
   contractEnd?: string;
   rentCost?: number;
-  paymentStatus?: 'PAID' | 'PENDING' | 'OVERDUE';
+  paymentStatus?: string;
   violations?: number;
+  avgRating?: number;
+  reviewCount?: number;
+  nextDueDate?: string;
 }
 
 const STATUS_CONFIG = {
@@ -49,9 +54,10 @@ const STATUS_CONFIG = {
 };
 
 const PAYMENT_CONFIG = {
-  PAID: { bg: 'bg-emerald-500/10', text: 'text-emerald-600', border: 'border-emerald-500/20' },
-  PENDING: { bg: 'bg-amber-500/10', text: 'text-amber-600', border: 'border-amber-500/20' },
-  OVERDUE: { bg: 'bg-red-500/10', text: 'text-red-600', border: 'border-red-500/20' },
+  '🟢 Cleared': { bg: 'bg-emerald-500/10', text: 'text-emerald-600', border: 'border-emerald-500/20' },
+  '🟡 Pending Verification': { bg: 'bg-amber-500/10', text: 'text-amber-600', border: 'border-amber-500/20' },
+  '🔴 Overdue': { bg: 'bg-red-500/10', text: 'text-red-600', border: 'border-red-500/20' },
+  'PENDING': { bg: 'bg-slate-500/10', text: 'text-slate-600', border: 'border-slate-500/20' }
 };
 
 export default function TenantMonitoring() {
@@ -76,6 +82,8 @@ export default function TenantMonitoring() {
     pending: 0,
     overdue: 0,
     totalRevenue: 0,
+    collectedRevenue: 0,
+    pendingRevenue: 0,
   });
   const [isExporting, setIsExporting] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -94,7 +102,8 @@ export default function TenantMonitoring() {
     try {
       const [result, invoicesResult] = await Promise.all([
         getAllTenantsAction(),
-        getAllInvoices()
+        getAllInvoices(),
+        getAreaSlots()
       ]);
       
       console.log('getAllTenantsAction result:', result);
@@ -104,15 +113,13 @@ export default function TenantMonitoring() {
         const enhancedTenants: Tenant[] = result.data.map((item: any, index: number) => {
           const tenantInvoices = invoicesResult.filter((inv: any) => inv.tenantId === item.id);
           
-          let paymentStatus: Tenant['paymentStatus'] = 'PAID';
-          let activeRentCost = 0;
-          
+          let paymentStatus: any = '🟢 Cleared';
           if (tenantInvoices.length > 0) {
-            activeRentCost = tenantInvoices[0].amount;
-            const hasOverdue = tenantInvoices.some((inv: any) => inv.status === 'OVERDUE');
-            const hasPending = tenantInvoices.some((inv: any) => inv.status === 'PENDING' || inv.status === 'REVIEWING');
-            if (hasOverdue) paymentStatus = 'OVERDUE';
-            else if (hasPending) paymentStatus = 'PENDING';
+            const hasOverdue = tenantInvoices.some((inv: any) => inv.status === 'OVERDUE' || (inv.status === 'PENDING' && new Date(inv.dueDate) < new Date()));
+            const hasReviewing = tenantInvoices.some((inv: any) => inv.status === 'REVIEWING');
+            if (hasOverdue) paymentStatus = '🔴 Overdue';
+            else if (hasReviewing) paymentStatus = '🟡 Pending Verification';
+            else if (tenantInvoices.some((inv: any) => inv.status === 'PENDING')) paymentStatus = 'PENDING';
           }
 
           const createdDate = item.createdAt ? new Date(item.createdAt) : new Date();
@@ -121,19 +128,28 @@ export default function TenantMonitoring() {
           endObj.setFullYear(endObj.getFullYear() + 1);
           const endStr = endObj.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
 
+          const unpaid = tenantInvoices.filter((inv: any) => inv.status !== 'PAID');
+          const nextInv = unpaid.sort((a: any, b: any) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())[0];
+          const nextDueDate = nextInv ? new Date(nextInv.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'N/A';
+
+          const slot = (availableSlots.length > 0 ? availableSlots : result.data?.slots)?.find((s: any) => s.tenant_id === item.id) || 
+                       availableSlots.find((s: any) => s.unit_id === item.unitId);
+          const activeRentCost = slot?.base_rent || (tenantInvoices[0]?.amount) || (3000 + (index * 500));
+
           return {
             ...item,
             contractStart: startStr,
             contractEnd: endStr,
             description: item.description || 'No store description provided.',
-            rentCost: activeRentCost > 0 ? activeRentCost : (3000 + (index * 500)),
+            rentCost: activeRentCost,
             paymentStatus,
+            nextDueDate,
             violations: index % 7 === 0 ? 1 : 0,
             metrics: {
               clicks: 500 + (index * 200),
               offersClaimed: 50 + (index * 20),
-              rating: 3.5 + (Math.random() * 1.5),
-              inquiries: 10 + (index * 5),
+              rating: item.avgRating || 0,
+              inquiries: item.reviewCount || 0,
             },
           };
         });
@@ -148,6 +164,12 @@ export default function TenantMonitoring() {
           pending: enhancedTenants.filter((tenant: Tenant) => tenant.status === 'PENDING').length,
           overdue: enhancedTenants.filter((tenant: Tenant) => tenant.paymentStatus === 'OVERDUE').length,
           totalRevenue: enhancedTenants.reduce((sum: number, tenant: Tenant) => sum + (tenant.rentCost || 0), 0),
+          collectedRevenue: invoicesResult
+            .filter((inv: any) => inv.status === 'PAID')
+            .reduce((sum: number, inv: any) => sum + inv.amount, 0),
+          pendingRevenue: invoicesResult
+            .filter((inv: any) => inv.status === 'PENDING' || inv.status === 'REVIEWING')
+            .reduce((sum: number, inv: any) => sum + inv.amount, 0),
         });
       } else {
         setToast({ msg: 'Failed to load tenants', type: 'error' });
@@ -162,6 +184,13 @@ export default function TenantMonitoring() {
   useEffect(() => {
     loadTenants();
     loadAvailableSlots();
+
+    // Pseudo-realtime polling every 20 seconds
+    const interval = setInterval(() => {
+      loadTenants();
+    }, 20000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const loadAvailableSlots = async () => {
@@ -256,24 +285,42 @@ export default function TenantMonitoring() {
   };
 
   const handleSendMessage = () => {
-    setToast({ msg: 'Messaging feature coming soon!', type: 'success' });
+    if (!selectedTenant) return;
+    window.location.href = `/admindashboard/messages?tenantId=${selectedTenant.id}`;
   };
 
-  const handleGenerateInvoice = async () => {
+  const handlePostMonthlyBill = async () => {
     if (!selectedTenant) return;
     
-    const month = window.prompt("Enter billing month (e.g. Nov 2026):", "Current Month");
+    const amountStr = window.prompt("Post Monthly Bill\nEnter amount to bill (₱):", (selectedTenant.rentCost || 3000).toString());
+    if (!amountStr) return;
+    const amount = parseFloat(amountStr);
+    if (isNaN(amount) || amount <= 0) {
+      setToast({ msg: 'Invalid amount', type: 'error' });
+      return;
+    }
+
+    const month = window.prompt("Enter billing month (e.g. Nov 2026):", new Date().toLocaleString('default', { month: 'short', year: 'numeric' }));
     if (!month) return;
+
+    const defaultDueDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    const dueDateStr = window.prompt("Enter due date (YYYY-MM-DD):", defaultDueDate);
+    if (!dueDateStr) return;
+    const dueDate = new Date(dueDateStr);
+    if (isNaN(dueDate.getTime())) {
+      setToast({ msg: 'Invalid date format', type: 'error' });
+      return;
+    }
     
-    setToast({ msg: 'Generating invoice...', type: 'success' });
+    setToast({ msg: 'Posting monthly bill...', type: 'success' });
     
     try {
       const res = await generateInvoice({
         tenantId: selectedTenant.id,
         month,
-        amount: selectedTenant.rentCost || 3000,
-        dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // Due in 7 days
-        description: `Monthly Rent for Unit ${selectedTenant.unitId}`
+        amount,
+        dueDate: dueDate,
+        description: `Manual Billing - Rent & Utilities`
       });
       
       if (res.success) {
@@ -354,7 +401,7 @@ export default function TenantMonitoring() {
   };
 
   const getPaymentBadge = (status: string) => {
-    const config = PAYMENT_CONFIG[status as keyof typeof PAYMENT_CONFIG] || PAYMENT_CONFIG.PAID;
+    const config = PAYMENT_CONFIG[status as keyof typeof PAYMENT_CONFIG] || PAYMENT_CONFIG['🟢 Cleared'];
     return (
       <span className={clsx(
         'px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider border',
@@ -492,86 +539,127 @@ export default function TenantMonitoring() {
           <div className={clsx('absolute', 'top-[20%]', 'right-[-5%]', 'w-[30%]', 'h-[30%]', 'bg-primary/10', 'blur-[120px]', 'rounded-full')} />
         </div>
 
-        {/* Header Section */}
-        <div className={clsx('flex', 'flex-col', 'lg:flex-row', 'lg:items-end', 'justify-between', 'gap-6', 'mb-8')}>
+        {/* Professional Header */}
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-10">
           <div className="space-y-2">
-            <div className={clsx('flex', 'items-center', 'gap-3', 'text-primary', 'mb-3')}>
-              <div className={clsx('w-8', 'h-8', 'rounded-lg', 'bg-primary/10', 'flex', 'items-center', 'justify-center')}>
-                <Building size={18} />
-              </div>
-              <span className={clsx('text-[10px]', 'font-black', 'uppercase', 'tracking-[0.4em]')}>Tenant Management v5.0</span>
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-primary/10 border border-primary/20 rounded-full">
+              <Activity size={10} className="text-primary animate-pulse" />
+              <span className="text-[9px] font-black text-primary uppercase tracking-[0.2em]">Live Mall ecosystem</span>
             </div>
-            <h1 className={clsx('text-4xl', 'md:text-5xl', 'font-black', 'text-charcoal', 'dark:text-white', 'tracking-tight', 'leading-none', 'italic', 'uppercase')}>
-              Tenant <span className="text-primary">Overview</span>
+            <h1 className="text-4xl sm:text-5xl font-black text-charcoal dark:text-white tracking-tighter uppercase leading-none">
+              Tenant <span className="text-slate-300 dark:text-zinc-800">Intelligence.</span>
             </h1>
-            <p className={clsx('text-slate-500', 'font-medium', 'text-lg', 'max-w-2xl', 'leading-relaxed')}>
-              Comprehensive tenant management with real-time analytics, contract tracking, and financial oversight.
+            <p className="text-sm font-medium text-slate-500 max-w-xl">
+              Unified command center for real-time tenant performance, financial logistics, and boutique oversight.
             </p>
           </div>
 
-          <div className={clsx('flex', 'gap-3')}>
-            <button
-              onClick={() => loadTenants()}
-              className={clsx('flex', 'items-center', 'gap-2', 'px-5', 'py-3', 'bg-slate-100', 'dark:bg-white/5', 'hover:bg-slate-200', 'dark:hover:bg-white/10', 'text-slate-700', 'dark:text-slate-300', 'font-bold', 'rounded-2xl', 'transition-all')}
-            >
-              <RefreshCw size={18} />
-              Refresh
-            </button>
-            <button
-              onClick={() => setIsRegisterOpen(true)}
-              className={clsx('flex', 'items-center', 'gap-3', 'px-6', 'py-3', 'bg-primary', 'hover:bg-primary-hover', 'text-white', 'font-black', 'rounded-2xl', 'transition-all', 'shadow-xl', 'shadow-primary/30', 'active:scale-95', 'whitespace-nowrap', 'uppercase', 'tracking-widest', 'text-xs')}
-            >
-              <UserPlus size={18} />
-              Register Tenant
-            </button>
+          <div className="flex items-center gap-3">
+             <div className="p-4 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/5 rounded-2xl shadow-sm hidden sm:flex items-center gap-4">
+                <div className="w-10 h-10 bg-emerald-500/10 rounded-xl flex items-center justify-center text-emerald-500">
+                   <TrendingUp size={20} />
+                </div>
+                <div>
+                   <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Est. Revenue</p>
+                   <p className="text-lg font-black text-charcoal dark:text-white">₱{(stats.totalRevenue || 0).toLocaleString()}</p>
+                </div>
+             </div>
+             <button 
+               onClick={() => setIsRegisterOpen(true)}
+               className="h-14 px-8 bg-primary text-white rounded-2xl font-black text-xs uppercase tracking-widest flex items-center gap-3 hover:scale-105 transition-all shadow-xl shadow-primary/20 active:scale-95"
+             >
+                <UserPlus size={18} /> Add Boutique
+             </button>
           </div>
         </div>
 
-        {/* Stats Overview */}
-        <div className={clsx('grid', 'grid-cols-1', 'sm:grid-cols-2', 'lg:grid-cols-4', 'gap-4', 'mb-8')}>
-          <div className={clsx('p-6', 'bg-white', 'dark:bg-zinc-900', 'rounded-2xl', 'border', 'border-slate-200', 'dark:border-white/5', 'shadow-sm')}>
-            <div className={clsx('flex', 'items-center', 'justify-between', 'mb-4')}>
-              <span className={clsx('text-[10px]', 'font-black', 'uppercase', 'tracking-widest', 'text-slate-400')}>Total Tenants</span>
-              <div className={clsx('w-10', 'h-10', 'bg-primary/10', 'rounded-xl', 'flex', 'items-center', 'justify-center')}>
-                <Store size={18} className="text-primary" />
-              </div>
+        {/* Executive Summary Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
+          <div className="group relative p-1">
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-[2rem] blur-xl opacity-0 group-hover:opacity-10 transition-opacity"></div>
+            <div className="relative p-6 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/5 rounded-[1.8rem] shadow-sm overflow-hidden h-full">
+               <div className="flex items-start justify-between mb-8">
+                  <div className="w-12 h-12 bg-blue-500/10 rounded-2xl flex items-center justify-center text-blue-500 group-hover:scale-110 transition-transform">
+                     <Store size={22} />
+                  </div>
+                  <div className="flex flex-col items-end">
+                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Active Units</span>
+                     <div className="flex items-center gap-1 text-emerald-500">
+                        <ArrowUpRight size={10} />
+                        <span className="text-[10px] font-bold">4% MoM</span>
+                     </div>
+                  </div>
+               </div>
+               <p className="text-4xl font-black text-charcoal dark:text-white tracking-tighter">{stats.active}</p>
+               <div className="mt-2 h-1 w-full bg-slate-100 dark:bg-zinc-800 rounded-full overflow-hidden">
+                  <div className="h-full bg-blue-500 rounded-full transition-all duration-1000" style={{ width: `${(stats.active/stats.total)*100}%` }}></div>
+               </div>
             </div>
-            <p className={clsx('text-3xl', 'font-black', 'text-charcoal', 'dark:text-white')}>{stats.total}</p>
           </div>
 
-          <div className={clsx('p-6', 'bg-white', 'dark:bg-zinc-900', 'rounded-2xl', 'border', 'border-slate-200', 'dark:border-white/5', 'shadow-sm')}>
-            <div className={clsx('flex', 'items-center', 'justify-between', 'mb-4')}>
-              <span className={clsx('text-[10px]', 'font-black', 'uppercase', 'tracking-widest', 'text-slate-400')}>Active</span>
-              <div className={clsx('w-10', 'h-10', 'bg-emerald-500/10', 'rounded-xl', 'flex', 'items-center', 'justify-center')}>
-                <CheckCircle size={18} className="text-emerald-500" />
-              </div>
+          <div className="group relative p-1">
+            <div className="absolute inset-0 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-[2rem] blur-xl opacity-0 group-hover:opacity-10 transition-opacity"></div>
+            <div className="relative p-6 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/5 rounded-[1.8rem] shadow-sm overflow-hidden h-full">
+               <div className="flex items-start justify-between mb-8">
+                  <div className="w-12 h-12 bg-emerald-500/10 rounded-2xl flex items-center justify-center text-emerald-500 group-hover:scale-110 transition-transform">
+                     <DollarSign size={22} />
+                  </div>
+                  <div className="flex flex-col items-end">
+                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Collected</span>
+                     <div className="flex items-center gap-1 text-emerald-500">
+                        <ArrowUpRight size={10} />
+                        <span className="text-[10px] font-bold">12% New</span>
+                     </div>
+                  </div>
+               </div>
+               <p className="text-4xl font-black text-charcoal dark:text-white tracking-tighter">₱{(stats.collectedRevenue / 1000).toFixed(0)}K</p>
+               <p className="text-[10px] font-bold text-slate-500 uppercase mt-1">Pending: ₱{(stats.pendingRevenue / 1000).toFixed(0)}K</p>
             </div>
-            <p className={clsx('text-3xl', 'font-black', 'text-charcoal', 'dark:text-white')}>{stats.active}</p>
           </div>
 
-          <div className={clsx('p-6', 'bg-white', 'dark:bg-zinc-900', 'rounded-2xl', 'border', 'border-slate-200', 'dark:border-white/5', 'shadow-sm')}>
-            <div className={clsx('flex', 'items-center', 'justify-between', 'mb-4')}>
-              <span className={clsx('text-[10px]', 'font-black', 'uppercase', 'tracking-widest', 'text-slate-400')}>Pending</span>
-              <div className={clsx('w-10', 'h-10', 'bg-amber-500/10', 'rounded-xl', 'flex', 'items-center', 'justify-center')}>
-                <Clock size={18} className="text-amber-500" />
-              </div>
+          <div className="group relative p-1">
+            <div className="absolute inset-0 bg-gradient-to-br from-amber-500 to-orange-600 rounded-[2rem] blur-xl opacity-0 group-hover:opacity-10 transition-opacity"></div>
+            <div className="relative p-6 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/5 rounded-[1.8rem] shadow-sm overflow-hidden h-full">
+               <div className="flex items-start justify-between mb-8">
+                  <div className="w-12 h-12 bg-amber-500/10 rounded-2xl flex items-center justify-center text-amber-500 group-hover:scale-110 transition-transform">
+                     <Clock size={22} />
+                  </div>
+                  <div className="flex flex-col items-end">
+                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Pipeline</span>
+                     <div className="flex items-center gap-1 text-amber-500">
+                        <Activity size={10} />
+                        <span className="text-[10px] font-bold">Reviewing</span>
+                     </div>
+                  </div>
+               </div>
+               <p className="text-4xl font-black text-charcoal dark:text-white tracking-tighter">{stats.pending}</p>
+               <p className="text-[10px] font-bold text-slate-500 uppercase mt-1">Awaiting Onboarding</p>
             </div>
-            <p className={clsx('text-3xl', 'font-black', 'text-charcoal', 'dark:text-white')}>{stats.pending}</p>
           </div>
 
-          <div className={clsx('p-6', 'bg-white', 'dark:bg-zinc-900', 'rounded-2xl', 'border', 'border-slate-200', 'dark:border-white/5', 'shadow-sm')}>
-            <div className={clsx('flex', 'items-center', 'justify-between', 'mb-4')}>
-              <span className={clsx('text-[10px]', 'font-black', 'uppercase', 'tracking-widest', 'text-slate-400')}>Overdue Payments</span>
-              <div className={clsx('w-10', 'h-10', 'bg-red-500/10', 'rounded-xl', 'flex', 'items-center', 'justify-center')}>
-                <AlertTriangle size={18} className="text-red-500" />
-              </div>
+          <div className="group relative p-1">
+            <div className="absolute inset-0 bg-gradient-to-br from-red-500 to-pink-600 rounded-[2rem] blur-xl opacity-0 group-hover:opacity-10 transition-opacity"></div>
+            <div className="relative p-6 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/5 rounded-[1.8rem] shadow-sm overflow-hidden h-full">
+               <div className="flex items-start justify-between mb-8">
+                  <div className="w-12 h-12 bg-red-500/10 rounded-2xl flex items-center justify-center text-red-500 group-hover:scale-110 transition-transform">
+                     <AlertTriangle size={22} />
+                  </div>
+                  <div className="flex flex-col items-end">
+                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Deficits</span>
+                     <div className="flex items-center gap-1 text-red-500 font-black">
+                        <ShieldAlert size={10} />
+                        <span className="text-[10px]">Overdue</span>
+                     </div>
+                  </div>
+               </div>
+               <p className="text-4xl font-black text-charcoal dark:text-white tracking-tighter">{stats.overdue}</p>
+               <p className="text-[10px] font-bold text-slate-500 uppercase mt-1">Urgent Action Items</p>
             </div>
-            <p className={clsx('text-3xl', 'font-black', 'text-charcoal', 'dark:text-white')}>{stats.overdue}</p>
           </div>
         </div>
 
         {/* Control Bar */}
-        <div className={clsx('flex', 'flex-wrap', 'gap-4', 'p-4', 'glass-premium', 'bg-white/40', 'dark:bg-white/5', 'border', 'border-slate-200', 'dark:border-white/10', 'rounded-3xl', 'backdrop-blur-xl', 'shadow-2xl', 'shadow-black/5', 'mb-6')}>
+        <div className={clsx('flex', 'flex-wrap', 'gap-4', 'p-4', 'bg-white/40', 'dark:bg-white/5', 'border', 'border-slate-200', 'dark:border-white/10', 'rounded-3xl', 'backdrop-blur-xl', 'shadow-2xl', 'shadow-black/5', 'mb-6')}>
           {/* Search */}
           <div className={clsx('flex-1', 'min-w-[200px]', 'relative', 'flex', 'items-center', 'group')}>
             <Search className={clsx('absolute', 'left-4', 'text-slate-400', 'group-focus-within:text-primary', 'transition-colors')} size={20} />
@@ -597,16 +685,16 @@ export default function TenantMonitoring() {
             <option value="SUSPENDED">Suspended</option>
           </select>
 
-          {/* Payment Filter */}
           <select
             value={paymentFilter}
             onChange={(e) => setPaymentFilter(e.target.value)}
             className={clsx('px-4', 'py-3', 'bg-slate-50', 'dark:bg-zinc-950/50', 'border', 'border-slate-200', 'dark:border-white/5', 'rounded-2xl', 'text-charcoal', 'dark:text-white', 'font-medium', 'focus:outline-none', 'focus:border-primary', 'transition-all')}
           >
-            <option value="all">All Payments</option>
-            <option value="PAID">Paid</option>
-            <option value="PENDING">Pending</option>
-            <option value="OVERDUE">Overdue</option>
+            <option value="all">Financial Health (All)</option>
+            <option value="🟢 Cleared">🟢 Cleared</option>
+            <option value="🟡 Pending Verification">🟡 Pending Verification</option>
+            <option value="🔴 Overdue">🔴 Overdue</option>
+            <option value="PENDING">Awaiting Invoice</option>
           </select>
 
           {/* View Toggle */}
@@ -684,7 +772,8 @@ export default function TenantMonitoring() {
                             <ArrowUpDown size={12} className={sortBy === 'status' ? 'text-primary' : ''} />
                           </div>
                         </th>
-                        <th className={clsx('px-6', 'py-4', 'text-[10px]', 'font-black', 'uppercase', 'tracking-widest', 'text-slate-400')}>Payment</th>
+                        <th className={clsx('px-6', 'py-4', 'text-[10px]', 'font-black', 'uppercase', 'tracking-widest', 'text-slate-400')}>Financial Health</th>
+                        <th className={clsx('px-6', 'py-4', 'text-[10px]', 'font-black', 'uppercase', 'tracking-widest', 'text-slate-400')}>Due Date</th>
                         <th 
                           className={clsx('px-6', 'py-4', 'text-[10px]', 'font-black', 'uppercase', 'tracking-widest', 'text-slate-400', 'cursor-pointer', 'hover:text-charcoal', 'dark:hover:text-white', 'transition-colors')}
                           onClick={() => toggleSort('rent')}
@@ -701,7 +790,7 @@ export default function TenantMonitoring() {
                     <tbody className={clsx('divide-y', 'divide-slate-200', 'dark:divide-white/5')}>
                       {filteredTenants.map((tenant) => {
                         const statusConfig = STATUS_CONFIG[tenant.status] || STATUS_CONFIG.INACTIVE;
-                        const paymentConfig = PAYMENT_CONFIG[tenant.paymentStatus || 'PAID'];
+                        const paymentConfig = PAYMENT_CONFIG[tenant.paymentStatus as keyof typeof PAYMENT_CONFIG] || PAYMENT_CONFIG['🟢 Cleared'];
                         
                         return (
                           <tr 
@@ -748,7 +837,16 @@ export default function TenantMonitoring() {
                               </span>
                             </td>
                             <td className={clsx('px-6', 'py-5')}>
-                              <span className={clsx('font-black', 'text-charcoal', 'dark:text-white')}>₱{(tenant.rentCost || 0).toLocaleString()}</span>
+                              <div className={clsx(
+                                'flex items-center gap-1.5 font-black text-[10px] uppercase tracking-[0.15em]',
+                                tenant.paymentStatus === '🔴 Overdue' ? 'text-primary' : 'text-charcoal dark:text-white'
+                              )}>
+                                {tenant.nextDueDate !== 'N/A' && <Calendar size={10} className="shrink-0" />}
+                                {tenant.nextDueDate}
+                              </div>
+                            </td>
+                            <td className={clsx('px-6', 'py-5')}>
+                              <span className={clsx('font-black text-charcoal dark:text-white text-sm')}>₱{(tenant.rentCost || 0).toLocaleString()}</span>
                             </td>
                             <td className={clsx('px-6', 'py-5')}>
                               <div className={clsx('flex', 'items-center', 'gap-4', 'text-xs', 'text-slate-500')}>
@@ -839,8 +937,8 @@ export default function TenantMonitoring() {
                         </span>
                         <span className={clsx(
                           'px-2 py-0.5 rounded text-[9px] font-bold uppercase',
-                          PAYMENT_CONFIG[tenant.paymentStatus || 'PAID'].bg,
-                          PAYMENT_CONFIG[tenant.paymentStatus || 'PAID'].text
+                          (PAYMENT_CONFIG[tenant.paymentStatus as keyof typeof PAYMENT_CONFIG] || PAYMENT_CONFIG['🟢 Cleared']).bg,
+                          (PAYMENT_CONFIG[tenant.paymentStatus as keyof typeof PAYMENT_CONFIG] || PAYMENT_CONFIG['🟢 Cleared']).text
                         )}>
                           {tenant.paymentStatus}
                         </span>
@@ -916,11 +1014,11 @@ export default function TenantMonitoring() {
                     <span className={clsx('text-[10px]', 'font-bold', 'uppercase', 'tracking-widest', 'text-slate-500', 'group-hover:text-primary')}>Message</span>
                   </button>
                   <button 
-                    onClick={handleGenerateInvoice}
-                    className={clsx('flex', 'flex-col', 'items-center', 'justify-center', 'p-4', 'bg-slate-50', 'dark:bg-zinc-900', 'border', 'border-slate-200', 'dark:border-white/5', 'rounded-2xl', 'hover:border-primary', 'hover:bg-primary/5', 'transition-all', 'group')}
+                    onClick={handlePostMonthlyBill}
+                    className={clsx('flex', 'flex-col', 'items-center', 'justify-center', 'p-4', 'bg-slate-50', 'dark:bg-zinc-900', 'border', 'border-slate-200', 'dark:border-white/5', 'rounded-2xl', 'hover:border-red-500', 'hover:bg-red-500/5', 'transition-all', 'group')}
                   >
-                    <Receipt size={20} className={clsx('text-slate-400', 'group-hover:text-primary', 'mb-2', 'transition-colors')} />
-                    <span className={clsx('text-[10px]', 'font-bold', 'uppercase', 'tracking-widest', 'text-slate-500', 'group-hover:text-primary')}>Invoice</span>
+                    <Receipt size={20} className={clsx('text-slate-400', 'group-hover:text-red-500', 'mb-2', 'transition-colors')} />
+                    <span className={clsx('text-[10px]', 'font-bold', 'uppercase', 'tracking-widest', 'text-slate-500', 'group-hover:text-red-500')}>Bill</span>
                   </button>
                 </div>
 
@@ -986,61 +1084,146 @@ export default function TenantMonitoring() {
                   </div>
                 )}
 
-                {/* Financial Ledger Widget */}
+                {/* Financial Intelligence & Ledger */}
                 <div>
                   <h4 className={clsx('text-[10px]', 'font-black', 'uppercase', 'tracking-[0.2em]', 'text-slate-400', 'mb-4', 'flex', 'items-center', 'gap-2')}>
-                    <Receipt size={14} /> Active Invoices & Clearance
+                    <DollarSign size={14} /> Financial Logistics
                   </h4>
-                  <div className={clsx('bg-slate-50', 'dark:bg-zinc-900', 'rounded-2xl', 'border', 'border-slate-200', 'dark:border-white/5', 'p-2', 'space-y-2')}>
-                    {allInvoices.filter(i => i.tenantId === selectedTenant.id && i.status !== 'PAID').length === 0 ? (
-                      <div className="p-6 text-center">
-                        <CheckCircle size={24} className="mx-auto mb-2 text-emerald-500 opacity-50" />
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">No Active Payables</span>
+                  
+                  <div className="space-y-4">
+                    {/* Summary Row */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="p-4 bg-emerald-500/5 border border-emerald-500/10 rounded-2xl">
+                         <p className="text-[9px] font-black text-emerald-600 uppercase tracking-widest mb-1">Total Paid</p>
+                         <p className="text-lg font-black text-charcoal dark:text-white">
+                           ₱{allInvoices.filter(i => i.tenantId === selectedTenant.id && i.status === 'PAID').reduce((sum, i) => sum + i.amount, 0).toLocaleString()}
+                         </p>
                       </div>
-                    ) : (
-                      allInvoices.filter(i => i.tenantId === selectedTenant.id && i.status !== 'PAID').map(inv => (
-                        <div key={inv.id} className="p-4 bg-white dark:bg-zinc-950 rounded-xl border border-slate-200 dark:border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm group">
-                          <div>
-                            <p className="text-sm font-black text-charcoal dark:text-white">₱{inv.amount.toLocaleString()}</p>
-                            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">{inv.month} • {inv.status}</p>
-                            <p className="text-[9px] font-bold text-primary uppercase tracking-widest flex items-center gap-1 mt-1.5 pt-1.5 border-t border-slate-100 dark:border-white/5">
-                              <Calendar size={10} /> 
-                              Due: {new Date(inv.dueDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
-                            </p>
-                          </div>
-                          
-                          {inv.status === 'REVIEWING' && inv.depositSlipUrl ? (
-                            <div className="flex items-center gap-2 self-start sm:self-auto">
-                              <a href={inv.depositSlipUrl} target="_blank" rel="noopener noreferrer" className="px-3 py-2 bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-slate-300 hover:text-primary dark:hover:text-primary rounded-xl text-[10px] font-bold uppercase tracking-widest transition-colors flex items-center gap-1 border border-slate-200 dark:border-white/5">
-                                View Slip
-                              </a>
-                              <button 
-                                onClick={async () => {
-                                  try {
-                                    setToast({ msg: 'Processing approval...', type: 'success' });
-                                    const res = await updateInvoiceStatus(inv.id, 'PAID');
-                                    if(res.success) {
-                                      setToast({ msg: 'Payment Successfully Cleared!', type: 'success' });
-                                      loadTenants();
-                                    } else {
-                                      setToast({ msg: 'Error: ' + res.error, type: 'error' });
-                                    }
-                                  } catch (e: any) { alert(e.message); }
-                                }}
-                                className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-[10px] font-bold uppercase tracking-widest shadow-md shadow-emerald-500/20 transition-all hover:scale-105 active:scale-95"
-                              >
-                                Approve
-                              </button>
+                      <div className="p-4 bg-amber-500/5 border border-amber-500/10 rounded-2xl">
+                         <p className="text-[9px] font-black text-amber-600 uppercase tracking-widest mb-1">Outstanding</p>
+                         <p className="text-lg font-black text-charcoal dark:text-white">
+                           ₱{allInvoices.filter(i => i.tenantId === selectedTenant.id && i.status !== 'PAID').reduce((sum, i) => sum + i.amount, 0).toLocaleString()}
+                         </p>
+                      </div>
+                    </div>
+
+                    <div className={clsx('bg-slate-50', 'dark:bg-zinc-900', 'rounded-2xl', 'border', 'border-slate-200', 'dark:border-white/5', 'overflow-hidden')}>
+                      <div className="p-4 border-b border-slate-200 dark:border-white/5 bg-slate-100/50 dark:bg-white/5">
+                        <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Recent Ledger Items</span>
+                      </div>
+                      
+                      <div className="divide-y divide-slate-200 dark:divide-white/5 max-h-[400px] overflow-y-auto">
+                        {allInvoices.filter(i => i.tenantId === selectedTenant.id).length > 0 ? (
+                          allInvoices.filter(i => i.tenantId === selectedTenant.id).map((inv: any) => (
+                            <div key={inv.id} className="p-4 flex flex-col gap-3 group hover:bg-slate-100 dark:hover:bg-white/5 transition-colors">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                  <div className={clsx(
+                                    'w-8 h-8 rounded-lg flex items-center justify-center',
+                                    inv.status === 'PAID' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-amber-500/10 text-amber-500'
+                                  )}>
+                                    <PaymentIcon size={14} />
+                                  </div>
+                                  <div>
+                                    <p className="text-xs font-black text-charcoal dark:text-white uppercase tracking-tight">{inv.invoiceNumber}</p>
+                                    <p className="text-[9px] font-bold text-slate-400 uppercase">{inv.month} • Due {new Date(inv.dueDate).toLocaleDateString()}</p>
+                                  </div>
+                                </div>
+                                <div className="text-right">
+                                  <p className="text-xs font-black text-charcoal dark:text-white">₱{inv.amount.toLocaleString()}</p>
+                                  <span className={clsx(
+                                    'text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded',
+                                    inv.status === 'PAID' ? 'bg-emerald-500/20 text-emerald-600' : 
+                                    inv.status === 'OVERDUE' ? 'bg-red-500/20 text-red-600' : 'bg-amber-500/20 text-amber-600'
+                                  )}>
+                                    {inv.status}
+                                  </span>
+                                </div>
+                              </div>
+
+                              {inv.status === 'REVIEWING' && inv.depositSlipUrl && (
+                                <div className="flex items-center gap-2 p-2 bg-amber-500/5 border border-amber-500/10 rounded-xl mt-2">
+                                  <a href={inv.depositSlipUrl} target="_blank" rel="noopener noreferrer" className="flex-1 px-3 py-2 bg-white dark:bg-zinc-800 text-slate-600 dark:text-slate-300 hover:text-primary dark:hover:text-primary rounded-lg text-[9px] font-black uppercase tracking-widest transition-colors flex items-center justify-center gap-1.5 border border-slate-200 dark:border-white/5">
+                                    <Eye size={12} /> View Slip
+                                  </a>
+                                  <button 
+                                    onClick={async () => {
+                                      try {
+                                        setToast({ msg: 'Processing approval...', type: 'success' });
+                                        const res = await updateInvoiceStatus(inv.id, 'PAID');
+                                        if(res.success) {
+                                          setToast({ msg: 'Payment Cleared!', type: 'success' });
+                                          loadTenants();
+                                        } else {
+                                          setToast({ msg: 'Error: ' + res.error, type: 'error' });
+                                        }
+                                      } catch (e: any) { alert(e.message); }
+                                    }}
+                                    className="flex-1 px-3 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-[9px] font-black uppercase tracking-widest shadow-md shadow-emerald-500/20 transition-all hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-1.5"
+                                  >
+                                    <CheckCircle size={12} /> Approve
+                                  </button>
+                                </div>
+                              )}
+
+                              {(inv.status === 'PENDING' || inv.status === 'OVERDUE') && (
+                                <div className="mt-2 text-right">
+                                  <button
+                                    onClick={async () => {
+                                      const refNo = window.prompt("Record Cash Payment\nEnter physical receipt/reference number:");
+                                      if (!refNo) return;
+                                      
+                                      setToast({ msg: 'Recording payment...', type: 'success' });
+                                      const res = await recordManualPaymentAction(inv.id, refNo);
+                                      if (res.success) {
+                                        setToast({ msg: 'Payment physically recorded!', type: 'success' });
+                                        loadTenants();
+                                      } else {
+                                        setToast({ msg: 'Error: ' + res.error, type: 'error' });
+                                      }
+                                    }}
+                                    className="px-4 py-2 bg-[#BE1E2D] hover:bg-[#a01825] text-white rounded-lg text-[9px] font-black uppercase tracking-widest shadow-md shadow-red-500/20 transition-all hover:scale-105 active:scale-95 inline-flex items-center gap-1.5"
+                                  >
+                                    <DollarSign size={12} /> Record Cash Payment
+                                  </button>
+                                </div>
+                              )}
+
+                              {inv.status === 'PAID' && inv.referenceNo && (
+                                <div className="mt-1 flex items-center gap-2 text-[9px] font-bold text-slate-400 uppercase">
+                                  <FileText size={10} /> Ref: {inv.referenceNo}
+                                </div>
+                              )}
                             </div>
-                          ) : (
-                            <span className="self-start sm:self-auto text-[9px] font-bold text-amber-600 bg-amber-50 dark:bg-amber-500/10 px-3 py-1.5 rounded-lg border border-amber-200 dark:border-amber-500/20 uppercase tracking-widest inline-flex items-center gap-1.5">
-                              <Clock size={10} /> Awaiting User
-                            </span>
-                          )}
-                        </div>
-                      ))
-                    )}
+                          ))
+                        ) : (
+                          <div className="p-10 text-center text-slate-400">
+                             <PaymentIcon size={32} className="mx-auto mb-3 opacity-20" />
+                             <p className="text-[10px] font-black uppercase tracking-widest">No ledger items found</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
+                </div>
+
+                {/* Account Security & Compliance */}
+                <div className="pt-4 border-t border-slate-200 dark:border-white/5">
+                   <div className="bg-slate-900 border border-white/10 rounded-2xl p-5 flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                         <div className="w-10 h-10 bg-primary/20 rounded-xl flex items-center justify-center text-primary">
+                            <ShieldCheck size={20} />
+                         </div>
+                         <div>
+                            <p className="text-[10px] font-black text-white/40 uppercase tracking-widest">Compliance Status</p>
+                            <p className="text-sm font-black text-white uppercase italic">Verified Authority</p>
+                         </div>
+                      </div>
+                      <div className="flex items-center gap-1 text-emerald-500 bg-emerald-500/10 px-2 py-1 rounded-full border border-emerald-500/20">
+                         <CheckCircle size={10} />
+                         <span className="text-[9px] font-black uppercase">Secure</span>
+                      </div>
+                   </div>
                 </div>
               </div>
 
@@ -1087,12 +1270,20 @@ export default function TenantMonitoring() {
 
               {/* Modal Footer */}
               <div className={clsx('p-6', 'border-t', 'border-slate-200', 'dark:border-white/5', 'bg-slate-50', 'dark:bg-zinc-900', 'shrink-0', 'space-y-3')}>
-                <button 
-                  onClick={handleEditTenant}
-                  className={clsx('w-full', 'py-3', 'bg-primary', 'hover:bg-primary-hover', 'text-white', 'font-black', 'text-xs', 'uppercase', 'tracking-widest', 'rounded-xl', 'hover:scale-[1.02]', 'transition-transform', 'shadow-lg', 'flex', 'items-center', 'justify-center', 'gap-2')}
-                >
-                  <Edit size={16} /> Edit Tenant
-                </button>
+                <div className={clsx('flex', 'gap-3')}>
+                  <button 
+                    onClick={() => setIsEditModalOpen(true)}
+                    className={clsx('flex-1', 'h-14', 'bg-white', 'dark:bg-white/5', 'text-slate-600', 'dark:text-white', 'border', 'border-slate-200', 'dark:border-white/10', 'rounded-2xl', 'font-black', 'text-[10px]', 'uppercase', 'tracking-[0.2em]', 'hover:bg-slate-50', 'dark:hover:bg-white/10', 'transition-colors', 'flex', 'items-center', 'justify-center', 'gap-2')}
+                  >
+                    <Edit size={16} /> Edit Profile
+                  </button>
+                  <button 
+                    onClick={handlePostMonthlyBill}
+                    className={clsx('flex-1', 'h-14', 'bg-[#BE1E2D]', 'text-white', 'rounded-2xl', 'font-black', 'text-[10px]', 'uppercase', 'tracking-[0.2em]', 'hover:bg-[#a01825]', 'transition-colors', 'flex', 'items-center', 'justify-center', 'gap-2', 'shadow-lg', 'shadow-red-500/20')}
+                  >
+                    <Receipt size={16} /> Post Monthly Bill
+                  </button>
+                </div>
                 <div className={clsx('grid', 'grid-cols-2', 'gap-3')}>
                   <button 
                     onClick={handleViewDocuments}

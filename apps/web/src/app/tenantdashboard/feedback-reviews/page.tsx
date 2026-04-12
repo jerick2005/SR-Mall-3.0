@@ -2,9 +2,13 @@
 
 import React from 'react';
 import { Star, MessageSquare, Filter, ChevronDown, CheckCircle } from 'lucide-react';
+import { useAuth } from '@/app/providers';
+import { getStorefrontAction } from '@/app/actions/tenant';
+import { getApprovedReviewsAction } from '@/app/actions/review';
 import clsx from 'clsx';
 
 export default function FeedbackReviews() {
+  const { user } = useAuth();
   const [reviews, setReviews] = React.useState<any[]>([]);
   const [avgRating, setAvgRating] = React.useState(0);
   const [isLoading, setIsLoading] = React.useState(true);
@@ -18,8 +22,17 @@ export default function FeedbackReviews() {
 
   React.useEffect(() => {
     async function loadData() {
-      const { getApprovedReviewsAction } = await import('@/app/actions/review');
-      const result = await getApprovedReviewsAction();
+      if (!user?.id) return;
+      
+      // 1. Get Tenant Profile for tenantId
+      const tenantRes = await getStorefrontAction(user.id);
+      let tId = undefined;
+      if (tenantRes.success && tenantRes.data) {
+        tId = tenantRes.data.id;
+      }
+
+      // 2. Get Reviews
+      const result = await getApprovedReviewsAction(tId);
       if (result.success && result.data) {
         setReviews(result.data);
         
@@ -39,7 +52,8 @@ export default function FeedbackReviews() {
       setIsLoading(false);
     }
     loadData();
-  }, []);
+  }, [user?.id]);
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-black pb-20 lg:pb-0">
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-10 py-4 sm:py-6 lg:py-10 space-y-4 sm:space-y-6 lg:space-y-8">

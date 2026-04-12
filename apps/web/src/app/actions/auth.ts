@@ -34,6 +34,10 @@ export async function loginAction(data: { email: string; password: string }) {
       return { success: false, error: 'Invalid email or password.' };
     }
 
+    if ((user as any).isBlacklisted) {
+      return { success: false, error: 'Authorization Revoked: This account has been restricted by system administration.' };
+    }
+
     return {
       success: true,
       data: {
@@ -41,7 +45,8 @@ export async function loginAction(data: { email: string; password: string }) {
         name: user.name || user.email.split('@')[0],
         email: user.email,
         role: user.role,
-        tenantId: user.tenant?.id || null
+        tenantId: user.tenant?.id || null,
+        isBlacklisted: (user as any).isBlacklisted
       }
     };
   } catch (error: any) {
@@ -111,13 +116,14 @@ export async function getUserCountAction() {
 
 export async function getAllUsersAction() {
   try {
-    const users = await prisma.user.findMany({
+    const users = await (prisma as any).user.findMany({
       orderBy: { createdAt: 'desc' },
       select: {
         id: true,
         name: true,
         email: true,
         role: true,
+        isBlacklisted: true,
         createdAt: true,
       }
     });
@@ -125,6 +131,20 @@ export async function getAllUsersAction() {
   } catch (error) {
     console.error('[GET_ALL_USERS_ERROR]:', error);
     return { success: false, error: 'Failed to fetch users.' };
+  }
+}
+
+export async function toggleUserBlacklistAction(userId: string, isBlacklisted: boolean) {
+  try {
+    await (prisma as any).user.update({
+      where: { id: userId },
+      data: { isBlacklisted }
+    });
+    revalidatePath('/admindashboard/user-management');
+    return { success: true };
+  } catch (error: any) {
+    console.error('[TOGGLE_BLACKLIST_ERROR]:', error);
+    return { success: false, error: error.message };
   }
 }
 
@@ -220,5 +240,46 @@ export async function updateProfileAction(userId: string, data: { name: string; 
        return { success: false, error: 'Email already in use by another account.' };
     }
     return { success: false, error: 'Failed to update profile.' };
+  }
+}
+
+export async function updateSecurityAction(userId: string, data: { currentPassword?: string; newPassword?: string }) {
+  try {
+    if (!data.currentPassword || !data.newPassword) {
+      return { success: false, error: 'Current and new passwords are required.' };
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId }
+    });
+
+    if (!user) return { success: false, error: 'User not found' };
+
+    // Verify current password
+    let isMatch = false;
+    try {
+      isMatch = await bcrypt.compare(data.currentPassword, user.password);
+    } catch (err) {
+      isMatch = false;
+    }
+    
+    // Fallback for non-hashed legacy passwords
+    if (!isMatch) isMatch = user.password === data.currentPassword;
+
+    if (!isMatch) {
+      return { success: false, error: 'Incorrect current password.' };
+    }
+
+    // Hash and update new password
+    const hashedPassword = await bcrypt.hash(data.newPassword, 10);
+    await prisma.user.update({
+      where: { id: userId },
+      data: { password: hashedPassword }
+    });
+
+    return { success: true };
+  } catch (error: any) {
+    console.error('[SECURITY_UPDATE_ERROR]:', error);
+    return { success: false, error: error.message };
   }
 }

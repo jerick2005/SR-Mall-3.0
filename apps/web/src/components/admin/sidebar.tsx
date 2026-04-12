@@ -6,12 +6,11 @@ import clsx from 'clsx';
 
 const navItems = [
   { href: '/admindashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/admindashboard/bookings', label: 'Bookings', icon: Calendar },
   { href: '/admindashboard/space-manager', label: 'Space Inventory Manager', icon: Presentation },
   { href: '/admindashboard/messenger-hub', label: 'Messenger Command Hub', icon: MessageSquare },
-  { href: '/admindashboard/requests', label: 'Event Inquiries/Merchant Requests', icon: Users },
   { href: '/admindashboard/tenant-monitoring', label: 'Tenant Monitoring', icon: Users },
   { href: '/admindashboard/ad-scheduler', label: 'Ad Scheduler', icon: Presentation },
-  { href: '/admindashboard/reservation-queue', label: 'Reservation Queue', icon: Calendar },
   { href: '/admindashboard/user-management', label: 'User Management & Blacklist', icon: ShieldAlert },
   { href: '/admindashboard/public-view-cms', label: 'Public-View CMS', icon: Palette },
 ];

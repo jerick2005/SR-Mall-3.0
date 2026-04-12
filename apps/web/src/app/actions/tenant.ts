@@ -12,8 +12,6 @@ import { occupySlot } from './space-slot';
  */
 export async function updateStorefrontAction(userId: string, profile: Partial<DigitalStorefront>) {
   try {
-    // In a real app, you would verify the session here.
-    // We assume the user exists as they are authenticated in the dashboard.
     const user = await prisma.user.findUnique({
       where: { id: userId }
     });
@@ -46,6 +44,7 @@ export async function updateStorefrontAction(userId: string, profile: Partial<Di
     });
 
     revalidatePath('/tenantdashboard/digital-storefront');
+    revalidatePath('/tenantdashboard/profile-settings');
     revalidatePath('/');
 
     return {
@@ -64,6 +63,45 @@ export async function updateStorefrontAction(userId: string, profile: Partial<Di
   } catch (error: any) {
     console.error('[UPDATE_STOREFRONT_ERROR]:', error);
     return { success: false, error: error.message || 'Failed to update storefront profile' };
+  }
+}
+
+export async function updateTenantProfileAction(userId: string, data: { name?: string; email?: string; shopName?: string; description?: string; logoUrl?: string }) {
+  try {
+    const updateTasks = [];
+
+    // Update User details
+    if (data.name || data.email) {
+      updateTasks.push(prisma.user.update({
+        where: { id: userId },
+        data: {
+          name: data.name,
+          email: data.email
+        }
+      }));
+    }
+
+    // Update Tenant details
+    if (data.shopName !== undefined || data.description !== undefined || data.logoUrl !== undefined) {
+      updateTasks.push(prisma.tenant.update({
+        where: { userId },
+        data: {
+          shopName: data.shopName,
+          description: data.description,
+          logoUrl: data.logoUrl
+        }
+      }));
+    }
+
+    await Promise.all(updateTasks);
+    
+    revalidatePath('/tenantdashboard/profile-settings');
+    revalidatePath('/tenantdashboard');
+    
+    return { success: true };
+  } catch (error: any) {
+    console.error('[UPDATE_PROFILE_ERROR]:', error);
+    return { success: false, error: error.message };
   }
 }
 
@@ -91,6 +129,52 @@ export async function getStorefrontAction(userId: string) {
   } catch (error: any) {
     console.error('[GET_STOREFRONT_ERROR]:', error);
     return { success: false, error: error.message || 'Failed to fetch storefront' };
+  }
+}
+
+export async function getTenantProfileAction(userId: string) {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        tenant: true
+      }
+    });
+
+    if (!user) return { success: false, error: 'User not found' };
+
+    return { 
+      success: true, 
+      data: {
+        name: user.name,
+        email: user.email,
+        shopName: user.tenant?.shopName || '',
+        description: user.tenant?.description || '',
+        logoUrl: user.tenant?.logoUrl || '',
+        unitId: user.tenant?.unitId || 'N/A',
+        status: user.tenant?.status || 'ACTIVE'
+      }
+    };
+  } catch (error: any) {
+    console.error('[GET_PROFILE_ERROR]:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+export async function deactivateTenantTerminalAction(userId: string) {
+  try {
+    await prisma.tenant.update({
+      where: { userId },
+      data: { status: 'SUSPENDED' }
+    });
+    
+    revalidatePath('/tenantdashboard/profile-settings');
+    revalidatePath('/admindashboard/tenant-monitoring');
+    
+    return { success: true };
+  } catch (error: any) {
+    console.error('[DEACTIVATE_TENANT_ERROR]:', error);
+    return { success: false, error: error.message };
   }
 }
 
@@ -122,7 +206,7 @@ export async function getAllStorefrontsAction() {
 
 export async function getAllTenantsAction() {
   try {
-    const tenants = await prisma.tenant.findMany({
+    const tenants = await (prisma as any).tenant.findMany({
       orderBy: { shopName: 'asc' },
       include: {
         user: {
@@ -131,23 +215,34 @@ export async function getAllTenantsAction() {
             email: true,
             name: true,
           }
+        },
+        reviews: {
+          where: { isApproved: true },
+          select: { rating: true }
         }
       }
     });
 
     return {
       success: true,
-      data: tenants.map((t: any) => ({
-        id: t.id,
-        shopName: t.shopName,
-        unitId: t.unitId,
-        status: t.status,
-        user: t.user,
-        description: t.description,
-        logoUrl: t.logoUrl,
-        galleryUrls: t.galleryUrls,
-        products: t.products,
-      }))
+      data: tenants.map((t: any) => {
+        const totalRating = t.reviews.reduce((acc: number, r: any) => acc + r.rating, 0);
+        const avgRating = t.reviews.length > 0 ? totalRating / t.reviews.length : 0;
+        
+        return {
+          id: t.id,
+          shopName: t.shopName,
+          unitId: t.unitId,
+          status: t.status,
+          user: t.user,
+          description: t.description,
+          logoUrl: t.logoUrl,
+          galleryUrls: t.galleryUrls,
+          products: t.products,
+          avgRating,
+          reviewCount: t.reviews.length
+        };
+      })
     };
   } catch (error: any) {
     console.error('[GET_ALL_TENANTS_ERROR]:', error);
@@ -443,7 +538,7 @@ export async function getTenantStatusAction(userId: string) {
 }
 export async function getTenantReportDataAction() {
   try {
-    const tenants = await prisma.tenant.findMany({
+    const tenants = await (prisma as any).tenant.findMany({
       include: {
         user: {
           select: {
@@ -453,8 +548,7 @@ export async function getTenantReportDataAction() {
           }
         },
         invoices: {
-          orderBy: { createdAt: 'desc' },
-          take: 1
+          orderBy: { createdAt: 'desc' }
         }
       }
     });
@@ -464,11 +558,20 @@ export async function getTenantReportDataAction() {
     const data = tenants.map(t => {
       const slot = slots.find(s => s.unit_id === t.unitId);
       
-      // Calculate lease expiry: 1 year from createdAt
       const expiryDate = new Date(t.createdAt);
       expiryDate.setFullYear(expiryDate.getFullYear() + 1);
 
-      // Extract floor level from unitId (e.g., "L1-101" -> "Level 1")
+      const unpaidInvoices = t.invoices.filter((inv: any) => inv.status !== 'PAID');
+      const balance = unpaidInvoices.reduce((sum: number, inv: any) => sum + inv.amount, 0);
+      
+      const lastPaidInvoice = t.invoices.find((inv: any) => inv.status === 'PAID');
+      const lastPaymentDate = lastPaidInvoice ? lastPaidInvoice.createdAt : null;
+
+      // Find the earliest due date among unpaid invoices
+      const overdueInvoice = unpaidInvoices
+        .sort((a: any, b: any) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())[0];
+      const nextDueDate = overdueInvoice ? overdueInvoice.dueDate : null;
+
       let floorLevel = 'Ground Floor';
       if (t.unitId && t.unitId.includes('-')) {
         const floorPart = t.unitId.split('-')[0];
@@ -477,7 +580,6 @@ export async function getTenantReportDataAction() {
         }
       }
 
-      // Try to extract category from description ("Premier [category] provider...")
       let category = 'Retail';
       if (t.description && t.description.includes('provider')) {
         const parts = t.description.split(' ');
@@ -494,9 +596,12 @@ export async function getTenantReportDataAction() {
         unitId: t.unitId,
         sqmSize: slot?.sqm_size || 0,
         monthlyRent: slot?.base_rent || 0,
+        balance,
+        lastPaymentDate,
+        nextDueDate,
         leaseExpiryDate: expiryDate,
         category: category,
-        status: t.invoices[0]?.status === 'PAID' ? 'PAID' : 'PENDING',
+        status: t.invoices[0]?.status === 'PAID' ? 'PAID' : (t.invoices[0]?.status || 'PENDING'),
         floorLevel
       };
     });

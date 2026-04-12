@@ -1,7 +1,14 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Users, ShieldCheck, Loader2, Mail, ShieldAlert, Store, Check, Trash2, Ban } from 'lucide-react';
+import { 
+  Users, ShieldCheck, Loader2, Mail, ShieldAlert, Store, 
+  Check, Trash2, Ban, CheckCircle2, Search, Filter, 
+  Activity, ArrowRight, UserPlus, Shield, MessageSquare,
+  Sparkles, RefreshCcw, MoreHorizontal
+} from 'lucide-react';
+import { toast } from 'sonner';
+import clsx from 'clsx';
 
 export default function UserManagement() {
   const [activeTab, setActiveTab] = useState<'users' | 'feedback'>('users');
@@ -9,306 +16,438 @@ export default function UserManagement() {
   const [loading, setLoading] = useState(true);
   const [reviews, setReviews] = useState<any[]>([]);
   const [reviewsLoading, setReviewsLoading] = useState(false);
-  const [approvingId, setApprovingId] = useState<string | null>(null);
-  const [deletingReviewId, setDeletingReviewId] = useState<string | null>(null);
-  const [updatingId, setUpdatingId] = useState<string | null>(null);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [isProcessing, setIsProcessing] = useState<string | null>(null);
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this user? This action cannot be undone.')) return;
-    setDeletingId(id);
-    const { deleteUserAction } = await import('@/app/actions/auth');
-    const res = await deleteUserAction(id);
-    if (res.success) {
-      setUsers(users.filter(u => u.id !== id));
-    } else {
-      alert(res.error || 'Failed to delete user');
-    }
-    setDeletingId(null);
-  };
-
-  const handleRoleChange = async (id: string, newRole: string) => {
-    setUpdatingId(id);
-    const { updateUserRoleAction } = await import('@/app/actions/auth');
-    const res = await updateUserRoleAction(id, newRole);
-    if (res.success) {
-      setUsers(users.map(u => u.id === id ? { ...u, role: newRole } : u));
-    } else {
-      alert(res.error || 'Failed to update user role');
-    }
-    setUpdatingId(null);
-  };
-
-  useEffect(() => {
-    async function loadUsers() {
+  const loadUsers = async () => {
+    setLoading(true);
+    try {
       const { getAllUsersAction } = await import('@/app/actions/auth');
       const result = await getAllUsersAction();
       if (result.success && result.data) {
         setUsers(result.data);
       }
+    } catch (err) {
+      toast.error("Institutional directory sync failed.");
+    } finally {
       setLoading(false);
     }
+  };
+
+  const loadReviews = async () => {
+    setReviewsLoading(true);
+    try {
+      const { getAllReviewsAction } = await import('@/app/actions/review');
+      const res = await getAllReviewsAction();
+      if (res.success && res.data) {
+        setReviews(res.data);
+      }
+    } catch (err) {
+      toast.error("Sentiment ledger sync failed.");
+    } finally {
+      setReviewsLoading(false);
+    }
+  };
+
+  useEffect(() => {
     loadUsers();
   }, []);
 
   useEffect(() => {
-    if (activeTab === 'feedback' && reviews.length === 0) {
-      async function loadReviews() {
-        setReviewsLoading(true);
-        const { getAllReviewsAction } = await import('@/app/actions/review');
-        const res = await getAllReviewsAction();
-        if (res.success && res.data) {
-          setReviews(res.data);
-        }
-        setReviewsLoading(false);
-      }
+    if (activeTab === 'feedback') {
       loadReviews();
     }
   }, [activeTab]);
 
+  const handleToggleBlacklist = async (id: string, currentStatus: boolean) => {
+    if (!confirm(`Authorization Override: Are you sure you want to ${currentStatus ? 'Restore' : 'Revoke'} access for this entity?`)) return;
+    setIsProcessing(id);
+    const { toggleUserBlacklistAction } = await import('@/app/actions/auth');
+    const res = await toggleUserBlacklistAction(id, !currentStatus);
+    if (res.success) {
+      toast.success(`Entity ${!currentStatus ? 'Restricted' : 'Restored'} Successfully`);
+      setUsers(users.map(u => u.id === id ? { ...u, isBlacklisted: !currentStatus } : u));
+    } else {
+      toast.error("Administrative Override Failed");
+    }
+    setIsProcessing(null);
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Critical Purge: This will permanently delete this identity and all associated manifests. Proceed?')) return;
+    setIsProcessing(id);
+    const { deleteUserAction } = await import('@/app/actions/auth');
+    const res = await deleteUserAction(id);
+    if (res.success) {
+      toast.warning("Identity Purged from Database");
+      setUsers(users.filter(u => u.id !== id));
+    } else {
+      toast.error("Purge Protocol Failure");
+    }
+    setIsProcessing(null);
+  };
+
+  const handleRoleChange = async (id: string, newRole: string) => {
+    setIsProcessing(id);
+    const { updateUserRoleAction } = await import('@/app/actions/auth');
+    const res = await updateUserRoleAction(id, newRole);
+    if (res.success) {
+      toast.success(`Privilege Matrix Updated to: ${newRole}`);
+      setUsers(users.map(u => u.id === id ? { ...u, role: newRole } : u));
+    } else {
+      toast.error("Privilege Update Denied");
+    }
+    setIsProcessing(null);
+  };
+
   const handleApproveReview = async (id: string) => {
-    setApprovingId(id);
+    setIsProcessing(id);
     const { approveReviewAction } = await import('@/app/actions/review');
     const res = await approveReviewAction(id);
     if (res.success) {
+      toast.success("Sentiment Approved for Public Manifest");
       setReviews(reviews.map(r => r.id === id ? { ...r, isApproved: true } : r));
     } else {
-      alert(res.error || 'Failed to approve review');
+      toast.error("Moderation Sync Failure");
     }
-    setApprovingId(null);
+    setIsProcessing(null);
   };
 
   const handleDeleteReview = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this review?')) return;
-    setDeletingReviewId(id);
+    if (!confirm('Moderation Filter: Purge this feedback from ledger?')) return;
+    setIsProcessing(id);
     const { deleteReviewAction } = await import('@/app/actions/review');
     const res = await deleteReviewAction(id);
     if (res.success) {
+      toast.warning("Sentiment Purged");
       setReviews(reviews.filter(r => r.id !== id));
     } else {
-      alert(res.error || 'Failed to delete review');
+      toast.error("Purge Protocol Failure");
     }
-    setDeletingReviewId(null);
+    setIsProcessing(null);
   };
 
+  const blacklistedUsers = users.filter(u => u.isBlacklisted);
+
   return (
-    <div className="p-4 md:p-8 lg:p-10 animate-fade-in-up min-h-[calc(100vh-80px)]">
-      <div className="mb-8">
-        <h1 className="text-3xl font-black text-charcoal dark:text-white tracking-tight">User Management Center</h1>
-        <p className="text-sm text-slate-500 font-medium mt-1">Review and manage all registered accounts and moderate user feedback.</p>
+    <div className="p-4 md:p-8 lg:p-10 animate-fade-in-up space-y-10 min-h-screen max-w-[1700px] mx-auto">
+      {/* Premium Header */}
+      <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8 pb-8 border-b border-slate-200 dark:border-white/10">
+        <div className="space-y-4">
+           <div className="inline-flex items-center gap-2 px-3 py-1 bg-primary/10 text-primary rounded-full text-[10px] font-black uppercase tracking-widest border border-primary/20">
+              <Shield size={12} /> Institutional Integrity Console
+           </div>
+           <h1 className="text-5xl font-black text-charcoal dark:text-white tracking-tighter italic uppercase leading-none">
+              Governance <span className="text-primary">Console.</span>
+           </h1>
+           <p className="text-slate-500 font-medium max-w-2xl text-lg">
+              Manage the master user matrix, privilege escalation, and coordinate sentiment moderation for the ecosystem.
+           </p>
+        </div>
+
+        <div className="flex items-center gap-4">
+           <button onClick={loadUsers} className="p-4 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/5 rounded-2xl text-slate-400 hover:text-primary transition-all shadow-sm active:scale-95">
+              <RefreshCcw size={20} className={loading ? 'animate-spin' : ''} />
+           </button>
+        </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex items-center gap-4 border-b border-slate-200 dark:border-white/10 mb-8">
-        <button
-          onClick={() => setActiveTab('users')}
-          className={`flex items-center gap-2 pb-4 text-sm font-bold uppercase tracking-widest border-b-2 transition-all ${
-            activeTab === 'users'
-              ? 'border-primary text-primary'
-              : 'border-transparent text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
-          }`}
-        >
-          <Users size={16} /> Directory
-        </button>
-        <button
-          onClick={() => setActiveTab('feedback')}
-          className={`flex items-center gap-2 pb-4 text-sm font-bold uppercase tracking-widest border-b-2 transition-all ${
-            activeTab === 'feedback'
-              ? 'border-primary text-primary'
-              : 'border-transparent text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
-          }`}
-        >
-          <ShieldCheck size={16} /> Moderation & Blacklist
-        </button>
+      {/* Navigation Matrix */}
+      <div className="flex items-center gap-2 bg-slate-100/50 dark:bg-white/5 p-2 rounded-[2rem] w-fit border border-slate-200 dark:border-white/5">
+         <button
+           onClick={() => setActiveTab('users')}
+           className={clsx(
+             'flex items-center gap-3 px-8 py-4 rounded-2xl transition-all relative whitespace-nowrap active:scale-95',
+             activeTab === 'users' 
+               ? 'bg-white dark:bg-zinc-800 text-charcoal dark:text-white shadow-xl' 
+               : 'text-slate-400 hover:bg-white/50 dark:hover:bg-white/5'
+           )}
+         >
+           <Users size={18} />
+           <span className="text-[11px] font-black uppercase tracking-widest">Identity Matrix</span>
+           {users.length > 0 && <span className="ml-2 px-2 py-0.5 bg-primary/10 text-primary rounded-full text-[9px] font-bold">{users.length}</span>}
+         </button>
+         <button
+           onClick={() => setActiveTab('feedback')}
+           className={clsx(
+             'flex items-center gap-3 px-8 py-4 rounded-2xl transition-all relative whitespace-nowrap active:scale-95',
+             activeTab === 'feedback' 
+               ? 'bg-white dark:bg-zinc-800 text-charcoal dark:text-white shadow-xl' 
+               : 'text-slate-400 hover:bg-white/50 dark:hover:bg-white/5'
+           )}
+         >
+           <MessageSquare size={18} />
+           <span className="text-[11px] font-black uppercase tracking-widest">Sentiment Ledger</span>
+           {reviews.filter(r => !r.isApproved).length > 0 && <span className="ml-2 px-2 py-0.5 bg-amber-500/10 text-amber-600 rounded-full text-[9px] font-bold">{reviews.filter(r => !r.isApproved).length}</span>}
+         </button>
       </div>
 
       {activeTab === 'users' && (
-        <div className="bg-white dark:bg-zinc-900 rounded-[2rem] border border-slate-100 dark:border-white/5 overflow-hidden shadow-sm animate-fade-in">
-          <div className="p-6 border-b border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-white/5 flex items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-blue-500/10 flex items-center justify-center text-blue-500 border border-blue-500/20">
-                <Users size={24} />
+        <div className="space-y-8 animate-fade-in">
+           <div className="bg-white dark:bg-zinc-900 border border-slate-100 dark:border-white/5 rounded-[3rem] shadow-sm overflow-hidden">
+              <div className="p-8 border-b border-slate-100 dark:border-white/5 bg-slate-50/30 dark:bg-white/[0.02] flex flex-col md:flex-row md:items-center justify-between gap-6">
+                 <div className="flex items-center gap-4">
+                    <div className="w-14 h-14 bg-primary/10 rounded-[1.25rem] flex items-center justify-center text-primary shadow-inner">
+                       <ShieldCheck size={28} />
+                    </div>
+                    <div>
+                       <h3 className="text-xl font-black text-charcoal dark:text-white uppercase tracking-tighter italic">Global Directory</h3>
+                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Institutional Integrity: 100% Operational</p>
+                    </div>
+                 </div>
+                 
+                 <div className="flex items-center gap-3">
+                    <div className="relative group/search">
+                       <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within/search:text-primary transition-colors" />
+                       <input type="text" placeholder="FILTER IDENTITY..." className="pl-12 pr-6 py-4 bg-white dark:bg-black border border-slate-200 dark:border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest w-full md:w-64 focus:ring-4 focus:ring-primary/10 transition-all outline-none" />
+                    </div>
+                 </div>
               </div>
-              <div>
-                <h3 className="font-bold text-charcoal dark:text-white tracking-tight text-lg">Global Directory</h3>
-                <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mt-1">Total Active Accounts: {loading ? '...' : users.length}</p>
-              </div>
-            </div>
-          </div>
-          
-          <div className="overflow-x-auto min-h-[400px]">
-            {loading ? (
-              <div className="flex flex-col items-center justify-center h-64 space-y-4">
-                 <Loader2 className="w-8 h-8 text-primary animate-spin" />
-                 <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">Loading Accounts...</p>
-              </div>
-            ) : (
-              <table className="w-full text-left border-collapse min-w-[800px]">
-                <thead>
-                  <tr className="border-b border-slate-100 dark:border-white/5">
-                    <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-slate-400">Account Details</th>
-                    <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-slate-400">Email Address</th>
-                    <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-slate-400">System Role</th>
-                    <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-slate-400">Registered On</th>
-                    <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-slate-400 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-white/5">
-                  {users.map((item) => (
-                    <tr key={item.id} className="hover:bg-slate-50 dark:hover:bg-white/5 transition-colors group">
-                      <td className="px-6 py-5">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-zinc-800 flex items-center justify-center font-black text-slate-500 text-sm">
-                             {item.name ? item.name.charAt(0).toUpperCase() : 'U'}
-                          </div>
-                          <div>
-                            <p className="text-sm font-bold text-charcoal dark:text-white">{item.name || 'Unknown User'}</p>
-                            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mt-1">ID: {item.id.slice(0, 8)}</p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-5">
-                        <div className="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-300">
-                          <Mail size={14} className="text-slate-400" /> {item.email}
-                        </div>
-                      </td>
-                      <td className="px-6 py-5">
-                        <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${
-                          item.role === 'ADMIN' ? 'bg-primary/10 text-primary' :
-                          item.role === 'TENANT' ? 'bg-amber-500/10 text-amber-500' :
-                          'bg-blue-500/10 text-blue-500'
-                        }`}>
-                          {item.role === 'ADMIN' ? <ShieldAlert size={12} /> : item.role === 'TENANT' ? <Store size={12} /> : <Users size={12} />}
-                          {item.role}
-                        </span>
-                      </td>
-                      <td className="px-6 py-5 text-sm text-slate-500 font-medium">
-                        {new Date(item.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
-                      </td>
-                        <td className="px-6 py-5 text-right">
-                          <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                            {updatingId === item.id ? (
-                              <Loader2 size={16} className="animate-spin text-primary mr-2" />
-                            ) : (
-                              <select 
-                                value={item.role}
-                                onChange={(e) => handleRoleChange(item.id, e.target.value)}
-                                className="bg-slate-100 dark:bg-zinc-800 text-charcoal dark:text-white px-2 py-1.5 rounded-lg text-xs font-bold outline-none border border-transparent focus:border-primary transition-all"
-                              >
-                                <option value="CUSTOMER">Customer</option>
-                                <option value="TENANT">Tenant</option>
-                                <option value="ADMIN">Admin</option>
-                              </select>
-                            )}
 
-                            <button
-                              onClick={() => handleDelete(item.id)}
-                              disabled={deletingId === item.id}
-                              className="inline-flex items-center justify-center w-8 h-8 bg-red-50 dark:bg-red-900/20 text-red-600 hover:bg-red-500 hover:text-white rounded-lg transition-colors active:scale-95 disabled:opacity-50"
-                              title="Delete User"
-                            >
-                              {deletingId === item.id ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
-                            </button>
-                          </div>
-                        </td>
-                    </tr>
-                  ))}
-                  
-                  {users.length === 0 && (
-                     <tr>
-                        <td colSpan={5} className="py-12 text-center text-slate-400 font-bold text-sm">No users found.</td>
-                     </tr>
-                  )}
-                </tbody>
-              </table>
-            )}
-          </div>
+              <div className="overflow-x-auto custom-scrollbar">
+                {loading ? (
+                  <div className="py-40 flex flex-col items-center justify-center gap-4">
+                     <Loader2 className="w-10 h-10 text-primary animate-spin" />
+                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Syncing Matrix...</p>
+                  </div>
+                ) : (
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                       <tr className="bg-slate-50/50 dark:bg-white/[0.02]">
+                          <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-slate-400">Institutional Identity</th>
+                          <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-slate-400">Privilege Level</th>
+                          <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-slate-400">Security Status</th>
+                          <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">Administrative Protocol</th>
+                       </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 dark:divide-white/5">
+                       {users.map((item) => (
+                         <tr key={item.id} className="hover:bg-slate-50/80 dark:hover:bg-white/[0.02] transition-colors group/row">
+                            <td className="px-8 py-8">
+                               <div className="flex items-center gap-5">
+                                  <div className={clsx(
+                                    'w-14 h-14 rounded-[1.5rem] font-black text-lg flex items-center justify-center border transition-all shadow-sm',
+                                    item.isBlacklisted ? 'bg-red-500 text-white border-red-400' : 'bg-slate-100 dark:bg-zinc-800 text-slate-500 dark:text-slate-400 border-transparent'
+                                  )}>
+                                     {item.name ? item.name.charAt(0).toUpperCase() : 'U'}
+                                  </div>
+                                  <div>
+                                     <p className={clsx('text-base font-black uppercase tracking-tight italic', item.isBlacklisted ? 'text-red-500 line-through opacity-60' : 'text-charcoal dark:text-white')}>{item.name || 'ANONYMOUS'}</p>
+                                     <p className="text-[10px] font-bold text-slate-400 mt-0.5 tracking-wider">{item.email}</p>
+                                  </div>
+                               </div>
+                            </td>
+                            <td className="px-8 py-8">
+                               <div className="flex items-center gap-3">
+                                  <div className="p-2 bg-primary/10 text-primary rounded-xl"><Shield size={16} /></div>
+                                  <select 
+                                    value={item.role}
+                                    onChange={(e) => handleRoleChange(item.id, e.target.value)}
+                                    disabled={isProcessing === item.id}
+                                    className="bg-transparent text-[11px] font-black uppercase tracking-widest text-charcoal dark:text-white hover:text-primary transition-colors cursor-pointer outline-none border-none p-0 focus:ring-0"
+                                  >
+                                     <option value="CUSTOMER">Customer Segment</option>
+                                     <option value="TENANT">Merchant Partner</option>
+                                     <option value="ADMIN">System Admin</option>
+                                  </select>
+                                  {isProcessing === item.id && <Loader2 size={14} className="animate-spin text-primary" />}
+                               </div>
+                            </td>
+                            <td className="px-8 py-8">
+                               {item.isBlacklisted ? (
+                                  <span className="inline-flex items-center gap-2 px-3 py-1 bg-red-500/10 text-red-500 text-[9px] font-black uppercase tracking-widest rounded-full border border-red-500/20">
+                                     <Ban size={10} /> Blacklisted
+                                  </span>
+                               ) : (
+                                  <span className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-500/10 text-emerald-500 text-[9px] font-black uppercase tracking-widest rounded-full border border-emerald-500/20">
+                                     <Activity size={10} className="animate-pulse" /> Active Uplink
+                                  </span>
+                               )}
+                            </td>
+                            <td className="px-8 py-8 text-right">
+                               <div className="flex items-center justify-end gap-3 opacity-0 group-hover/row:opacity-100 transition-all duration-300">
+                                  <button
+                                    onClick={() => handleToggleBlacklist(item.id, item.isBlacklisted)}
+                                    disabled={isProcessing === item.id}
+                                    className={clsx(
+                                      'px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-xl active:scale-95 disabled:opacity-50',
+                                      item.isBlacklisted ? 'bg-emerald-500 text-white shadow-emerald-500/20' : 'bg-red-500 text-white shadow-red-500/20'
+                                    )}
+                                  >
+                                     {item.isBlacklisted ? 'Restore Access' : 'Revoke Authorization'}
+                                  </button>
+                                  <button
+                                    onClick={() => handleDelete(item.id)}
+                                    disabled={isProcessing === item.id}
+                                    className="p-3.5 bg-slate-100 dark:bg-zinc-800 text-slate-400 hover:text-red-500 rounded-xl transition-all"
+                                  >
+                                     <Trash2 size={18} />
+                                  </button>
+                               </div>
+                            </td>
+                         </tr>
+                       ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+           </div>
         </div>
       )}
 
       {activeTab === 'feedback' && (
-        <div className="space-y-4 animate-fade-in">
-          {reviewsLoading ? (
-            <div className="flex flex-col items-center justify-center p-12 bg-white/50 dark:bg-zinc-900/50 rounded-[2rem] border border-slate-100 dark:border-white/5">
-              <Loader2 className="w-8 h-8 text-primary animate-spin mb-4" />
-              <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">Loading Reviews...</p>
-            </div>
-          ) : reviews.length === 0 ? (
-            <div className="p-12 text-center bg-white dark:bg-zinc-900 rounded-[2rem] border border-slate-100 dark:border-white/5">
-              <div className="w-16 h-16 bg-slate-50 dark:bg-zinc-800 rounded-full flex items-center justify-center mx-auto mb-4">
-                <ShieldCheck size={28} className="text-slate-400" />
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-10 animate-fade-in">
+           {/* Left: Moderation Feed */}
+           <div className="xl:col-span-8 space-y-8">
+              <div className="flex items-center justify-between">
+                 <h2 className="text-2xl font-black text-charcoal dark:text-white uppercase item-center italic tracking-tighter">Sentiment <span className="text-primary">Moderation.</span></h2>
+                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{reviews.filter(r => !r.isApproved).length} Pending Review</span>
               </div>
-              <h3 className="text-lg font-bold text-charcoal dark:text-white mb-2">No Reviews Found</h3>
-              <p className="text-sm text-slate-500 font-medium">There is currently no user feedback in the database.</p>
-            </div>
-          ) : (
-            reviews.map((item: any) => (
-              <div
-                key={item.id}
-                className={`p-6 rounded-[2rem] border transition-all ${
-                  item.isApproved
-                    ? 'bg-white dark:bg-zinc-900 border-slate-100 dark:border-white/5 shadow-sm'
-                    : 'bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/40'
-                }`}
-              >
-                <div className="flex flex-col md:flex-row items-start justify-between gap-6">
-                  <div className="flex-1">
-                    <div className="flex flex-wrap items-center gap-3 mb-2">
-                      <span className="font-bold text-charcoal dark:text-white">{item.user?.name || 'Unknown User'}</span>
-                      <span className="text-xs font-medium text-slate-500">({item.user?.email})</span>
-                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                          item.rating >= 4 ? 'bg-green-500/10 text-green-600' : 
-                          item.rating === 3 ? 'bg-amber-500/10 text-amber-600' :
-                          'bg-red-500/10 text-red-600'
-                        }`}
-                      >
-                        {item.rating} Stars
-                      </span>
-                      {!item.isApproved && (
-                        <span className="flex items-center gap-1 text-[10px] font-bold uppercase text-amber-600 tracking-wider">
-                          <ShieldAlert size={12} /> Pending Moderation
-                        </span>
-                      )}
-                      {item.isApproved && (
-                        <span className="flex items-center gap-1 text-[10px] font-bold uppercase text-primary tracking-wider">
-                          <Check size={12} /> Approved
-                        </span>
-                      )}
-                      <span className="text-xs text-slate-400 font-medium ml-auto">
-                        {new Date(item.createdAt).toLocaleString()}
-                      </span>
-                    </div>
-                    <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-300 italic">
-                      {item.comment ? `"${item.comment}"` : <span className="text-slate-400">No written comment provided.</span>}
-                    </p>
+              
+              <div className="space-y-6">
+                {reviewsLoading ? (
+                  <div className="p-40 text-center"><Loader2 className="animate-spin mx-auto text-primary" size={40} /></div>
+                ) : reviews.length === 0 ? (
+                  <div className="p-40 text-center border-2 border-dashed border-slate-200 dark:border-white/5 rounded-[3rem] bg-white/50 dark:bg-zinc-900/50">
+                     <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest">Sentiment Ledger is Clear</p>
                   </div>
+                ) : (
+                  reviews.map((item: any) => (
+                    <div key={item.id} className={clsx(
+                      'p-10 rounded-[3rem] border transition-all group/review relative overflow-hidden',
+                      item.isApproved ? 'bg-white dark:bg-zinc-900 border-slate-100 dark:border-white/5' : 'bg-amber-500/5 border-amber-500/20'
+                    )}>
+                       <div className="flex flex-col md:flex-row items-start justify-between gap-10 relative z-10">
+                          <div className="flex-1 space-y-6">
+                             <div className="flex items-center gap-4">
+                                <div className="w-12 h-12 bg-slate-100 dark:bg-zinc-800 rounded-2xl flex items-center justify-center font-black text-primary">
+                                   {item.user?.name?.charAt(0) || 'U'}
+                                </div>
+                                <div>
+                                   <div className="flex items-center gap-3">
+                                      <h4 className="text-sm font-black text-charcoal dark:text-white uppercase">{item.user?.name || 'Authorized Shopper'}</h4>
+                                      <div className="flex items-center gap-1">
+                                         {[...Array(5)].map((_, i) => (
+                                           <Sparkles key={i} size={10} className={clsx(i < (item.rating || 5) ? 'text-amber-500' : 'text-slate-200')} />
+                                         ))}
+                                      </div>
+                                   </div>
+                                   <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">{new Date().toLocaleDateString()}</p>
+                                </div>
+                             </div>
+                             
+                             <div className="p-6 bg-slate-50/50 dark:bg-black/40 rounded-[2rem] border border-slate-100/50 dark:border-white/5 relative">
+                                <MessageSquare size={40} className="absolute -top-5 -right-5 text-primary opacity-5" />
+                                <p className="text-sm font-bold text-slate-500 dark:text-slate-400 italic leading-relaxed">"{item.comment}"</p>
+                             </div>
 
-                  <div className="flex flex-wrap items-center gap-2">
-                    {!item.isApproved && (
-                      <button 
-                        onClick={() => handleApproveReview(item.id)}
-                        disabled={approvingId === item.id}
-                        className="flex items-center gap-2 px-4 py-2.5 bg-green-500/10 text-green-600 hover:bg-green-500 hover:text-white rounded-xl text-xs font-bold transition-colors disabled:opacity-50"
-                      >
-                        {approvingId === item.id ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />} 
-                        Approve
-                      </button>
-                    )}
-                    <button 
-                      onClick={() => handleDeleteReview(item.id)}
-                      disabled={deletingReviewId === item.id}
-                      className="flex items-center gap-2 px-4 py-2.5 bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/10 rounded-xl text-xs font-bold transition-colors disabled:opacity-50"
-                    >
-                      {deletingReviewId === item.id ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
-                      Delete
-                    </button>
-                  </div>
-                </div>
+                             <div className="flex items-center gap-4 pt-2">
+                                {!item.isApproved && (
+                                   <button 
+                                     onClick={() => handleApproveReview(item.id)}
+                                     className="flex items-center gap-2 px-6 py-3 bg-emerald-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-emerald-500/20 hover:scale-105 transition-all"
+                                   >
+                                      Authorize Feed
+                                   </button>
+                                )}
+                                <button 
+                                  onClick={() => handleDeleteReview(item.id)}
+                                  className="px-6 py-3 bg-red-500/10 text-red-500 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-500 hover:text-white transition-all"
+                                >
+                                   Purge Sentiment
+                                </button>
+                                {item.isApproved && (
+                                   <div className="flex items-center gap-2 text-emerald-500 text-[10px] font-black uppercase tracking-widest">
+                                      <CheckCircle2 size={14} /> System Verified
+                                   </div>
+                                )}
+                             </div>
+                          </div>
+
+                          <div className="shrink-0 text-right opacity-40 group-hover/review:opacity-100 transition-opacity">
+                             <div className="bg-slate-100 dark:bg-zinc-800 p-4 rounded-2xl flex flex-col items-center">
+                                <span className="text-2xl font-black text-charcoal dark:text-white">{item.rating || 5}</span>
+                                <span className="text-[8px] font-black uppercase tracking-widest text-slate-400">Stars</span>
+                             </div>
+                          </div>
+                       </div>
+                    </div>
+                  ))
+                )}
               </div>
-            ))
-          )}
+           </div>
+
+           {/* Right: Restricted Entities Terminal */}
+           <div className="xl:col-span-4 space-y-8">
+              <h2 className="text-2xl font-black text-charcoal dark:text-white uppercase italic tracking-tighter">Blacklist <span className="text-red-500">Terminal.</span></h2>
+              <div className="bg-charcoal dark:bg-zinc-900 rounded-[3rem] p-10 border border-white/5 shadow-2xl relative overflow-hidden">
+                 <div className="absolute top-0 right-0 p-8 opacity-5">
+                    <ShieldAlert size={120} />
+                 </div>
+                 
+                 <div className="flex items-center justify-between mb-10 relative z-10">
+                    <div className="space-y-1">
+                       <h3 className="text-lg font-black text-white uppercase italic tracking-tighter">Restricted Node Matrix</h3>
+                       <p className="text-[10px] font-black text-red-500 uppercase tracking-widest underline decoration-red-500/30 decoration-4">Authorization Denied</p>
+                    </div>
+                    <div className="bg-red-500 text-white px-4 py-1 rounded-xl text-xs font-black shadow-lg shadow-red-500/20">{blacklistedUsers.length}</div>
+                 </div>
+
+                 <div className="space-y-4 max-h-[600px] overflow-y-auto custom-scrollbar pr-2 relative z-10">
+                    {blacklistedUsers.length === 0 ? (
+                       <div className="py-20 text-center space-y-4">
+                          <ShieldCheck size={48} className="text-emerald-500 mx-auto opacity-20" />
+                          <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest animate-pulse">Ecosystem Security Integrity: High</p>
+                       </div>
+                    ) : (
+                       blacklistedUsers.map(u => (
+                         <div key={u.id} className="flex items-center justify-between p-5 bg-white/5 rounded-[1.5rem] border border-white/5 group/bitem hover:bg-white/10 hover:border-red-500/30 transition-all">
+                            <div className="truncate flex-1">
+                               <p className="text-sm font-black text-white truncate uppercase tracking-tight">{u.name || 'ANONYMOUS'}</p>
+                               <p className="text-[10px] text-zinc-500 font-bold truncate tracking-widest mt-0.5">{u.email}</p>
+                            </div>
+                            <button 
+                              onClick={() => handleToggleBlacklist(u.id, true)}
+                              className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center opacity-0 group-hover/bitem:opacity-100 hover:scale-110 active:scale-95 transition-all"
+                              title="Restore Identity"
+                            >
+                               <Check size={18} />
+                            </button>
+                         </div>
+                       ))
+                    )}
+                 </div>
+
+                 <div className="mt-10 pt-8 border-t border-white/5 space-y-4 relative z-10">
+                    <p className="text-[9px] font-bold text-zinc-500 uppercase leading-relaxed tracking-wider italic">Administrative Warning: Blacklisted entities are automatically blocked from terminal authentication and manifesting. All active session keys for these identifiers have been liquidated.</p>
+                 </div>
+              </div>
+              
+              {/* Quick Actions Card */}
+              <div className="bg-primary rounded-[2.5rem] p-8 text-white shadow-2xl relative overflow-hidden group">
+                 <div className="absolute top-0 right-0 p-4 opacity-20 group-hover:rotate-12 transition-transform">
+                    <RefreshCcw size={40} />
+                 </div>
+                 <h4 className="text-lg font-black uppercase italic tracking-tighter mb-2">Global Refresh</h4>
+                 <p className="text-[10px] font-bold uppercase tracking-widest opacity-80 mb-6 underline decoration-white/20">Re-synchronize entire identity matrix.</p>
+                 <button onClick={loadUsers} className="w-full py-4 bg-white text-primary rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-xl shadow-black/10 active:scale-95 transition-all">Execute Sync</button>
+              </div>
+           </div>
         </div>
       )}
+
+      {/* Persistence Custom Styling */}
+      <style jsx global>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: rgba(var(--primary-rgb), 0.1);
+          border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: rgba(var(--primary-rgb), 0.3);
+        }
+      `}</style>
     </div>
   );
 }

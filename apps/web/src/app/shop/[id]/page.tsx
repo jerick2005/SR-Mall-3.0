@@ -21,6 +21,7 @@ import { DigitalStorefront } from '@/types/storefront';
 import { getStorefrontByIdAction } from '@/app/actions/tenant';
 import { useAuth } from '@/app/providers';
 import { ChatBox } from '@/components/chat-box';
+import { FeedbackSection } from '@/components/feedback-section';
 import { LoginModal } from '@/components/login-modal';
 import clsx from 'clsx';
 
@@ -399,6 +400,12 @@ export default function ShopProfilePage() {
           </div>
         </div>
       )}
+
+      {/* Tenant-Specific Feedback Section */}
+      <FeedbackSection 
+        isAuthenticated={isAuthenticated} 
+        tenantId={shop.id} 
+      />
 
       {shop && (
         <ChatBox 

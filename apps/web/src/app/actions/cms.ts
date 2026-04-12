@@ -18,24 +18,24 @@ export async function getPublicViewConfigAction() {
 }
 
 export async function updatePublicViewConfigAction(data: {
-  logoUrl?: string;
-  companyName?: string;
-  contactEmail?: string;
-  contactPhone?: string;
-  contactAddress?: string;
-  heroTitle?: string;
-  heroSubtitle?: string;
-  heroBgUrl?: string;
-  heroBadge?: string;
-  heroOverlayDark?: number;
-  featuredVideoUrl?: string;
-  videoTitle?: string;
-  videoDescription?: string;
-  aboutTitle?: string;
-  aboutDescription?: string;
-  aboutImageUrl?: string;
-  contactTitle?: string;
-  contactDescription?: string;
+  logoUrl?: string | null;
+  companyName?: string | null;
+  contactEmail?: string | null;
+  contactPhone?: string | null;
+  contactAddress?: string | null;
+  heroTitle?: string | null;
+  heroSubtitle?: string | null;
+  heroBgUrl?: string | null;
+  heroBadge?: string | null;
+  heroOverlayDark?: number | null;
+  featuredVideoUrl?: string | null;
+  videoTitle?: string | null;
+  videoDescription?: string | null;
+  aboutTitle?: string | null;
+  aboutDescription?: string | null;
+  aboutImageUrl?: string | null;
+  contactTitle?: string | null;
+  contactDescription?: string | null;
 }, adminId?: string) {
   try {
     const existingConfig = await prisma.publicViewConfig.findFirst();

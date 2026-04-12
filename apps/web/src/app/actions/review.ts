@@ -4,7 +4,7 @@ import { prisma } from '@srmall/database';
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
 
-export async function submitReviewAction(userId: string, rating: number, comment?: string) {
+export async function submitReviewAction(userId: string, rating: number, comment?: string, tenantId?: string) {
   try {
     if (!userId) {
       return {
@@ -20,10 +20,11 @@ export async function submitReviewAction(userId: string, rating: number, comment
       };
     }
 
-    // Check if user already submitted a review
-    const existingReview = await prisma.review.findFirst({
+    // Check if user already submitted a review for THIS tenant (or general mall if tenantId is null)
+    const existingReview = await (prisma as any).review.findFirst({
       where: {
-        userId: userId
+        userId: userId,
+        tenantId: tenantId || null
       }
     });
 
@@ -34,9 +35,10 @@ export async function submitReviewAction(userId: string, rating: number, comment
       };
     }
 
-    const review = await prisma.review.create({
+    const review = await (prisma as any).review.create({
       data: {
         userId: userId,
+        tenantId: tenantId || null,
         rating,
         comment: comment || null,
         isApproved: false // Requires admin approval before appearing on public view
@@ -121,10 +123,13 @@ export async function deleteMyReviewAction(userId: string) {
   }
 }
 
-export async function getMyReviewAction(userId: string) {
+export async function getMyReviewAction(userId: string, tenantId?: string) {
   try {
-    const review = await prisma.review.findFirst({
-      where: { userId },
+    const review = await (prisma as any).review.findFirst({
+      where: { 
+        userId,
+        tenantId: tenantId || null
+      },
       orderBy: { createdAt: 'desc' }
     });
     return { success: true, data: review };
@@ -134,11 +139,12 @@ export async function getMyReviewAction(userId: string) {
   }
 }
 
-export async function getApprovedReviewsAction() {
+export async function getApprovedReviewsAction(tenantId?: string) {
   try {
-    const reviews = await prisma.review.findMany({
+    const reviews = await (prisma as any).review.findMany({
       where: {
-        isApproved: true
+        isApproved: true,
+        tenantId: tenantId || null // If tenantId is provided, get for that tenant, otherwise get general mall reviews
       },
       include: {
         user: {

@@ -49,14 +49,24 @@ export default function AdPromoManager() {
     setTimeout(() => setToast(null), 4500);
   };
 
-  useEffect(() => { if (user?.id) fetchPromos(); }, [user?.id]);
+  useEffect(() => { 
+    if (user?.id) {
+      fetchPromos();
+    } else {
+      setLoading(false);
+    }
+  }, [user?.id]);
 
   const fetchPromos = async () => {
-    if (!user?.id) return;
+    if (!user?.id) {
+      setLoading(false);
+      return;
+    }
     try {
       const tenant = await getTenantByUserId(user.id);
-      if (!tenant) return;
-      setPromos(await getPromosByTenant(tenant.id));
+      if (tenant) {
+        setPromos(await getPromosByTenant(tenant.id));
+      }
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
   };

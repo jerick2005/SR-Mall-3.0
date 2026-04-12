@@ -4,6 +4,7 @@ import React from 'react';
 import { Download, Receipt, Calendar, Building2, AlertTriangle, CheckCircle, Clock, X } from 'lucide-react';
 import { getTenantInvoices, submitDepositSlip } from '@/app/actions/finance';
 import { getStorefrontAction } from '@/app/actions/tenant';
+import { generateTenantReceiptPDF } from '@/utils/report-generator';
 import { useAuth } from '@/app/providers';
 
 export default function LeasePayments() {
@@ -19,17 +20,27 @@ export default function LeasePayments() {
   };
 
   React.useEffect(() => {
+    let intervalId: NodeJS.Timeout;
+    
     if (user?.id) {
-      getStorefrontAction(user.id).then(res => {
+      const fetchData = async () => {
+        const res = await getStorefrontAction(user.id);
         if (res.success && res.data) {
           setStorefront(res.data);
-          getTenantInvoices(res.data.id).then(data => {
-            setPayments(data || []);
-          });
+          const data = await getTenantInvoices(res.data.id);
+          setPayments(data || []);
         }
-      });
+      };
+
+      fetchData();
+      // Simulate Supabase Realtime with high-frequency polling
+      intervalId = setInterval(fetchData, 10000);
     }
+    return () => clearInterval(intervalId);
   }, [user]);
+
+  const unpaidBalance = payments.filter(p => p.status === 'PENDING' || p.status === 'OVERDUE').reduce((sum, p) => sum + p.amount, 0);
+  const isCleared = payments.length > 0 && unpaidBalance === 0;
 
   // Derive contract info from storefront
   const unitId = storefront?.unit_id || '—';
@@ -97,25 +108,33 @@ export default function LeasePayments() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-          {/* Current Monthly Rent */}
           <div className="bg-white dark:bg-zinc-900 border border-slate-100 dark:border-white/5 p-4 sm:p-6 rounded-2xl sm:rounded-[2rem] shadow-sm flex flex-col justify-between">
             <div className="flex justify-between items-start mb-4 sm:mb-6">
-              <h3 className="text-slate-500 font-bold text-[10px] uppercase tracking-widest leading-none">Latest Monthly Rent</h3>
-              <div className="w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-900/30 text-blue-500 flex items-center justify-center">
+              <h3 className="text-slate-500 font-bold text-[10px] uppercase tracking-widest leading-none">Account Standing</h3>
+              <div className="w-8 h-8 rounded-full bg-slate-50 dark:bg-zinc-800 text-slate-500 flex items-center justify-center">
                 <Receipt size={16} />
               </div>
             </div>
             <div>
-              <p className="text-2xl sm:text-3xl lg:text-4xl font-black text-charcoal dark:text-white">
-                ₱{payments.length > 0 ? payments[0].amount.toLocaleString() : '0'}
-                <span className="text-lg sm:text-xl text-slate-300">.00</span>
-              </p>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-2 flex items-center gap-1.5">
-                <Clock size={12} />
-                {payments.length > 0 && payments[0].dueDate
-                  ? `Due by ${new Date(payments[0].dueDate).toLocaleDateString()}`
-                  : 'No Active Invoices'}
-              </p>
+              {isCleared ? (
+                <div className="flex items-center gap-3">
+                  <span className="text-4xl sm:text-5xl border border-emerald-200 dark:border-emerald-900 bg-emerald-50 dark:bg-emerald-900/30 w-16 h-16 flex items-center justify-center rounded-2xl shadow-inner shadow-emerald-500/20">🟢</span>
+                  <div>
+                    <p className="text-2xl sm:text-3xl font-black text-emerald-600">Account Cleared</p>
+                    <p className="text-[10px] sm:text-xs font-bold text-emerald-500/60 uppercase tracking-widest mt-1">No outstanding balances</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center gap-3">
+                  <span className="text-4xl sm:text-5xl border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-900/30 w-16 h-16 flex items-center justify-center rounded-2xl shadow-inner shadow-red-500/20">🔴</span>
+                  <div>
+                    <p className="text-[10px] sm:text-xs font-black text-red-500/60 uppercase tracking-widest mb-1">Balance Due</p>
+                    <p className="text-2xl sm:text-3xl lg:text-4xl font-black text-charcoal dark:text-white">
+                      ₱{unpaidBalance.toLocaleString()}
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
@@ -234,9 +253,20 @@ export default function LeasePayments() {
                     </td>
                     <td className="px-4 sm:px-6 py-4 sm:py-5 text-right">
                       {row.status === 'PAID' ? (
-                        <button className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-slate-300 hover:text-primary rounded-xl font-bold text-[9px] sm:text-[10px] uppercase tracking-widest transition-colors">
-                          <Download size={12} className="sm:w-[14px] sm:h-[14px]" /> Receipt
-                        </button>
+                        row.referenceNo ? (
+                          <div className="inline-flex flex-col items-end gap-1 text-right">
+                             <button onClick={() => generateTenantReceiptPDF(row, storefront)} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-emerald-500/20 transition-all hover:scale-105 active:scale-95 shadow-sm shadow-emerald-500/10 cursor-pointer">
+                                <Download size={10} /> Download receipt
+                             </button>
+                             <p className="text-[8px] sm:text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">
+                               Admin Ref: {row.referenceNo}
+                             </p>
+                          </div>
+                        ) : (
+                          <button onClick={() => generateTenantReceiptPDF(row, storefront)} className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-slate-300 hover:text-primary rounded-xl font-bold text-[9px] sm:text-[10px] uppercase tracking-widest transition-colors hover:scale-105 active:scale-95">
+                            <Download size={12} className="sm:w-[14px] sm:h-[14px]" /> Web Receipt
+                          </button>
+                        )
                       ) : row.status === 'REVIEWING' ? (
                         <span className="inline-flex items-center px-3 sm:px-4 py-2 text-[9px] sm:text-[10px] font-bold text-blue-500 uppercase tracking-widest">
                           <Clock size={10} className="mr-1" /> Awaiting Clearance

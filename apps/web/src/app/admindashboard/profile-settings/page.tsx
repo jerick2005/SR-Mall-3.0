@@ -1,21 +1,33 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { User, Lock, Bell, Shield, Save, Camera, Eye, EyeOff, CheckCircle, AlertTriangle, Mail, Phone, Globe, Key } from 'lucide-react';
+import { 
+  User, Lock, Bell, Shield, Save, Camera, Eye, EyeOff, 
+  CheckCircle, AlertTriangle, Mail, Phone, Globe, Key,
+  ShieldCheck, ArrowRight, Loader2, Sparkles, Activity, Monitor
+} from 'lucide-react';
 import { useAuth } from '@/app/providers';
 import { getNotificationPreferences, updateNotificationPreferences } from '@/app/actions/notifications';
+import { updateSecurityAction } from '@/app/actions/auth';
+import { toast } from 'sonner';
 import clsx from 'clsx';
 
 type Tab = 'profile' | 'security' | 'notifications' | 'system';
 
-export default function ProfileSettings() {
+export default function AdminProfileSettings() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<Tab>('profile');
-  const [showOldPass, setShowOldPass] = useState(false);
-  const [showNewPass, setShowNewPass] = useState(false);
-  const [saved, setSaved] = useState(false);
+  const [showPass, setShowPass] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [notificationPrefs, setNotificationPrefs] = useState<any>(null);
   const [loadingPrefs, setLoadingPrefs] = useState(false);
+
+  // Security State
+  const [securityData, setSecurityData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
 
   // Load notification preferences
   useEffect(() => {
@@ -25,7 +37,6 @@ export default function ProfileSettings() {
         if (res.success && res.data) {
           setNotificationPrefs(res.data);
         } else {
-          // Set default preferences if none exist
           setNotificationPrefs({
             newBookingInquiry: true,
             feedbackSpamDetected: true,
@@ -40,13 +51,42 @@ export default function ProfileSettings() {
     }
   }, [user, activeTab]);
 
-  const handleSave = async () => {
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
-    
-    // Save notification preferences if on notifications tab
-    if (activeTab === 'notifications' && user && notificationPrefs) {
-      await updateNotificationPreferences(user.id, notificationPrefs);
+  const handleProfileSave = async () => {
+    setIsSaving(true);
+    // Mock save for other profile fields for now as they aren't fully hooked to a tenant-like specialized action yet
+    await new Promise(r => setTimeout(r, 1000));
+    toast.success("Profile Identity Updated");
+    setIsSaving(false);
+  };
+
+  const handleSecurityUpdate = async () => {
+    if (!user?.id) return;
+    if (securityData.newPassword !== securityData.confirmPassword) {
+      toast.error("Security mismatch: Passwords do not align.");
+      return;
+    }
+
+    setIsSaving(true);
+    const res = await updateSecurityAction(user.id, {
+      currentPassword: securityData.currentPassword,
+      newPassword: securityData.newPassword
+    });
+
+    if (res.success) {
+      toast.success("Security Credentials Synchronized");
+      setSecurityData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+    } else {
+      toast.error("Security update failed", { description: res.error });
+    }
+    setIsSaving(false);
+  };
+
+  const handleNotifSave = async () => {
+    if (user && notificationPrefs) {
+      setIsSaving(true);
+      const res = await updateNotificationPreferences(user.id, notificationPrefs);
+      if (res.success) toast.success("Intelligence Alert Preferences Saved");
+      setIsSaving(false);
     }
   };
 
@@ -54,283 +94,340 @@ export default function ProfileSettings() {
     setNotificationPrefs((prev: any) => prev ? { ...prev, [key]: value } : null);
   };
 
-  const tabs: { key: Tab; label: string; icon: React.ElementType }[] = [
-    { key: 'profile', label: 'Profile Info', icon: User },
-    { key: 'security', label: 'Security', icon: Lock },
-    { key: 'notifications', label: 'Notifications', icon: Bell },
-    { key: 'system', label: 'System Access', icon: Shield },
+  const tabs: { key: Tab; label: string; icon: any }[] = [
+    { key: 'profile', label: 'Identity Matrix', icon: User },
+    { key: 'security', label: 'Security Firewall', icon: Lock },
+    { key: 'notifications', label: 'Intelligence Alerts', icon: Bell },
+    { key: 'system', label: 'System Authorization', icon: Shield },
   ];
 
   return (
-    <div className={clsx('p-8', 'lg:p-10', 'animate-fade-in-up', 'max-w-[1200px]', 'mx-auto', 'space-y-8')}>
-      {/* Header */}
-      <div className={clsx('flex', 'items-end', 'justify-between')}>
-        <div>
-          <h1 className={clsx('text-3xl', 'font-black', 'text-charcoal', 'dark:text-white', 'tracking-tight')}>Profile Settings</h1>
-          <p className={clsx('text-sm', 'text-slate-500', 'font-medium', 'mt-1')}>Manage your administrator account and preferences.</p>
+    <div className="p-4 md:p-8 lg:p-10 animate-fade-in-up space-y-10 min-h-screen max-w-[1400px] mx-auto">
+      {/* Premium Header */}
+      <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8 pb-8 border-b border-slate-200 dark:border-white/10">
+        <div className="space-y-4">
+           <div className="inline-flex items-center gap-2 px-3 py-1 bg-primary/10 text-primary rounded-full text-[10px] font-black uppercase tracking-widest border border-primary/20">
+              <ShieldCheck size={12} /> Root Level Access
+           </div>
+           <h1 className="text-5xl font-black text-charcoal dark:text-white tracking-tighter italic uppercase leading-none">
+              Control <span className="text-primary">Center.</span>
+           </h1>
+           <p className="text-slate-500 font-medium max-w-2xl text-lg">
+              Manage master administrator credentials, security protocols, and system-wide intelligence alerts.
+           </p>
         </div>
-        {saved && (
-          <div className={clsx('flex', 'items-center', 'gap-2', 'px-4', 'py-2.5', 'bg-green-50', 'dark:bg-green-900/30', 'text-green-600', 'border', 'border-green-200', 'dark:border-green-900/50', 'rounded-xl', 'text-sm', 'font-bold', 'animate-fade-in')}>
-            <CheckCircle size={16} /> Changes saved successfully!
-          </div>
-        )}
       </div>
 
-      <div className={clsx('flex', 'flex-col', 'lg:flex-row', 'gap-8')}>
-        {/* Sidebar Tabs */}
-        <div className={clsx('w-full', 'lg:w-64', 'shrink-0', 'space-y-2')}>
-          {/* Avatar Card */}
-          <div className={clsx('bg-white', 'dark:bg-zinc-900', 'border', 'border-slate-100', 'dark:border-white/5', 'rounded-[2rem]', 'p-6', 'text-center', 'mb-4', 'shadow-sm')}>
-            <div className={clsx('relative', 'inline-block', 'mb-4')}>
-              <div className={clsx('w-20', 'h-20', 'rounded-full', 'bg-primary', 'text-white', 'font-black', 'text-2xl', 'flex', 'items-center', 'justify-center', 'ring-4', 'ring-primary/20', 'shadow-xl', 'shadow-primary/20')}>
-                AD
+      <div className="flex flex-col lg:flex-row gap-10">
+        {/* Navigation & Status Card */}
+        <aside className="w-full lg:w-80 shrink-0 space-y-6">
+           {/* Professional Avatar Card */}
+           <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/5 rounded-[2.5rem] p-8 text-center shadow-sm relative overflow-hidden group">
+              <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                 <Sparkles size={40} className="text-primary" />
               </div>
-              <button className={clsx('absolute', '-bottom-1', '-right-1', 'w-7', 'h-7', 'rounded-full', 'bg-charcoal', 'dark:bg-white', 'text-white', 'dark:text-black', 'flex', 'items-center', 'justify-center', 'shadow-md', 'hover:scale-110', 'transition-transform')}>
-                <Camera size={13} />
-              </button>
-            </div>
-            <h3 className={clsx('font-bold', 'text-charcoal', 'dark:text-white')}>Admin Module</h3>
-            <p className={clsx('text-[10px]', 'font-bold', 'text-primary', 'uppercase', 'tracking-widest', 'mt-1')}>Super Administrator</p>
-            <div className={clsx('mt-3', 'px-3', 'py-1.5', 'bg-green-50', 'dark:bg-green-900/20', 'border', 'border-green-200', 'dark:border-green-900/50', 'rounded-full', 'flex', 'items-center', 'justify-center', 'gap-2')}>
-              <span className={clsx('w-1.5', 'h-1.5', 'bg-green-500', 'rounded-full', 'animate-pulse')}></span>
-              <span className={clsx('text-[10px]', 'font-bold', 'text-green-600', 'uppercase', 'tracking-widest')}>Active Session</span>
-            </div>
-          </div>
-
-          {/* Tab Links */}
-          <div className={clsx('bg-white', 'dark:bg-zinc-900', 'border', 'border-slate-100', 'dark:border-white/5', 'rounded-[2rem]', 'p-3', 'shadow-sm')}>
-            {tabs.map(({ key, label, icon: Icon }) => (
-              <button
-                key={key}
-                onClick={() => setActiveTab(key)}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${
-                  activeTab === key
-                    ? 'bg-primary/10 text-primary border border-primary/20'
-                    : 'text-slate-500 hover:bg-slate-50 dark:hover:bg-white/5 hover:text-charcoal dark:hover:text-white'
-                }`}
-              >
-                <Icon size={17} className={activeTab === key ? 'text-primary' : 'text-slate-400'} />
-                {label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Main Content */}
-        <div className="flex-1">
-
-          {/* ── Profile Info ── */}
-          {activeTab === 'profile' && (
-            <div className={clsx('bg-white', 'dark:bg-zinc-900', 'border', 'border-slate-100', 'dark:border-white/5', 'rounded-[2rem]', 'shadow-sm', 'p-8', 'space-y-8')}>
-              <h2 className={clsx('font-black', 'text-charcoal', 'dark:text-white', 'flex', 'items-center', 'gap-2', 'text-lg')}><User size={20} className="text-slate-400" /> Personal Information</h2>
-
-              <div className={clsx('grid', 'grid-cols-1', 'md:grid-cols-2', 'gap-6')}>
-                <div>
-                  <label className={clsx('text-[10px]', 'font-bold', 'text-slate-400', 'uppercase', 'tracking-widest', 'block', 'mb-2')}>First Name</label>
-                  <input type="text" defaultValue="Mall" className={clsx('w-full', 'px-4', 'py-3', 'bg-slate-50', 'dark:bg-zinc-800', 'border', 'border-slate-200', 'dark:border-white/10', 'rounded-xl', 'focus:border-primary', 'focus:outline-none', 'transition-colors', 'text-sm', 'font-medium', 'text-charcoal', 'dark:text-white')} />
+              <div className="relative inline-block mb-6">
+                <div className="w-24 h-24 rounded-[2rem] bg-primary text-white font-black text-3xl flex items-center justify-center ring-4 ring-primary/20 shadow-2xl transition-transform group-hover:scale-105">
+                   AD
                 </div>
-                <div>
-                  <label className={clsx('text-[10px]', 'font-bold', 'text-slate-400', 'uppercase', 'tracking-widest', 'block', 'mb-2')}>Last Name</label>
-                  <input type="text" defaultValue="Administrator" className={clsx('w-full', 'px-4', 'py-3', 'bg-slate-50', 'dark:bg-zinc-800', 'border', 'border-slate-200', 'dark:border-white/10', 'rounded-xl', 'focus:border-primary', 'focus:outline-none', 'transition-colors', 'text-sm', 'font-medium', 'text-charcoal', 'dark:text-white')} />
-                </div>
-                <div>
-                  <label className={clsx('text-[10px]', 'font-bold', 'text-slate-400', 'uppercase', 'tracking-widest', 'flex', 'items-center', 'gap-1.5', 'mb-2')}><Mail size={12}/> Email Address</label>
-                  <input type="email" defaultValue="srmall@admin.com" className={clsx('w-full', 'px-4', 'py-3', 'bg-slate-50', 'dark:bg-zinc-800', 'border', 'border-slate-200', 'dark:border-white/10', 'rounded-xl', 'focus:border-primary', 'focus:outline-none', 'transition-colors', 'text-sm', 'font-medium', 'text-charcoal', 'dark:text-white')} />
-                </div>
-                <div>
-                  <label className={clsx('text-[10px]', 'font-bold', 'text-slate-400', 'uppercase', 'tracking-widest', 'flex', 'items-center', 'gap-1.5', 'mb-2')}><Phone size={12}/> Phone Number</label>
-                  <input type="tel" defaultValue="+63 917 555 0000" className={clsx('w-full', 'px-4', 'py-3', 'bg-slate-50', 'dark:bg-zinc-800', 'border', 'border-slate-200', 'dark:border-white/10', 'rounded-xl', 'focus:border-primary', 'focus:outline-none', 'transition-colors', 'text-sm', 'font-medium', 'text-charcoal', 'dark:text-white')} />
-                </div>
-                <div className="md:col-span-2">
-                  <label className={clsx('text-[10px]', 'font-bold', 'text-slate-400', 'uppercase', 'tracking-widest', 'flex', 'items-center', 'gap-1.5', 'mb-2')}><Globe size={12}/> Department / Role Title</label>
-                  <input type="text" defaultValue="SR Mall Management — Super Administrator" className={clsx('w-full', 'px-4', 'py-3', 'bg-slate-50', 'dark:bg-zinc-800', 'border', 'border-slate-200', 'dark:border-white/10', 'rounded-xl', 'focus:border-primary', 'focus:outline-none', 'transition-colors', 'text-sm', 'font-medium', 'text-charcoal', 'dark:text-white')} />
-                </div>
-                <div className="md:col-span-2">
-                  <label className={clsx('text-[10px]', 'font-bold', 'text-slate-400', 'uppercase', 'tracking-widest', 'block', 'mb-2')}>Bio / Notes</label>
-                  <textarea rows={3} defaultValue="Oversees all mall operations, tenant management, and administrative decisions for SR Mall." className={clsx('w-full', 'px-4', 'py-3', 'bg-slate-50', 'dark:bg-zinc-800', 'border', 'border-slate-200', 'dark:border-white/10', 'rounded-xl', 'focus:border-primary', 'focus:outline-none', 'transition-colors', 'text-sm', 'font-medium', 'text-charcoal', 'dark:text-white', 'resize-none')} />
-                </div>
-              </div>
-
-              <div className={clsx('pt-6', 'border-t', 'border-slate-100', 'dark:border-white/5', 'flex', 'justify-end')}>
-                <button onClick={handleSave} className={clsx('flex', 'items-center', 'gap-2', 'px-8', 'py-3', 'bg-primary', 'text-white', 'hover:bg-primary-hover', 'rounded-xl', 'font-bold', 'text-xs', 'uppercase', 'tracking-widest', 'transition-all', 'shadow-lg', 'shadow-primary/20', 'hover:scale-[1.02]')}>
-                  <Save size={16} /> Save Changes
+                <button className="absolute -bottom-2 -right-2 w-10 h-10 rounded-2xl bg-charcoal dark:bg-white text-white dark:text-black flex items-center justify-center shadow-xl hover:scale-110 active:scale-95 transition-all">
+                   <Camera size={16} />
                 </button>
               </div>
-            </div>
-          )}
-
-          {/* ── Security ── */}
-          {activeTab === 'security' && (
-            <div className="space-y-6">
-              {/* Change Password */}
-              <div className={clsx('bg-white', 'dark:bg-zinc-900', 'border', 'border-slate-100', 'dark:border-white/5', 'rounded-[2rem]', 'shadow-sm', 'p-8', 'space-y-6')}>
-                <h2 className={clsx('font-black', 'text-charcoal', 'dark:text-white', 'flex', 'items-center', 'gap-2', 'text-lg')}><Key size={20} className="text-slate-400" /> Change Password</h2>
-
-                <div className="space-y-4">
-                  <div>
-                    <label className={clsx('text-[10px]', 'font-bold', 'text-slate-400', 'uppercase', 'tracking-widest', 'block', 'mb-2')}>Current Password</label>
-                    <div className="relative">
-                      <input type={showOldPass ? 'text' : 'password'} placeholder="••••••••" className={clsx('w-full', 'px-4', 'py-3', 'bg-slate-50', 'dark:bg-zinc-800', 'border', 'border-slate-200', 'dark:border-white/10', 'rounded-xl', 'focus:border-primary', 'focus:outline-none', 'transition-colors', 'text-sm', 'font-medium', 'pr-12')} />
-                      <button onClick={() => setShowOldPass(!showOldPass)} className={clsx('absolute', 'right-4', 'top-1/2', '-translate-y-1/2', 'text-slate-400', 'hover:text-primary', 'transition-colors')}>
-                        {showOldPass ? <EyeOff size={18} /> : <Eye size={18} />}
-                      </button>
-                    </div>
-                  </div>
-                  <div>
-                    <label className={clsx('text-[10px]', 'font-bold', 'text-slate-400', 'uppercase', 'tracking-widest', 'block', 'mb-2')}>New Password</label>
-                    <div className="relative">
-                      <input type={showNewPass ? 'text' : 'password'} placeholder="••••••••" className={clsx('w-full', 'px-4', 'py-3', 'bg-slate-50', 'dark:bg-zinc-800', 'border', 'border-slate-200', 'dark:border-white/10', 'rounded-xl', 'focus:border-primary', 'focus:outline-none', 'transition-colors', 'text-sm', 'font-medium', 'pr-12')} />
-                      <button onClick={() => setShowNewPass(!showNewPass)} className={clsx('absolute', 'right-4', 'top-1/2', '-translate-y-1/2', 'text-slate-400', 'hover:text-primary', 'transition-colors')}>
-                        {showNewPass ? <EyeOff size={18} /> : <Eye size={18} />}
-                      </button>
-                    </div>
-                  </div>
-                  <div>
-                    <label className={clsx('text-[10px]', 'font-bold', 'text-slate-400', 'uppercase', 'tracking-widest', 'block', 'mb-2')}>Confirm New Password</label>
-                    <input type="password" placeholder="••••••••" className={clsx('w-full', 'px-4', 'py-3', 'bg-slate-50', 'dark:bg-zinc-800', 'border', 'border-slate-200', 'dark:border-white/10', 'rounded-xl', 'focus:border-primary', 'focus:outline-none', 'transition-colors', 'text-sm', 'font-medium')} />
-                  </div>
-                </div>
-
-                <div className={clsx('flex', 'justify-end', 'pt-2')}>
-                  <button onClick={handleSave} className={clsx('flex', 'items-center', 'gap-2', 'px-8', 'py-3', 'bg-charcoal', 'dark:bg-white', 'text-white', 'dark:text-black', 'hover:scale-[1.02]', 'rounded-xl', 'font-bold', 'text-xs', 'uppercase', 'tracking-widest', 'transition-transform', 'shadow-lg')}>
-                    <Lock size={16} /> Update Password
-                  </button>
-                </div>
+              <h3 className="font-black text-xl text-charcoal dark:text-white uppercase tracking-tighter italic">Master Admin</h3>
+              <p className="text-[10px] font-black text-primary uppercase tracking-[0.3em] mt-1">Superuser Principal</p>
+              
+              <div className="mt-6 pt-6 border-t border-slate-100 dark:border-white/5 flex items-center justify-center gap-3">
+                 <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.5)]"></span>
+                 <span className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest">Active Authority Session</span>
               </div>
+           </div>
 
-              {/* Danger Zone */}
-              <div className={clsx('bg-red-50', 'dark:bg-red-950/20', 'border', 'border-red-200', 'dark:border-red-900/40', 'rounded-[2rem]', 'shadow-sm', 'p-8', 'space-y-4')}>
-                <h2 className={clsx('font-black', 'text-primary', 'flex', 'items-center', 'gap-2', 'text-lg')}><AlertTriangle size={20} /> Danger Zone</h2>
-                <p className={clsx('text-sm', 'font-medium', 'text-slate-600', 'dark:text-slate-300')}>These actions are irreversible. Proceed with extreme caution.</p>
-                <div className={clsx('flex', 'flex-col', 'sm:flex-row', 'gap-3', 'pt-2')}>
-                  <button className={clsx('px-6', 'py-3', 'border-2', 'border-primary', 'text-primary', 'font-bold', 'text-xs', 'uppercase', 'tracking-widest', 'rounded-xl', 'hover:bg-primary', 'hover:text-white', 'transition-all')}>
-                    Revoke All Active Sessions
-                  </button>
-                  <button className={clsx('px-6', 'py-3', 'bg-primary', 'text-white', 'font-bold', 'text-xs', 'uppercase', 'tracking-widest', 'rounded-xl', 'hover:bg-red-700', 'transition-colors', 'shadow-lg', 'shadow-primary/20')}>
-                    Disable Account
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* ── Notifications ── */}
-          {activeTab === 'notifications' && (
-            <div className={clsx('bg-white', 'dark:bg-zinc-900', 'border', 'border-slate-100', 'dark:border-white/5', 'rounded-[2rem]', 'shadow-sm', 'p-8', 'space-y-8')}>
-              <h2 className={clsx('font-black', 'text-charcoal', 'dark:text-white', 'flex', 'items-center', 'gap-2', 'text-lg')}><Bell size={20} className="text-slate-400" /> Notification Preferences</h2>
-
-              <div className={clsx('space-y-1', 'divide-y', 'divide-slate-100', 'dark:divide-white/5')}>
-                {[
-                  { label: 'New Booking Inquiry', desc: 'Alert when a user sends a space booking request via Messenger.', key: 'newBookingInquiry' },
-                  { label: 'Feedback Spam Detected', desc: 'Alert when the anti-spam system flags a user automatically.', key: 'feedbackSpamDetected' },
-                  { label: 'Expiring Contracts', desc: 'Reminder 30 days before a tenant lease is set to expire.', key: 'expiringContracts' },
-                  { label: 'Overdue Rent Payments', desc: 'Daily alert for tenants with outstanding payments.', key: 'overdueRentPayments' },
-                  { label: 'Ad Submission Received', desc: 'Notify when a tenant uploads a new banner for approval.', key: 'adSubmissionReceived' },
-                  { label: 'System Health Reports', desc: 'Weekly automated system status summary reports.', key: 'systemHealthReports' },
-                ].map((notif) => (
-                  <NotifRow 
-                    key={notif.label} 
-                    label={notif.label} 
-                    desc={notif.desc} 
-                    enabled={notificationPrefs?.[notif.key] || false}
-                    onToggle={(enabled) => updateNotificationPref(notif.key, enabled)}
-                  />
-                ))}
-              </div>
-
-              <div className={clsx('flex', 'justify-end', 'pt-2')}>
-                <button onClick={handleSave} className={clsx('flex', 'items-center', 'gap-2', 'px-8', 'py-3', 'bg-primary', 'text-white', 'hover:bg-primary-hover', 'rounded-xl', 'font-bold', 'text-xs', 'uppercase', 'tracking-widest', 'transition-all', 'shadow-lg', 'shadow-primary/20', 'hover:scale-[1.02]')}>
-                  <Save size={16} /> Save Preferences
+           {/* Semantic Navigation */}
+           <nav className="bg-white dark:bg-zinc-900/50 border border-slate-200 dark:border-white/5 rounded-[2.5rem] p-3 shadow-sm space-y-1">
+              {tabs.map(({ key, label, icon: Icon }) => (
+                <button
+                  key={key}
+                  onClick={() => setActiveTab(key)}
+                  className={clsx(
+                    'w-full flex items-center gap-4 px-5 py-4 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all',
+                    activeTab === key
+                      ? 'bg-primary text-white shadow-xl shadow-primary/25 translate-x-1'
+                      : 'text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5 hover:text-charcoal dark:hover:text-white'
+                  )}
+                >
+                  <Icon size={18} className={activeTab === key ? 'text-white' : 'text-slate-500'} />
+                  {label}
                 </button>
-              </div>
-            </div>
-          )}
+              ))}
+           </nav>
+        </aside>
 
-          {/* ── System Access ── */}
-          {activeTab === 'system' && (
-            <div className="space-y-6">
-              <div className={clsx('bg-white', 'dark:bg-zinc-900', 'border', 'border-slate-100', 'dark:border-white/5', 'rounded-[2rem]', 'shadow-sm', 'p-8', 'space-y-6')}>
-                <h2 className={clsx('font-black', 'text-charcoal', 'dark:text-white', 'flex', 'items-center', 'gap-2', 'text-lg')}><Shield size={20} className="text-slate-400" /> System Access & Permissions</h2>
-
-                <div className={clsx('grid', 'grid-cols-1', 'sm:grid-cols-2', 'gap-4')}>
-                  {[
-                    { label: 'Tenant Management', granted: true },
-                    { label: 'Financial Ledger', granted: true },
-                    { label: 'Feedback Moderation', granted: true },
-                    { label: 'User Blacklist Control', granted: true },
-                    { label: 'Ad Scheduler', granted: true },
-                    { label: 'System Configuration', granted: true },
-                  ].map((perm) => (
-                    <div key={perm.label} className={clsx('flex', 'items-center', 'justify-between', 'bg-slate-50', 'dark:bg-zinc-800', 'border', 'border-slate-100', 'dark:border-white/5', 'px-5', 'py-4', 'rounded-xl')}>
-                      <span className={clsx('text-sm', 'font-bold', 'text-charcoal', 'dark:text-white')}>{perm.label}</span>
-                      <span className={`flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full ${perm.granted ? 'bg-green-50 dark:bg-green-900/30 text-green-600' : 'bg-slate-200 dark:bg-zinc-700 text-slate-400'}`}>
-                        {perm.granted ? <CheckCircle size={12} /> : null}
-                        {perm.granted ? 'Granted' : 'Restricted'}
-                      </span>
-                    </div>
-                  ))}
+        {/* Console Interface */}
+        <main className="flex-1 min-w-0">
+           {activeTab === 'profile' && (
+             <div className="bg-white dark:bg-zinc-900 border border-slate-100 dark:border-white/5 rounded-[3rem] p-8 md:p-12 shadow-sm space-y-10 animate-fade-in">
+                <div className="flex items-center gap-4 border-b border-slate-100 dark:border-white/5 pb-8">
+                   <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary shadow-inner">
+                      <User size={24} />
+                   </div>
+                   <div>
+                      <h2 className="text-2xl font-black text-charcoal dark:text-white uppercase italic tracking-tighter">Identity Matrix.</h2>
+                      <p className="text-xs text-slate-500 font-medium">Define your administrative profile within the master directory.</p>
+                   </div>
                 </div>
 
-                <div className={clsx('bg-blue-50/50', 'dark:bg-blue-900/10', 'border', 'border-blue-100', 'dark:border-blue-900/30', 'p-4', 'rounded-xl', 'flex', 'items-start', 'gap-3')}>
-                  <Shield size={18} className={clsx('text-blue-500', 'shrink-0', 'mt-0.5')} />
-                  <p className={clsx('text-xs', 'font-medium', 'text-slate-600', 'dark:text-slate-300')}>You hold <strong>Super Administrator</strong> access. All permissions are fully granted. Changes to system access require IT approval.</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <InputGroup label="First Name Matrix" defaultValue="Mall" icon={User} />
+                  <InputGroup label="Last Name Matrix" defaultValue="Administrator" icon={User} />
+                  <InputGroup label="Secure Communication Channel" defaultValue="srmall@admin.com" icon={Mail} />
+                  <InputGroup label="Terminal Phone Link" defaultValue="+63 917 555 0000" icon={Phone} />
+                  <div className="md:col-span-2">
+                    <InputGroup label="Institutional Role / Department" defaultValue="SR Mall Management — Super Administrator" icon={Globe} />
+                  </div>
+                  <div className="md:col-span-2 space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Professional Manifest / Bio</label>
+                    <textarea rows={4} defaultValue="Oversees all mall operations, tenant management, and administrative decisions for SR Mall ecosystem." className="w-full px-6 py-4 bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-white/10 rounded-[1.5rem] focus:ring-4 focus:ring-primary/10 transition-all text-sm font-medium text-charcoal dark:text-white outline-none resize-none" />
+                  </div>
                 </div>
-              </div>
 
-              {/* Login History */}
-              <div className={clsx('bg-white', 'dark:bg-zinc-900', 'border', 'border-slate-100', 'dark:border-white/5', 'rounded-[2rem]', 'shadow-sm', 'overflow-hidden')}>
-                <div className={clsx('p-6', 'border-b', 'border-slate-100', 'dark:border-white/5')}>
-                  <h2 className={clsx('font-black', 'text-charcoal', 'dark:text-white', 'text-lg')}>Recent Login Activity</h2>
+                <div className="pt-8 border-t border-slate-100 dark:border-white/5 flex justify-end">
+                   <button 
+                     onClick={handleProfileSave}
+                     disabled={isSaving}
+                     className="flex items-center gap-3 px-10 py-5 bg-primary text-white rounded-2xl font-black text-[11px] uppercase tracking-[0.2em] shadow-2xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all disabled:opacity-50"
+                   >
+                     {isSaving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+                     Commit Identity
+                   </button>
                 </div>
-                <div className={clsx('divide-y', 'divide-slate-100', 'dark:divide-white/5')}>
-                  {[
-                    { device: 'Chrome on Windows', location: 'Manila, PH', time: 'Today, 9:18 AM', current: true },
-                    { device: 'Safari on iPhone', location: 'Pasig, PH', time: 'Yesterday, 8:55 PM', current: false },
-                    { device: 'Chrome on Windows', location: 'Manila, PH', time: 'Mar 18, 2:30 PM', current: false },
-                  ].map((session, i) => (
-                    <div key={i} className={clsx('px-6', 'py-5', 'flex', 'items-center', 'justify-between', 'hover:bg-slate-50', 'dark:hover:bg-white/5', 'transition-colors')}>
-                      <div>
-                        <p className={clsx('text-sm', 'font-bold', 'text-charcoal', 'dark:text-white', 'flex', 'items-center', 'gap-2')}>
-                          {session.device}
-                          {session.current && <span className={clsx('text-[9px]', 'font-bold', 'text-green-600', 'bg-green-50', 'dark:bg-green-900/30', 'px-2', 'py-0.5', 'rounded-full', 'uppercase', 'tracking-widest')}>Current</span>}
-                        </p>
-                        <p className={clsx('text-xs', 'font-medium', 'text-slate-400', 'mt-0.5')}>{session.location} · {session.time}</p>
+             </div>
+           )}
+
+           {activeTab === 'security' && (
+             <div className="space-y-8 animate-fade-in">
+                <div className="bg-white dark:bg-zinc-900 border border-slate-100 dark:border-white/5 rounded-[3rem] p-8 md:p-12 shadow-sm space-y-10">
+                   <div className="flex items-center gap-4 border-b border-slate-100 dark:border-white/5 pb-8">
+                      <div className="w-12 h-12 rounded-2xl bg-orange-500/10 flex items-center justify-center text-orange-500 shadow-inner">
+                         <Key size={24} />
                       </div>
-                      {!session.current && (
-                        <button className={clsx('text-[10px]', 'font-bold', 'text-primary', 'uppercase', 'tracking-widest', 'hover:underline')}>
-                          Revoke
-                        </button>
-                      )}
-                    </div>
-                  ))}
+                      <div>
+                         <h2 className="text-2xl font-black text-charcoal dark:text-white uppercase italic tracking-tighter">Security Firewall.</h2>
+                         <p className="text-xs text-slate-500 font-medium">Update master authorization keys and terminal access tokens.</p>
+                      </div>
+                   </div>
+
+                   <div className="space-y-8">
+                      <div className="space-y-2">
+                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Primary Access Token (Current)</label>
+                         <div className="relative">
+                            <input 
+                              type={showPass ? 'text' : 'password'} 
+                              placeholder="••••••••••••" 
+                              value={securityData.currentPassword}
+                              onChange={e => setSecurityData({...securityData, currentPassword: e.target.value})}
+                              className="w-full px-6 py-5 bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-white/10 rounded-2xl text-sm font-bold outline-none focus:ring-4 focus:ring-primary/10 transition-all" 
+                            />
+                            <button onClick={() => setShowPass(!showPass)} className="absolute right-6 top-1/2 -translate-y-1/2 text-slate-300 hover:text-primary transition-colors">
+                               {showPass ? <EyeOff size={20} /> : <Eye size={20} />}
+                            </button>
+                         </div>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                         <div className="space-y-2">
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">New Authority Token</label>
+                            <input 
+                              type="password" 
+                              placeholder="••••••••••••" 
+                              value={securityData.newPassword}
+                              onChange={e => setSecurityData({...securityData, newPassword: e.target.value})}
+                              className="w-full px-6 py-5 bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-white/10 rounded-2xl text-sm font-bold outline-none focus:ring-4 focus:ring-primary/10 transition-all" 
+                            />
+                         </div>
+                         <div className="space-y-2">
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Confirm Token Synchronicity</label>
+                            <input 
+                              type="password" 
+                              placeholder="••••••••••••" 
+                              value={securityData.confirmPassword}
+                              onChange={e => setSecurityData({...securityData, confirmPassword: e.target.value})}
+                              className="w-full px-6 py-5 bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-white/10 rounded-2xl text-sm font-bold outline-none focus:ring-4 focus:ring-primary/10 transition-all" 
+                            />
+                         </div>
+                      </div>
+                   </div>
+
+                   <div className="flex justify-end pt-4">
+                      <button 
+                        onClick={handleSecurityUpdate}
+                        disabled={isSaving || !securityData.currentPassword}
+                        className="px-10 py-5 bg-charcoal dark:bg-white text-white dark:text-black rounded-2xl font-black text-[11px] uppercase tracking-widest shadow-2xl hover:scale-105 active:scale-95 transition-all disabled:opacity-50"
+                      >
+                         {isSaving ? <Loader2 size={16} className="animate-spin" /> : "Re-authorize Firewall"}
+                      </button>
+                   </div>
                 </div>
-              </div>
-            </div>
-          )}
-        </div>
+
+                {/* Danger Protocol */}
+                <div className="bg-red-500/5 border border-red-500/10 rounded-[3rem] p-10 flex flex-col md:flex-row items-center justify-between gap-8 group">
+                   <div className="space-y-2 max-w-lg">
+                      <h3 className="text-xl font-black text-primary uppercase italic tracking-tighter flex items-center gap-2 underline decoration-primary/20 decoration-4 underline-offset-4">
+                         <AlertTriangle size={24} /> Zero Trust Protocol
+                      </h3>
+                      <p className="text-xs font-semibold text-slate-500 leading-relaxed uppercase grey-text">Initiate global terminal de-authorization or administrative lockout. This action requires secondary clearance.</p>
+                   </div>
+                   <div className="flex gap-4 w-full md:w-auto">
+                      <button className="flex-1 md:flex-none px-6 py-4 border-2 border-primary text-primary font-black text-[10px] uppercase tracking-widest rounded-xl hover:bg-primary hover:text-white transition-all active:scale-95">Purge Sessions</button>
+                      <button className="flex-1 md:flex-none px-6 py-4 bg-primary text-white font-black text-[10px] uppercase tracking-widest rounded-xl hover:brightness-110 transition-all shadow-xl shadow-primary/20 active:scale-95">Lock Console</button>
+                   </div>
+                </div>
+             </div>
+           )}
+
+           {activeTab === 'notifications' && (
+             <div className="bg-white dark:bg-zinc-900 border border-slate-100 dark:border-white/5 rounded-[3rem] p-8 md:p-12 shadow-sm space-y-10 animate-fade-in">
+                <div className="flex items-center gap-4 border-b border-slate-100 dark:border-white/5 pb-8">
+                   <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary shadow-inner">
+                      <Bell size={24} />
+                   </div>
+                   <div>
+                      <h2 className="text-2xl font-black text-charcoal dark:text-white uppercase italic tracking-tighter">Intelligence Alerts.</h2>
+                      <p className="text-xs text-slate-500 font-medium">Configure terminal telemetry and administrative signal priorities.</p>
+                   </div>
+                </div>
+
+                <div className="space-y-2 divide-y divide-slate-100 dark:divide-white/5">
+                   {[
+                      { label: 'Merchant Onboarding Signals', desc: 'Critical alert for new shop partnership manifest submissions.', key: 'newBookingInquiry' }, // Reusing keys for logic
+                      { label: 'Security Anomaly Detection', desc: 'Automatic signal when the anti-spam protocol flags institutional risk.', key: 'feedbackSpamDetected' },
+                      { label: 'Institutional Term Cycle', desc: 'Notify 30 days prior to contract expiration for verified tenants.', key: 'expiringContracts' },
+                      { label: 'Fiscal Delinquency Tracking', desc: 'Daily telemetry for overdue asset usage payments.', key: 'overdueRentPayments' },
+                      { label: 'Brand Asset Submission', desc: 'Channel alert for new billboard or storefront creative approvals.', key: 'adSubmissionReceived' },
+                      { label: 'System Health Manifest', desc: 'Holistic weekly telemetry reports and operational summaries.', key: 'systemHealthReports' },
+                   ].map((item) => (
+                      <div key={item.label} className="flex items-center justify-between py-6 gap-8 group/notif">
+                         <div className="space-y-1">
+                            <h4 className="text-sm font-black text-charcoal dark:text-white uppercase tracking-tight group-hover/notif:text-primary transition-colors">{item.label}</h4>
+                            <p className="text-[11px] text-slate-400 font-medium leading-relaxed">{item.desc}</p>
+                         </div>
+                         <button 
+                           onClick={() => updateNotificationPref(item.key, !notificationPrefs?.[item.key])}
+                           className={clsx(
+                             "w-14 h-7 rounded-full transition-all relative shrink-0",
+                             notificationPrefs?.[item.key] ? "bg-primary shadow-lg shadow-primary/30" : "bg-slate-200 dark:bg-zinc-800"
+                           )}
+                         >
+                            <span className={clsx(
+                              "w-5 h-5 bg-white rounded-full absolute top-1 shadow-md transition-transform",
+                              notificationPrefs?.[item.key] ? "translate-x-8" : "translate-x-1"
+                            )} />
+                         </button>
+                      </div>
+                   ))}
+                </div>
+
+                <div className="pt-8 border-t border-slate-100 dark:border-white/5 flex justify-end">
+                   <button 
+                     onClick={handleNotifSave}
+                     disabled={isSaving || loadingPrefs}
+                     className="flex items-center gap-3 px-10 py-5 bg-primary text-white rounded-2xl font-black text-[11px] uppercase tracking-[0.2em] shadow-xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all disabled:opacity-50"
+                   >
+                     {isSaving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+                     Secure Preferences
+                   </button>
+                </div>
+             </div>
+           )}
+
+           {activeTab === 'system' && (
+             <div className="space-y-8 animate-fade-in">
+                <div className="bg-white dark:bg-zinc-900 border border-slate-100 dark:border-white/5 rounded-[3rem] p-10 md:p-12 shadow-sm space-y-10">
+                   <div className="flex items-center gap-4 border-b border-slate-100 dark:border-white/5 pb-8">
+                      <div className="w-12 h-12 rounded-2xl bg-blue-500/10 flex items-center justify-center text-blue-500 shadow-inner">
+                         <Shield size={24} />
+                      </div>
+                      <div>
+                         <h2 className="text-2xl font-black text-charcoal dark:text-white uppercase italic tracking-tighter">Authorization Matrix.</h2>
+                         <p className="text-xs text-slate-500 font-medium">Current administrative privileges and system access vectors.</p>
+                      </div>
+                   </div>
+
+                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {[
+                        { label: 'Tenant Master Control', granted: true },
+                        { label: 'Unified Fiscal Ledger', granted: true },
+                        { label: 'Public Content Moderator', granted: true },
+                        { label: 'Institutional Blacklist', granted: true },
+                        { label: 'Ad Strategy Scheduler', granted: true },
+                        { label: 'Infrastructure Config', granted: true },
+                      ].map((perm) => (
+                        <div key={perm.label} className="bg-slate-50 dark:bg-black/40 border border-slate-100 dark:border-white/5 px-6 py-5 rounded-2xl flex items-center justify-between group/perm hover:border-primary/30 transition-all">
+                           <span className="text-sm font-black text-charcoal dark:text-white uppercase tracking-tight">{perm.label}</span>
+                           <div className="flex items-center gap-2 px-3 py-1 bg-emerald-500/10 text-emerald-600 rounded-full text-[9px] font-black uppercase tracking-widest border border-emerald-500/20">
+                              <CheckCircle size={10} /> Authorized
+                           </div>
+                        </div>
+                      ))}
+                   </div>
+
+                   <div className="p-6 bg-blue-500/5 border border-blue-500/10 rounded-2xl flex items-start gap-4">
+                      <Activity size={20} className="text-blue-500 shrink-0 mt-0.5" />
+                      <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 leading-relaxed uppercase grey-text">You are currently operating as a <strong className="text-blue-500">Root Superuser</strong>. All system-wide authorization gates are bypassed. Any configuration change here may have systemic impacts.</p>
+                   </div>
+                </div>
+
+                {/* Login Telemetry */}
+                <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/5 rounded-[3rem] shadow-sm overflow-hidden">
+                   <div className="p-8 border-b border-slate-100 dark:border-white/5 flex items-center justify-between">
+                      <h3 className="text-xl font-black text-charcoal dark:text-white uppercase italic tracking-tighter">Terminal Telemetry</h3>
+                      <button className="text-[10px] font-black text-primary uppercase tracking-widest hover:underline">Purge History</button>
+                   </div>
+                   <div className="divide-y divide-slate-100 dark:divide-white/5">
+                      {[
+                        { device: 'Workstation — Chrome (Windows)', location: 'Global Admin Center', time: 'Active Now', current: true },
+                        { device: 'Mobile Terminal — Safari (iOS)', location: 'Pasig Operations Node', time: '14 Hours Ago', current: false },
+                        { device: 'Remote Node — Chrome (macOS)', location: 'Unknown Uplink', time: 'Mar 18, 2026', current: false },
+                      ].map((item, i) => (
+                        <div key={i} className="px-8 py-6 flex items-center justify-between hover:bg-slate-50/50 dark:hover:bg-white/[0.02] transition-colors group/terminal">
+                           <div className="flex items-center gap-5">
+                              <div className={clsx("w-10 h-10 rounded-xl flex items-center justify-center", item.current ? "bg-emerald-500/10 text-emerald-600" : "bg-slate-100 dark:bg-zinc-800 text-slate-400")}>
+                                {item.current ? <Activity size={18} /> : <Monitor size={18} />}
+                              </div>
+                              <div>
+                                 <p className="text-sm font-black text-charcoal dark:text-white uppercase tracking-tight flex items-center gap-2">
+                                    {item.device}
+                                    {item.current && <span className="text-[8px] font-black bg-emerald-500 text-white px-1.5 py-0.5 rounded tracking-widest uppercase animate-pulse">Live</span>}
+                                 </p>
+                                 <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">{item.location} • {item.time}</p>
+                              </div>
+                           </div>
+                           {!item.current && <button className="p-3 text-slate-400 hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-all"><ArrowRight size={18} /></button>}
+                        </div>
+                      ))}
+                   </div>
+                </div>
+             </div>
+           )}
+        </main>
       </div>
     </div>
   );
 }
 
-function NotifRow({ label, desc, enabled, onToggle }: { 
-  label: string; 
-  desc: string; 
-  enabled: boolean; 
-  onToggle: (enabled: boolean) => void; 
-}) {
+function InputGroup({ label, defaultValue, icon: Icon }: any) {
   return (
-    <div className={clsx('flex', 'items-start', 'justify-between', 'py-5', 'gap-6')}>
-      <div className="flex-1">
-        <h4 className={clsx('text-sm', 'font-bold', 'text-charcoal', 'dark:text-white')}>{label}</h4>
-        <p className={clsx('text-xs', 'font-medium', 'text-slate-400', 'mt-0.5')}>{desc}</p>
+    <div className="space-y-2">
+      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{label}</label>
+      <div className="relative group/input">
+         <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within/input:text-primary transition-colors">
+            <Icon size={18} />
+         </div>
+         <input 
+           type="text" 
+           defaultValue={defaultValue} 
+           className="w-full pl-14 pr-6 py-4 bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-white/10 rounded-2xl focus:ring-4 focus:ring-primary/10 transition-all text-sm font-bold text-charcoal dark:text-white outline-none" 
+         />
       </div>
-      <button
-        onClick={() => onToggle(!enabled)}
-        className={`w-12 h-6 rounded-full transition-colors relative shrink-0 mt-0.5 ${enabled ? 'bg-primary' : 'bg-slate-200 dark:bg-zinc-700'}`}
-      >
-        <span className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-transform shadow-sm ${enabled ? 'translate-x-6' : 'translate-x-0.5'}`}></span>
-      </button>
     </div>
   );
 }

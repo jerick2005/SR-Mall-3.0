@@ -16,6 +16,8 @@ export interface DigitalStorefront {
   gallery_urls: string[]; // Array of gallery image URLs
   products?: StoreProduct[]; // JSON array of products for the storefront
   rent_cost?: number; // Monthly rent cost
+  avgRating?: number; // Average reputation score
+  reviewCount?: number; // Total number of approved reviews
   createdAt?: Date;
   updatedAt?: Date;
 }

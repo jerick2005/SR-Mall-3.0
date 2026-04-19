@@ -11,7 +11,7 @@ export async function GET() {
     const promos = await getApprovedTenantPromos();
 
     console.log("Function returned promos:", promos.length);
-    promos.forEach((promo, index) => {
+    promos.forEach((promo: any, index: number) => {
       console.log(`Promo ${index + 1}:`, {
         id: promo.id,
         title: promo.title,
@@ -27,7 +27,7 @@ export async function GET() {
       success: true,
       currentDate: now.toISOString(),
       promoCount: promos.length,
-      promos: promos.map((p) => ({
+      promos: promos.map((p: any) => ({
         id: p.id,
         title: p.title,
         startDate: p.startDate,

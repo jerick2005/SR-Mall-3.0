@@ -1,6 +1,6 @@
-'use server';
+"use server";
 
-import { prisma } from '@srmall/database';
+import { prisma } from "@srmall/database";
 
 /**
  * Fix existing users with 'USER' role to 'CUSTOMER'
@@ -10,8 +10,8 @@ export async function fixUserRolesAction() {
   try {
     // Update all users with 'USER' role to 'CUSTOMER'
     const result = await prisma.user.updateMany({
-      where: { role: 'USER' },
-      data: { role: 'CUSTOMER' },
+      where: { role: "USER" },
+      data: { role: "CUSTOMER" },
     });
 
     return {
@@ -20,10 +20,10 @@ export async function fixUserRolesAction() {
       count: result.count,
     };
   } catch (error: any) {
-    console.error('[FIX_USER_ROLES_ERROR]:', error);
+    console.error("[FIX_USER_ROLES_ERROR]:", error);
     return {
       success: false,
-      error: error.message || 'Failed to fix user roles',
+      error: error.message || "Failed to fix user roles",
     };
   }
 }
@@ -34,11 +34,11 @@ export async function fixUserRolesAction() {
 export async function checkUserRolesAction() {
   try {
     const userCount = await prisma.user.count({
-      where: { role: 'USER' },
+      where: { role: "USER" },
     });
 
     const customerCount = await prisma.user.count({
-      where: { role: 'CUSTOMER' },
+      where: { role: "CUSTOMER" },
     });
 
     return {

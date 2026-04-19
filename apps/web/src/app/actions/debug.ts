@@ -1,6 +1,6 @@
-'use server';
+"use server";
 
-import { prisma } from '@srmall/database';
+import { prisma } from "@srmall/database";
 
 export async function debugDatabaseAction() {
   try {
@@ -12,30 +12,30 @@ export async function debugDatabaseAction() {
         email: true,
         name: true,
         role: true,
-        createdAt: true
+        createdAt: true,
       },
-      take: 5
+      take: 5,
     });
 
     return {
       success: true,
       data: {
         userCount,
-        users: users.map(u => ({
+        users: users.map((u) => ({
           ...u,
-          password: '[HIDDEN]'
-        }))
-      }
+          password: "[HIDDEN]",
+        })),
+      },
     };
   } catch (error) {
-    console.error('Database debug error:', error);
+    console.error("Database debug error:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: error instanceof Error ? error.message : "Unknown error",
       details: {
         prismaAvailable: !!prisma,
-        errorType: typeof error
-      }
+        errorType: typeof error,
+      },
     };
   }
 }

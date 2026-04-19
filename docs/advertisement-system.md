@@ -42,29 +42,35 @@ The system is divided into two distinct pipelines to ensure Admin maintains "Mal
 ## 🎯 Two Distinct Advertisement Flows
 
 ### A. Admin Advertisement Flow (Global Mall-Wide)
+
 **Role:** Admin uploads high-level mall announcements (e.g., Grand Sale, Mall Hours).
 
 #### Process Flow:
+
 1. **Upload** → Admin Dashboard → Upload to `storage/mall-ads/` → Insert to `mall_ads` table
 2. **Moderation** → Auto-approved (Admin content bypasses review)
 3. **Public Display** → Displayed as **Primary Hero Carousel** (Main Banner) at top of Public-View homepage
 
 #### Features:
+
 - **High Priority Control**: Admin can set HIGH/MEDIUM/LOW priority
 - **Auto-Expiry**: System automatically hides expired ads
 - **Real-time Updates**: Changes appear immediately in public view
 - **Cloud Storage**: Images stored in `public/uploads/ads/` with unique filenames
 
 ### B. Tenant Advertisement Flow (Shop-Specific Promos)
+
 **Role:** Tenant uploads specific shop deals (e.g., "Buy 1 Take 1").
 
 #### Process Flow:
+
 1. **Upload** → Tenant Dashboard → Upload to `storage/tenant-promos/` → Insert to `tenant_promos` table with `status: 'pending'`
 2. **Admin Review** → Admin reviews "Pending" list in dashboard
 3. **Approval** → Admin can APPROVE or REJECT promotions
 4. **Public Display** → Approved promotions sync to public view
 
 #### Features:
+
 - **Status Management**: Pending → Approved → Rejected workflow
 - **Auto-Expiry**: System hides expired promotions automatically
 - **Shop Integration**: Links directly to tenant's digital storefront
@@ -186,10 +192,12 @@ export interface UploadResponse {
 To keep UI clean and professional (Modern Crimson Theme):
 
 ### 1. The Hero Section (Mall-Wide Ads)
+
 **Logic:** `SELECT * FROM mall_ads WHERE is_active = true ORDER BY priority DESC;`
 **UI:** Large, auto-sliding banners with smooth fade transitions.
 
 #### Features:
+
 - **Auto-Carousel**: 8-second intervals between ads
 - **Responsive Design**: Mobile-first approach
 - **Smooth Transitions**: Fade-in/fade-out animations
@@ -197,10 +205,12 @@ To keep UI clean and professional (Modern Crimson Theme):
 - **Video Support**: MP4, WebM, MOV video formats
 
 ### 2. The Promo Section (Daily Deals)
+
 **Logic:** `SELECT * FROM tenant_promos WHERE status = 'approved' AND end_date >= CURRENT_DATE;`
 **UI:** 3-column grid of cards with hover effects.
 
 #### Features:
+
 - **3-Column Grid**: Responsive layout (1 col mobile, 2 col tablet, 3 col desktop)
 - **Shop Integration**: Each promo links to tenant's digital storefront
 - **Auto-Expiry**: Expired promos automatically hidden
@@ -212,17 +222,20 @@ To keep UI clean and professional (Modern Crimson Theme):
 ## 🔬 Research-Driven Solutions (For Your Capstone)
 
 ### Manual Workflow Errors Resolved:
+
 - **Manual Image Coding**: ❌ → **Database-Driven URLs** ✅
 - **Scheduling Conflicts**: ❌ → **PostgreSQL Date Constraints** ✅
 - **Weak Communication**: ❌ → **Direct Shop Links** ✅
 
 ### Performance Optimizations:
+
 - **Database Indexes**: Priority and status queries optimized
 - **Cloud Storage**: CDN-ready URLs with unique naming
 - **Lazy Loading**: Images load on-demand
 - **Caching Strategy**: React Query integration ready
 
 ### Security Features:
+
 - **Role-Based Access**: Admin vs Tenant permissions
 - **File Validation**: Type and size restrictions
 - **SQL Injection Protection**: Prisma ORM security
@@ -244,11 +257,11 @@ interface AdminPromoApprovalProps {
   onRefresh: () => Promise<void>;
 }
 
-export default function AdminPromoApproval({ 
-  pendingPromos, 
-  onApprove, 
-  onReject, 
-  onRefresh 
+export default function AdminPromoApproval({
+  pendingPromos,
+  onApprove,
+  onReject,
+  onRefresh
 }: AdminPromoApprovalProps) {
   return (
     <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-lg p-6">
@@ -256,20 +269,20 @@ export default function AdminPromoApproval({
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
           Pending Tenant Promotions
         </h2>
-        <button 
+        <button
           onClick={onRefresh}
           className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
         >
           Refresh
         </button>
       </div>
-      
+
       <div className="space-y-4">
         {pendingPromos.map((promo) => (
           <div key={promo.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
             <div className="flex gap-4">
-              <img 
-                src={promo.promoImage} 
+              <img
+                src={promo.promoImage}
                 alt={promo.title}
                 className="w-24 h-24 object-cover rounded-lg"
               />
@@ -285,7 +298,7 @@ export default function AdminPromoApproval({
                 </div>
               </div>
             </div>
-            
+
             <div className="flex gap-2 mt-4">
               <button
                 onClick={() => onApprove(promo.id)}
@@ -309,6 +322,7 @@ export default function AdminPromoApproval({
 ```
 
 ### Key Features:
+
 - **Real-time Updates**: WebSocket integration for live approval status
 - **Bulk Actions**: Approve/Reject multiple promos at once
 - **Visual Preview**: Image thumbnails and full details
@@ -320,11 +334,13 @@ export default function AdminPromoApproval({
 ## 📱 Mobile Responsiveness
 
 ### Breakpoints Used:
+
 - **Mobile**: < 768px (1 column)
-- **Tablet**: 768px - 1024px (2 columns)  
+- **Tablet**: 768px - 1024px (2 columns)
 - **Desktop**: > 1024px (3+ columns)
 
 ### Performance Metrics:
+
 - **First Contentful Paint**: < 1.5s
 - **Largest Contentful Paint**: < 2.5s
 - **Cumulative Layout Shift**: < 0.1
@@ -335,6 +351,7 @@ export default function AdminPromoApproval({
 ## 🛠️ Development Best Practices
 
 ### Code Organization:
+
 ```
 src/
 ├── app/
@@ -351,11 +368,12 @@ src/
 ```
 
 ### Environment Variables:
+
 ```env
 # Database Configuration
 DATABASE_URL="postgresql://postgres:admin123@localhost:5435/srmalldb"
 
-# Next.js Configuration  
+# Next.js Configuration
 NODE_ENV="development"
 
 # Cloud Storage (Optional for future cloud migration)
@@ -369,6 +387,7 @@ CLOUDINARY_API_KEY=""
 ## 🎯 Capstone Success Criteria
 
 ### ✅ Completed Features:
+
 - [x] **Database Schema**: PostgreSQL with proper relationships
 - [x] **TypeScript Interfaces**: Strict typing throughout
 - [x] **Admin Ad Management**: Full CRUD operations
@@ -380,7 +399,9 @@ CLOUDINARY_API_KEY=""
 - [x] **Error Handling**: Comprehensive error management
 
 ### 🏆 Presentation Ready:
+
 This system demonstrates:
+
 - **Modern React Architecture**: Hooks, server actions, API routes
 - **Enterprise Database Design**: PostgreSQL with proper indexing
 - **Professional UI/UX**: Tailwind CSS with animations
@@ -392,12 +413,14 @@ This system demonstrates:
 ## 📞 Support & Maintenance
 
 ### Common Issues & Solutions:
+
 1. **Upload Failed** → Check storage permissions and file size limits
 2. **Database Connection** → Verify PostgreSQL is running and credentials
 3. **Images Not Showing** → Check public URL generation and CORS
 4. **Slow Performance** → Add database indexes and optimize queries
 
 ### Monitoring Checklist:
+
 - [ ] Database connection pool monitoring
 - [ ] File storage usage tracking
 - [ ] API response time metrics

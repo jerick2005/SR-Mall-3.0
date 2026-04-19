@@ -1,6 +1,6 @@
-import { NextResponse } from 'next/server';
-import { prisma } from '@srmall/database';
-import bcrypt from 'bcryptjs';
+import { NextResponse } from "next/server";
+import { prisma } from "@srmall/database";
+import bcrypt from "bcryptjs";
 
 export async function POST(req: Request) {
   try {
@@ -10,8 +10,8 @@ export async function POST(req: Request) {
     // input validation
     if (!email || !password || !firstName || !lastName) {
       return NextResponse.json(
-        { message: 'Missing required fields' },
-        { status: 400 }
+        { message: "Missing required fields" },
+        { status: 400 },
       );
     }
 
@@ -22,8 +22,8 @@ export async function POST(req: Request) {
 
     if (existingUser) {
       return NextResponse.json(
-        { message: 'User with this email already exists' },
-        { status: 409 }
+        { message: "User with this email already exists" },
+        { status: 409 },
       );
     }
 
@@ -41,14 +41,17 @@ export async function POST(req: Request) {
     });
 
     return NextResponse.json(
-      { success: true, user: { id: user.id, email: user.email, name: user.name } },
-      { status: 201 }
+      {
+        success: true,
+        user: { id: user.id, email: user.email, name: user.name },
+      },
+      { status: 201 },
     );
   } catch (error) {
-    console.error('Signup Error:', error);
+    console.error("Signup Error:", error);
     return NextResponse.json(
-      { message: 'Internal Server Error' },
-      { status: 500 }
+      { message: "Internal Server Error" },
+      { status: 500 },
     );
   }
 }

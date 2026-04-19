@@ -1,22 +1,27 @@
-'use server';
+"use server";
 
-import { prisma } from '@srmall/database';
-import { revalidatePath } from 'next/cache';
-import { cookies } from 'next/headers';
+import { prisma } from "@srmall/database";
+import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
 
-export async function submitReviewAction(userId: string, rating: number, comment?: string, tenantId?: string) {
+export async function submitReviewAction(
+  userId: string,
+  rating: number,
+  comment?: string,
+  tenantId?: string,
+) {
   try {
     if (!userId) {
       return {
         success: false,
-        error: 'You must be logged in to submit a review'
+        error: "You must be logged in to submit a review",
       };
     }
 
     if (rating < 1 || rating > 5) {
       return {
         success: false,
-        error: 'Rating must be between 1 and 5 stars'
+        error: "Rating must be between 1 and 5 stars",
       };
     }
 
@@ -24,14 +29,15 @@ export async function submitReviewAction(userId: string, rating: number, comment
     const existingReview = await (prisma as any).review.findFirst({
       where: {
         userId: userId,
-        tenantId: tenantId || null
-      }
+        tenantId: tenantId || null,
+      },
     });
 
     if (existingReview) {
       return {
         success: false,
-        error: 'You have already submitted a review. You can edit your existing review instead.'
+        error:
+          "You have already submitted a review. You can edit your existing review instead.",
       };
     }
 
@@ -41,101 +47,110 @@ export async function submitReviewAction(userId: string, rating: number, comment
         tenantId: tenantId || null,
         rating,
         comment: comment || null,
-        isApproved: false // Requires admin approval before appearing on public view
+        isApproved: false, // Requires admin approval before appearing on public view
       },
       include: {
         user: {
           select: {
             name: true,
-            email: true
-          }
-        }
-      }
+            email: true,
+          },
+        },
+      },
     });
 
     // Create notification for admin about new review
     await prisma.notification.create({
       data: {
         userId: userId,
-        type: 'NEW_REVIEW_SUBMITTED',
-        title: 'New Review Submitted',
-        message: `A new ${rating}-star review is pending moderation approval.`
-      }
+        type: "NEW_REVIEW_SUBMITTED",
+        title: "New Review Submitted",
+        message: `A new ${rating}-star review is pending moderation approval.`,
+      },
     });
 
-    revalidatePath('/public-view');
-    revalidatePath('/admindashboard');
+    revalidatePath("/public-view");
+    revalidatePath("/admindashboard");
 
     return {
       success: true,
       data: review,
-      message: 'Review submitted! It will appear publicly once approved by our team.'
+      message:
+        "Review submitted! It will appear publicly once approved by our team.",
     };
-
   } catch (error) {
-    console.error('Submit review error:', error);
+    console.error("Submit review error:", error);
     return {
       success: false,
-      error: 'Failed to submit review. Please try again.'
+      error: "Failed to submit review. Please try again.",
     };
   }
 }
 
-export async function editMyReviewAction(userId: string, rating: number, comment?: string) {
+export async function editMyReviewAction(
+  userId: string,
+  rating: number,
+  comment?: string,
+) {
   try {
-    if (!userId) return { success: false, error: 'Unauthorized' };
-    if (rating < 1 || rating > 5) return { success: false, error: 'Invalid rating' };
+    if (!userId) return { success: false, error: "Unauthorized" };
+    if (rating < 1 || rating > 5)
+      return { success: false, error: "Invalid rating" };
 
     const existingReview = await prisma.review.findFirst({ where: { userId } });
-    if (!existingReview) return { success: false, error: 'Review not found.' };
+    if (!existingReview) return { success: false, error: "Review not found." };
 
     const review = await prisma.review.update({
       where: { id: existingReview.id },
-      data: { rating, comment: comment || null }
+      data: { rating, comment: comment || null },
     });
-    
-    revalidatePath('/public-view');
-    revalidatePath('/admindashboard');
-    return { success: true, data: review, message: 'Review updated successfully!' };
+
+    revalidatePath("/public-view");
+    revalidatePath("/admindashboard");
+    return {
+      success: true,
+      data: review,
+      message: "Review updated successfully!",
+    };
   } catch (error) {
-    console.error('Edit review error:', error);
-    return { success: false, error: 'Failed to update review.' };
+    console.error("Edit review error:", error);
+    return { success: false, error: "Failed to update review." };
   }
 }
 
 export async function deleteMyReviewAction(userId: string) {
   try {
-    if (!userId) return { success: false, error: 'Unauthorized' };
-    
+    if (!userId) return { success: false, error: "Unauthorized" };
+
     const existingReview = await prisma.review.findFirst({ where: { userId } });
-    if (!existingReview) return { success: false, error: 'Review not found.' };
+    if (!existingReview) return { success: false, error: "Review not found." };
 
     await prisma.review.delete({
-      where: { id: existingReview.id }
+      where: { id: existingReview.id },
     });
-    
-    revalidatePath('/public-view');
-    revalidatePath('/admindashboard');
-    return { success: true, message: 'Review deleted successfully!' };
+
+    revalidatePath("/public-view");
+    revalidatePath("/admindashboard");
+    return { success: true, message: "Review deleted successfully!" };
   } catch (error) {
-    console.error('Delete review error:', error);
-    return { success: false, error: 'Failed to delete review.' };
+    console.error("Delete review error:", error);
+    return { success: false, error: "Failed to delete review." };
   }
 }
 
 export async function getMyReviewAction(userId: string, tenantId?: string) {
   try {
     const review = await (prisma as any).review.findFirst({
-      where: { 
+      where: {
         userId,
-        tenantId: tenantId || null
+        tenantId: tenantId || null,
       },
-      orderBy: { createdAt: 'desc' }
+      orderBy: { createdAt: "desc" },
     });
     return { success: true, data: review };
   } catch (error) {
-    console.error('Get my review error:', error);
-    return { success: false, error: 'Failed to fetch your review.' };
+    console.error("Get my review error:", error);
+    return { success: false, error: "Failed to fetch your review." };
   }
 }
 
@@ -144,20 +159,20 @@ export async function getApprovedReviewsAction(tenantId?: string) {
     const reviews = await (prisma as any).review.findMany({
       where: {
         isApproved: true,
-        tenantId: tenantId || null // If tenantId is provided, get for that tenant, otherwise get general mall reviews
+        tenantId: tenantId || null, // If tenantId is provided, get for that tenant, otherwise get general mall reviews
       },
       include: {
         user: {
           select: {
             name: true,
-            email: true
-          }
-        }
+            email: true,
+          },
+        },
       },
       orderBy: {
-        createdAt: 'desc'
+        createdAt: "desc",
       },
-      take: 50 // Limit to latest 50 reviews
+      take: 50, // Limit to latest 50 reviews
     });
 
     return {
@@ -168,17 +183,16 @@ export async function getApprovedReviewsAction(tenantId?: string) {
         comment: review.comment,
         createdAt: review.createdAt,
         user: {
-          name: review.user.name || 'Anonymous',
-          email: review.user.email
-        }
-      }))
+          name: review.user.name || "Anonymous",
+          email: review.user.email,
+        },
+      })),
     };
-
   } catch (error) {
-    console.error('Get reviews error:', error);
+    console.error("Get reviews error:", error);
     return {
       success: false,
-      error: 'Failed to load reviews'
+      error: "Failed to load reviews",
     };
   }
 }
@@ -187,12 +201,12 @@ export async function getAllReviewsAction() {
   try {
     // Get user from cookie storage (custom auth system)
     const cookieStore = await cookies();
-    const userCookie = cookieStore.get('srmall_user')?.value;
-    
+    const userCookie = cookieStore.get("srmall_user")?.value;
+
     if (!userCookie) {
       return {
         success: false,
-        error: 'Unauthorized'
+        error: "Unauthorized",
       };
     }
 
@@ -202,20 +216,20 @@ export async function getAllReviewsAction() {
     } catch (e) {
       return {
         success: false,
-        error: 'Invalid authentication data'
+        error: "Invalid authentication data",
       };
     }
 
     // Check if user is admin
     const userData = await prisma.user.findUnique({
       where: { id: user.id },
-      select: { role: true }
+      select: { role: true },
     });
 
-    if (userData?.role !== 'ADMIN') {
+    if (userData?.role !== "ADMIN") {
       return {
         success: false,
-        error: 'Admin access required'
+        error: "Admin access required",
       };
     }
 
@@ -224,25 +238,24 @@ export async function getAllReviewsAction() {
         user: {
           select: {
             name: true,
-            email: true
-          }
-        }
+            email: true,
+          },
+        },
       },
       orderBy: {
-        createdAt: 'desc'
-      }
+        createdAt: "desc",
+      },
     });
 
     return {
       success: true,
-      data: reviews
+      data: reviews,
     };
-
   } catch (error) {
-    console.error('Get all reviews error:', error);
+    console.error("Get all reviews error:", error);
     return {
       success: false,
-      error: 'Failed to load reviews'
+      error: "Failed to load reviews",
     };
   }
 }
@@ -251,12 +264,12 @@ export async function approveReviewAction(reviewId: string) {
   try {
     // Get user from cookie storage (custom auth system)
     const cookieStore = await cookies();
-    const userCookie = cookieStore.get('srmall_user')?.value;
-    
+    const userCookie = cookieStore.get("srmall_user")?.value;
+
     if (!userCookie) {
       return {
         success: false,
-        error: 'Unauthorized'
+        error: "Unauthorized",
       };
     }
 
@@ -266,20 +279,20 @@ export async function approveReviewAction(reviewId: string) {
     } catch (e) {
       return {
         success: false,
-        error: 'Invalid authentication data'
+        error: "Invalid authentication data",
       };
     }
 
     // Check if user is admin
     const userData = await prisma.user.findUnique({
       where: { id: user.id },
-      select: { role: true }
+      select: { role: true },
     });
 
-    if (userData?.role !== 'ADMIN') {
+    if (userData?.role !== "ADMIN") {
       return {
         success: false,
-        error: 'Admin access required'
+        error: "Admin access required",
       };
     }
 
@@ -290,26 +303,25 @@ export async function approveReviewAction(reviewId: string) {
         user: {
           select: {
             name: true,
-            email: true
-          }
-        }
-      }
+            email: true,
+          },
+        },
+      },
     });
 
-    revalidatePath('/public-view');
-    revalidatePath('/admindashboard');
+    revalidatePath("/public-view");
+    revalidatePath("/admindashboard");
 
     return {
       success: true,
       data: review,
-      message: 'Review approved successfully'
+      message: "Review approved successfully",
     };
-
   } catch (error) {
-    console.error('Approve review error:', error);
+    console.error("Approve review error:", error);
     return {
       success: false,
-      error: 'Failed to approve review'
+      error: "Failed to approve review",
     };
   }
 }
@@ -318,12 +330,12 @@ export async function deleteReviewAction(reviewId: string) {
   try {
     // Get user from cookie storage (custom auth system)
     const cookieStore = await cookies();
-    const userCookie = cookieStore.get('srmall_user')?.value;
-    
+    const userCookie = cookieStore.get("srmall_user")?.value;
+
     if (!userCookie) {
       return {
         success: false,
-        error: 'Unauthorized'
+        error: "Unauthorized",
       };
     }
 
@@ -333,40 +345,39 @@ export async function deleteReviewAction(reviewId: string) {
     } catch (e) {
       return {
         success: false,
-        error: 'Invalid authentication data'
+        error: "Invalid authentication data",
       };
     }
 
     // Check if user is admin
     const userData = await prisma.user.findUnique({
       where: { id: user.id },
-      select: { role: true }
+      select: { role: true },
     });
 
-    if (userData?.role !== 'ADMIN') {
+    if (userData?.role !== "ADMIN") {
       return {
         success: false,
-        error: 'Admin access required'
+        error: "Admin access required",
       };
     }
 
     await prisma.review.delete({
-      where: { id: reviewId }
+      where: { id: reviewId },
     });
 
-    revalidatePath('/public-view');
-    revalidatePath('/admindashboard');
+    revalidatePath("/public-view");
+    revalidatePath("/admindashboard");
 
     return {
       success: true,
-      message: 'Review deleted successfully'
+      message: "Review deleted successfully",
     };
-
   } catch (error) {
-    console.error('Delete review error:', error);
+    console.error("Delete review error:", error);
     return {
       success: false,
-      error: 'Failed to delete review'
+      error: "Failed to delete review",
     };
   }
 }

@@ -1,11 +1,12 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import Link from 'next/link';
-import { useAuth } from '@/app/providers';
-import { useRouter } from 'next/navigation';
-import { DashboardThemeToggle } from '../theme-toggle';
-import { Bell, ChevronDown, LogOut, Search, User } from 'lucide-react';
+import React, { useState } from "react";
+import Link from "next/link";
+import { useAuth } from "@/app/providers";
+import { useRouter } from "next/navigation";
+import { DashboardThemeToggle } from "../theme-toggle";
+import NotificationDropdown from "../notification-dropdown";
+import { Bell, ChevronDown, LogOut, Search, User } from "lucide-react";
 
 export const AdminNavbar = () => {
   const { logout } = useAuth();
@@ -14,7 +15,7 @@ export const AdminNavbar = () => {
 
   const handleLogout = () => {
     logout();
-    router.push('/public-view');
+    router.push("/public-view");
   };
 
   return (
@@ -27,8 +28,12 @@ export const AdminNavbar = () => {
               <span className="text-white font-bold text-xl">S</span>
             </div>
             <div>
-              <h1 className="text-charcoal dark:text-white font-bold text-lg tracking-tight leading-none">SR-MANAGE</h1>
-              <span className="text-[10px] text-primary font-bold uppercase tracking-widest">Admin Control</span>
+              <h1 className="text-charcoal dark:text-white font-bold text-lg tracking-tight leading-none">
+                SR-MANAGE
+              </h1>
+              <span className="text-[10px] text-primary font-bold uppercase tracking-widest">
+                Admin Control
+              </span>
             </div>
           </div>
 
@@ -47,10 +52,7 @@ export const AdminNavbar = () => {
 
         <div className="flex items-center gap-4">
           <DashboardThemeToggle />
-          <button className="relative p-2 text-slate-400 hover:text-primary transition-colors">
-            <Bell size={20} />
-            <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-primary rounded-full border-2 border-black"></span>
-          </button>
+          <NotificationDropdown />
 
           <div className="h-6 w-px bg-white/10 mx-2"></div>
 
@@ -63,21 +65,37 @@ export const AdminNavbar = () => {
                 AD
               </div>
               <div className="flex flex-col items-start leading-none hidden md:flex">
-                <span className="text-xs font-bold text-charcoal dark:text-white">Admin Module</span>
-                <span className="text-[10px] text-slate-400 font-medium tracking-tight">Super Administrator</span>
+                <span className="text-xs font-bold text-charcoal dark:text-white">
+                  Admin Module
+                </span>
+                <span className="text-[10px] text-slate-400 font-medium tracking-tight">
+                  Super Administrator
+                </span>
               </div>
-              <ChevronDown size={14} className={`text-slate-400 transition-transform ${isProfileOpen ? 'rotate-180' : ''}`} />
+              <ChevronDown
+                size={14}
+                className={`text-slate-400 transition-transform ${isProfileOpen ? "rotate-180" : ""}`}
+              />
             </button>
 
             {isProfileOpen && (
               <div className="absolute top-full right-0 mt-4 w-56 bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border border-slate-100 dark:border-white/5 py-3 animate-fade-in-up">
                 <div className="px-5 py-2 border-b border-slate-50 dark:border-white/5 mb-2">
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Account Overview</p>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                    Account Overview
+                  </p>
                 </div>
-                <Link href="/admindashboard/profile-settings" onClick={() => setIsProfileOpen(false)} className="w-full flex items-center gap-3 px-5 py-3 text-sm font-medium hover:bg-slate-50 dark:hover:bg-white/5 transition-colors text-charcoal dark:text-slate-300">
+                <Link
+                  href="/admindashboard/profile-settings"
+                  onClick={() => setIsProfileOpen(false)}
+                  className="w-full flex items-center gap-3 px-5 py-3 text-sm font-medium hover:bg-slate-50 dark:hover:bg-white/5 transition-colors text-charcoal dark:text-slate-300"
+                >
                   <User size={16} /> Profile Settings
                 </Link>
-                <Link href="/public-view" className="w-full flex items-center gap-3 px-5 py-3 text-sm font-medium hover:bg-slate-50 dark:hover:bg-white/5 transition-colors text-charcoal dark:text-slate-300">
+                <Link
+                  href="/public-view"
+                  className="w-full flex items-center gap-3 px-5 py-3 text-sm font-medium hover:bg-slate-50 dark:hover:bg-white/5 transition-colors text-charcoal dark:text-slate-300"
+                >
                   <Search size={16} /> Public View
                 </Link>
                 <button

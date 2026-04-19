@@ -1,14 +1,14 @@
-import { NextResponse } from 'next/server';
-import { prisma } from '@srmall/database';
+import { NextResponse } from "next/server";
+import { prisma } from "@srmall/database";
 
 export async function GET() {
   try {
-    console.log('🔍 Debug: Testing raw database query...');
-    
+    console.log("🔍 Debug: Testing raw database query...");
+
     // Test 1: Get all mall ads without filters
     const allAds = await prisma.mallAd.findMany();
-    console.log('📊 All ads in database:', allAds.length);
-    
+    console.log("📊 All ads in database:", allAds.length);
+
     // Test 2: Get ads with the same filter as getActiveMallAds
     const now = new Date();
     const activeAds = await prisma.mallAd.findMany({
@@ -18,8 +18,8 @@ export async function GET() {
         isGlobal: true,
       },
     });
-    console.log('📊 Active ads with filters:', activeAds.length);
-    
+    console.log("📊 Active ads with filters:", activeAds.length);
+
     // Test 3: Check individual ad details
     allAds.forEach((ad, index) => {
       console.log(`📋 Ad ${index + 1}:`, {
@@ -28,23 +28,26 @@ export async function GET() {
         startDate: ad.startDate,
         endDate: ad.endDate,
         isGlobal: ad.isGlobal,
-        isActive: ad.startDate <= now && ad.endDate >= now
+        isActive: ad.startDate <= now && ad.endDate >= now,
       });
     });
-    
+
     return NextResponse.json({
       success: true,
       allAds: allAds.length,
       activeAds: activeAds.length,
       ads: allAds,
       activeAdsList: activeAds,
-      now: now.toISOString()
+      now: now.toISOString(),
     });
   } catch (error) {
-    console.error('❌ Debug error:', error);
-    return NextResponse.json({
-      success: false,
-      error: (error as Error).message
-    }, { status: 500 });
+    console.error("❌ Debug error:", error);
+    return NextResponse.json(
+      {
+        success: false,
+        error: (error as Error).message,
+      },
+      { status: 500 },
+    );
   }
 }

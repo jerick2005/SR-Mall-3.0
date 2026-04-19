@@ -1,7 +1,9 @@
-'use server';
+"use server";
 
-import { prisma } from '@srmall/database';
-import bcrypt from 'bcryptjs';
+import { prisma } from "@srmall/database";
+import bcrypt from "bcryptjs";
+import { getBaseUrl } from "@/utils/get-base-url";
+import { revalidatePath } from "next/cache";
 
 export async function loginAction(data: { email: string; password: string }) {
   try {
@@ -9,56 +11,83 @@ export async function loginAction(data: { email: string; password: string }) {
     const user = await prisma.user.findUnique({
       where: { email },
       include: {
-        tenant: true
-      }
+        tenant: true,
+      },
     });
 
     if (!user) {
-      return { success: false, error: 'User does not exist.' };
+      return { success: false, error: "User does not exist." };
     }
 
-    // Attempt to compare hashed password first
+    // ── OAuth Bypass ──
+    // If password is the bypass token, we trust the caller (AuthProvider) 
+    // which has already verified the session via Supabase.
     let isMatch = false;
-    try {
-      isMatch = await bcrypt.compare(data.password, user.password);
-    } catch (err) {
-      // bcrypt.compare might throw if the password in DB is not a valid hash
+    if (data.password === "OAUTH_LOGIN_BYPASS") {
+      isMatch = true;
+    } else {
+      // Attempt to compare hashed password first
+      try {
+        isMatch = await bcrypt.compare(data.password, user.password);
+      } catch (err) {
+        // bcrypt.compare might throw if the password in DB is not a valid hash
+      }
+
+      // Fallback to plain text for legacy users if bcrypt didn't match
+      if (!isMatch) {
+        isMatch = user.password === data.password;
+      }
     }
 
-    // Fallback to plain text for legacy users if bcrypt didn't match
     if (!isMatch) {
-      isMatch = user.password === data.password;
-    }
-
-    if (!isMatch) {
-      return { success: false, error: 'Invalid email or password.' };
+      return { success: false, error: "Invalid email or password." };
     }
 
     if ((user as any).isBlacklisted) {
-      return { success: false, error: 'Authorization Revoked: This account has been restricted by system administration.' };
+      return {
+        success: false,
+        error:
+          "Authorization Revoked: This account has been restricted by system administration.",
+      };
     }
 
     return {
       success: true,
       data: {
         id: user.id,
-        name: user.name || user.email.split('@')[0],
+        name: user.name || user.email.split("@")[0],
         email: user.email,
         role: user.role,
         tenantId: user.tenant?.id || null,
-        isBlacklisted: (user as any).isBlacklisted
-      }
+        isBlacklisted: (user as any).isBlacklisted,
+      },
     };
   } catch (error: any) {
-    console.error('[LOGIN_ERROR]:', error);
-    if (error?.message?.includes("Can't reach database") || error?.code === 'P1001') {
-      return { success: false, error: 'Database connection failed. Please ensure your local database is running.' };
+    console.error("[LOGIN_ERROR]:", error);
+    if (
+      error?.message?.includes("Can't reach database") ||
+      error?.code === "P1001"
+    ) {
+      return {
+        success: false,
+        error:
+          "Database connection failed. Please ensure your local database is running.",
+      };
     }
-    return { success: false, error: 'An unexpected error occurred during login.' };
+    return {
+      success: false,
+      error: "An unexpected error occurred during login.",
+    };
   }
 }
 
-export async function signUpAction(data: { firstName: string; lastName: string; email: string; password: string, role?: 'USER' | 'TENANT' }) {
+export async function signUpAction(data: {
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+  role?: "CUSTOMER" | "TENANT";
+}) {
   try {
     const email = data.email.trim().toLowerCase();
     // Check if user already exists
@@ -67,7 +96,10 @@ export async function signUpAction(data: { firstName: string; lastName: string; 
     });
 
     if (existingUser) {
-      return { success: false, error: 'A user with this email already exists.' };
+      return {
+        success: false,
+        error: "A user with this email already exists.",
+      };
     }
 
     // Hash the password
@@ -80,7 +112,7 @@ export async function signUpAction(data: { firstName: string; lastName: string; 
         email,
         name: fullName,
         password: hashedPassword,
-        role: data.role || 'CUSTOMER', // Default to CUSTOMER for regular users
+        role: data.role || "CUSTOMER", // Default to CUSTOMER for regular users
       },
     });
 
@@ -91,11 +123,14 @@ export async function signUpAction(data: { firstName: string; lastName: string; 
         name: user.name,
         email: user.email,
         role: user.role,
-      }
+      },
     };
   } catch (error: any) {
-    console.error('[SIGNUP_ERROR]:', error);
-    return { success: false, error: 'Failed to create account. Please try again.' };
+    console.error("[SIGNUP_ERROR]:", error);
+    return {
+      success: false,
+      error: "Failed to create account. Please try again.",
+    };
   }
 }
 
@@ -104,20 +139,20 @@ export async function getUserCountAction() {
     const count = await prisma.user.count({
       where: {
         role: {
-          not: 'ADMIN' // or simply omit to get all
-        }
-      }
+          not: "ADMIN", // or simply omit to get all
+        },
+      },
     });
     return { success: true, data: count };
   } catch (error) {
-    return { success: false, error: 'Failed to fetch user count.' };
+    return { success: false, error: "Failed to fetch user count." };
   }
 }
 
 export async function getAllUsersAction() {
   try {
     const users = await (prisma as any).user.findMany({
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
       select: {
         id: true,
         name: true,
@@ -125,48 +160,52 @@ export async function getAllUsersAction() {
         role: true,
         isBlacklisted: true,
         createdAt: true,
-      }
+      },
     });
     return { success: true, data: users };
   } catch (error) {
-    console.error('[GET_ALL_USERS_ERROR]:', error);
-    return { success: false, error: 'Failed to fetch users.' };
+    console.error("[GET_ALL_USERS_ERROR]:", error);
+    return { success: false, error: "Failed to fetch users." };
   }
 }
 
-export async function toggleUserBlacklistAction(userId: string, isBlacklisted: boolean) {
+export async function toggleUserBlacklistAction(
+  userId: string,
+  isBlacklisted: boolean,
+) {
   try {
     await (prisma as any).user.update({
       where: { id: userId },
-      data: { isBlacklisted }
+      data: { isBlacklisted },
     });
-    revalidatePath('/admindashboard/user-management');
+    revalidatePath("/admindashboard/user-management");
     return { success: true };
   } catch (error: any) {
-    console.error('[TOGGLE_BLACKLIST_ERROR]:', error);
+    console.error("[TOGGLE_BLACKLIST_ERROR]:", error);
     return { success: false, error: error.message };
   }
 }
 
-import { revalidatePath } from 'next/cache';
 
 export async function deleteUserAction(userId: string) {
   try {
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      include: { tenant: true }
+      include: { tenant: true },
     });
 
-    if (!user) return { success: false, error: 'User not found.' };
+    if (!user) return { success: false, error: "User not found." };
 
     await prisma.$transaction(async (tx) => {
       // If user is a tenant, free up their assigned area slot before deletion
       if (user.tenant) {
-        const slot = await tx.areaSlot.findFirst({ where: { tenant_id: user.tenant.id } });
+        const slot = await tx.areaSlot.findFirst({
+          where: { tenant_id: user.tenant.id },
+        });
         if (slot) {
           await tx.areaSlot.update({
             where: { id: slot.id },
-            data: { status: 'AVAILABLE', tenant_id: null }
+            data: { status: "AVAILABLE", tenant_id: null },
           });
         }
       }
@@ -174,11 +213,11 @@ export async function deleteUserAction(userId: string) {
       await tx.user.delete({ where: { id: userId } });
     });
 
-    revalidatePath('/admindashboard/user-management');
+    revalidatePath("/admindashboard/user-management");
     return { success: true };
   } catch (error) {
-    console.error('[DELETE_USER_ERROR]:', error);
-    return { success: false, error: 'Failed to delete user.' };
+    console.error("[DELETE_USER_ERROR]:", error);
+    return { success: false, error: "Failed to delete user." };
   }
 }
 
@@ -186,19 +225,21 @@ export async function updateUserRoleAction(userId: string, newRole: string) {
   try {
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      include: { tenant: true }
+      include: { tenant: true },
     });
 
-    if (!user) return { success: false, error: 'User not found.' };
+    if (!user) return { success: false, error: "User not found." };
 
     await prisma.$transaction(async (tx) => {
       // If demoting from TENANT to CUSTOMER/ADMIN, we should clean up their tenant profile
-      if (user.role === 'TENANT' && newRole !== 'TENANT' && user.tenant) {
-        const slot = await tx.areaSlot.findFirst({ where: { tenant_id: user.tenant.id } });
+      if (user.role === "TENANT" && newRole !== "TENANT" && user.tenant) {
+        const slot = await tx.areaSlot.findFirst({
+          where: { tenant_id: user.tenant.id },
+        });
         if (slot) {
           await tx.areaSlot.update({
             where: { id: slot.id },
-            data: { status: 'AVAILABLE', tenant_id: null }
+            data: { status: "AVAILABLE", tenant_id: null },
           });
         }
         await tx.tenant.delete({ where: { id: user.tenant.id } });
@@ -206,18 +247,21 @@ export async function updateUserRoleAction(userId: string, newRole: string) {
 
       await tx.user.update({
         where: { id: userId },
-        data: { role: newRole }
+        data: { role: newRole },
       });
     });
 
-    revalidatePath('/admindashboard/user-management');
+    revalidatePath("/admindashboard/user-management");
     return { success: true };
   } catch (error) {
-    return { success: false, error: 'Failed to update user role.' };
+    return { success: false, error: "Failed to update user role." };
   }
 }
 
-export async function updateProfileAction(userId: string, data: { name: string; email: string }) {
+export async function updateProfileAction(
+  userId: string,
+  data: { name: string; email: string },
+) {
   try {
     const updatedUser = await prisma.user.update({
       where: { id: userId },
@@ -230,30 +274,39 @@ export async function updateProfileAction(userId: string, data: { name: string; 
         name: true,
         email: true,
         role: true,
-      }
+      },
     });
 
     return { success: true, data: updatedUser };
   } catch (error: any) {
-    console.error('[UPDATE_PROFILE_ERROR]:', error);
-    if (error.code === 'P2002') {
-       return { success: false, error: 'Email already in use by another account.' };
+    console.error("[UPDATE_PROFILE_ERROR]:", error);
+    if (error.code === "P2002") {
+      return {
+        success: false,
+        error: "Email already in use by another account.",
+      };
     }
-    return { success: false, error: 'Failed to update profile.' };
+    return { success: false, error: "Failed to update profile." };
   }
 }
 
-export async function updateSecurityAction(userId: string, data: { currentPassword?: string; newPassword?: string }) {
+export async function updateSecurityAction(
+  userId: string,
+  data: { currentPassword?: string; newPassword?: string },
+) {
   try {
     if (!data.currentPassword || !data.newPassword) {
-      return { success: false, error: 'Current and new passwords are required.' };
+      return {
+        success: false,
+        error: "Current and new passwords are required.",
+      };
     }
 
     const user = await prisma.user.findUnique({
-      where: { id: userId }
+      where: { id: userId },
     });
 
-    if (!user) return { success: false, error: 'User not found' };
+    if (!user) return { success: false, error: "User not found" };
 
     // Verify current password
     let isMatch = false;
@@ -262,24 +315,24 @@ export async function updateSecurityAction(userId: string, data: { currentPasswo
     } catch (err) {
       isMatch = false;
     }
-    
+
     // Fallback for non-hashed legacy passwords
     if (!isMatch) isMatch = user.password === data.currentPassword;
 
     if (!isMatch) {
-      return { success: false, error: 'Incorrect current password.' };
+      return { success: false, error: "Incorrect current password." };
     }
 
     // Hash and update new password
     const hashedPassword = await bcrypt.hash(data.newPassword, 10);
     await prisma.user.update({
       where: { id: userId },
-      data: { password: hashedPassword }
+      data: { password: hashedPassword },
     });
 
     return { success: true };
   } catch (error: any) {
-    console.error('[SECURITY_UPDATE_ERROR]:', error);
+    console.error("[SECURITY_UPDATE_ERROR]:", error);
     return { success: false, error: error.message };
   }
 }

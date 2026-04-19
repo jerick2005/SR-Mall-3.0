@@ -1,10 +1,25 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import { Bell, Check, CheckCircle, X, AlertTriangle, Info, Calendar, CreditCard, MessageSquare, Settings } from 'lucide-react';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '@/app/providers';
-import { getNotificationsAction, markNotificationAsReadAction, markAllNotificationsAsReadAction } from '@/app/actions/notification';
+import React, { useState, useEffect } from "react";
+import {
+  Bell,
+  Check,
+  CheckCircle,
+  X,
+  AlertTriangle,
+  Info,
+  Calendar,
+  CreditCard,
+  MessageSquare,
+  Settings,
+} from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/app/providers";
+import {
+  getNotificationsAction,
+  markNotificationAsReadAction,
+  markAllNotificationsAsReadAction,
+} from "@/app/actions/notification";
 
 interface Notification {
   id: string;
@@ -19,7 +34,9 @@ interface NotificationDropdownProps {
   className?: string;
 }
 
-export default function NotificationDropdown({ className = '' }: NotificationDropdownProps) {
+export default function NotificationDropdown({
+  className = "",
+}: NotificationDropdownProps) {
   const { user } = useAuth();
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
@@ -42,7 +59,7 @@ export default function NotificationDropdown({ className = '' }: NotificationDro
 
   useEffect(() => {
     loadNotifications();
-    
+
     // Refresh notifications every 30 seconds
     const interval = setInterval(loadNotifications, 30000);
     return () => clearInterval(interval);
@@ -50,17 +67,17 @@ export default function NotificationDropdown({ className = '' }: NotificationDro
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
-      case 'NEW_BOOKING_INQUIRY':
+      case "NEW_BOOKING_INQUIRY":
         return <MessageSquare className="w-4 h-4 text-blue-500" />;
-      case 'AD_SUBMISSION_RECEIVED':
+      case "AD_SUBMISSION_RECEIVED":
         return <Info className="w-4 h-4 text-purple-500" />;
-      case 'EXPIRING_CONTRACTS':
+      case "EXPIRING_CONTRACTS":
         return <Calendar className="w-4 h-4 text-orange-500" />;
-      case 'OVERDUE_RENT_PAYMENTS':
+      case "OVERDUE_RENT_PAYMENTS":
         return <CreditCard className="w-4 h-4 text-red-500" />;
-      case 'FEEDBACK_SPAM_DETECTED':
+      case "FEEDBACK_SPAM_DETECTED":
         return <AlertTriangle className="w-4 h-4 text-yellow-500" />;
-      case 'SYSTEM_HEALTH_REPORTS':
+      case "SYSTEM_HEALTH_REPORTS":
         return <Settings className="w-4 h-4 text-gray-500" />;
       default:
         return <Bell className="w-4 h-4 text-gray-500" />;
@@ -70,9 +87,11 @@ export default function NotificationDropdown({ className = '' }: NotificationDro
   const formatTimeAgo = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
-    const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
-    
-    if (diffInMinutes < 1) return 'Just now';
+    const diffInMinutes = Math.floor(
+      (now.getTime() - date.getTime()) / (1000 * 60),
+    );
+
+    if (diffInMinutes < 1) return "Just now";
     if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
     if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)}h ago`;
     return `${Math.floor(diffInMinutes / 1440)}d ago`;
@@ -81,10 +100,10 @@ export default function NotificationDropdown({ className = '' }: NotificationDro
   const markAsRead = async (notificationId: string) => {
     const res = await markNotificationAsReadAction(notificationId);
     if (res.success) {
-      setNotifications(prev => 
-        prev.map(n => n.id === notificationId ? { ...n, isRead: true } : n)
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === notificationId ? { ...n, isRead: true } : n)),
       );
-      setUnreadCount(prev => Math.max(0, prev - 1));
+      setUnreadCount((prev) => Math.max(0, prev - 1));
     }
   };
 
@@ -92,7 +111,7 @@ export default function NotificationDropdown({ className = '' }: NotificationDro
     if (!user) return;
     const res = await markAllNotificationsAsReadAction(user.id);
     if (res.success) {
-      setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+      setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
       setUnreadCount(0);
     }
   };
@@ -107,7 +126,7 @@ export default function NotificationDropdown({ className = '' }: NotificationDro
         <Bell size={20} className="group-hover:animate-pulse" />
         {unreadCount > 0 && (
           <span className="absolute -top-1 -right-1 w-5 h-5 bg-primary text-white text-xs font-bold rounded-full flex items-center justify-center animate-pulse">
-            {unreadCount > 9 ? '9+' : unreadCount}
+            {unreadCount > 9 ? "9+" : unreadCount}
           </span>
         )}
       </button>
@@ -116,18 +135,20 @@ export default function NotificationDropdown({ className = '' }: NotificationDro
       {isOpen && (
         <>
           {/* Backdrop */}
-          <div 
-            className="fixed inset-0 z-40" 
+          <div
+            className="fixed inset-0 z-40"
             onClick={() => setIsOpen(false)}
           />
-          
+
           {/* Dropdown Panel */}
           <div className="absolute right-0 top-12 w-[calc(100vw-2rem)] sm:w-96 bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl border border-slate-100 dark:border-white/5 z-50 overflow-hidden max-w-sm sm:max-w-none">
             {/* Header */}
             <div className="flex items-center justify-between p-6 border-b border-slate-100 dark:border-white/5">
               <div className="flex items-center gap-3">
                 <Bell className="w-5 h-5 text-primary" />
-                <h3 className="font-bold text-charcoal dark:text-white">Notifications</h3>
+                <h3 className="font-bold text-charcoal dark:text-white">
+                  Notifications
+                </h3>
                 {unreadCount > 0 && (
                   <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-1 rounded-full">
                     {unreadCount} new
@@ -151,15 +172,21 @@ export default function NotificationDropdown({ className = '' }: NotificationDro
                   <div className="w-16 h-16 bg-slate-100 dark:bg-zinc-800 rounded-2xl flex items-center justify-center mx-auto mb-4">
                     <Bell className="w-8 h-8 text-slate-400" />
                   </div>
-                  <p className="text-sm font-medium text-slate-500">No notifications yet</p>
-                  <p className="text-xs text-slate-400 mt-1">We'll notify you when something important happens</p>
+                  <p className="text-sm font-medium text-slate-500">
+                    No notifications yet
+                  </p>
+                  <p className="text-xs text-slate-400 mt-1">
+                    We'll notify you when something important happens
+                  </p>
                 </div>
               ) : (
                 notifications.map((notification) => (
                   <div
                     key={notification.id}
                     className={`p-4 border-b border-slate-50 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-zinc-800 transition-colors ${
-                      !notification.isRead ? 'bg-primary/5 dark:bg-primary/10' : ''
+                      !notification.isRead
+                        ? "bg-primary/5 dark:bg-primary/10"
+                        : ""
                     }`}
                   >
                     <div className="flex items-start gap-3">
@@ -197,17 +224,21 @@ export default function NotificationDropdown({ className = '' }: NotificationDro
             </div>
 
             {/* Footer */}
-                <button 
-                  onClick={() => {
-                    if (user?.role === 'ADMIN') {
-                      router.push('/admindashboard/requests');
-                    }
-                    setIsOpen(false);
-                  }}
-                  className="w-full text-center text-xs font-bold text-primary hover:text-primary-hover transition-colors"
-                >
-                  View all notifications
-                </button>
+            <button
+              onClick={() => {
+                if (user?.role === "ADMIN") {
+                  router.push("/admindashboard/notifications");
+                } else if (user?.role === "TENANT") {
+                  router.push("/tenantdashboard/notifications");
+                } else {
+                  router.push("/profile/notifications");
+                }
+                setIsOpen(false);
+              }}
+              className="w-full text-center text-xs font-bold text-primary hover:text-primary-hover transition-colors"
+            >
+              View all notifications
+            </button>
           </div>
         </>
       )}

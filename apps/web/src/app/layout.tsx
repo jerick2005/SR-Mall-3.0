@@ -16,7 +16,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "SR-MANAGE | Public Digital Concierge",
-  description: "Experience the Future of Shopping with SR Mall Management System",
+  description:
+    "Experience the Future of Shopping with SR Mall Management System",
 };
 
 import { Toaster } from "sonner";

@@ -1,23 +1,36 @@
-'use client';
+"use client";
 
-import React, { useState, useRef, useEffect } from 'react';
-import { X, Send, Paperclip, Smile, Minimize2, MapPin, ArrowLeft, Search } from 'lucide-react';
-import { useAuth } from '@/app/providers';
-import { LoginModal } from './login-modal';
+import React, { useState, useRef, useEffect } from "react";
+import {
+  X,
+  Send,
+  Paperclip,
+  Smile,
+  Minimize2,
+  MapPin,
+  ArrowLeft,
+  Search,
+} from "lucide-react";
+import { useAuth } from "@/app/providers";
+import { LoginModal } from "./login-modal";
 
-import { getAllStorefrontsAction } from '@/app/actions/tenant';
+import { getAllStorefrontsAction } from "@/app/actions/tenant";
 
 interface ChatBoxProps {
   isOpen: boolean;
   onClose: () => void;
   isAuthenticated: boolean;
-  initialRecipient?: 'admin' | 'shop' | null;
+  initialRecipient?: "admin" | "shop" | null;
   initialShopName?: string | null;
   inquirySlotId?: string | null;
 }
 
 const DEFAULT_SHOPS = [
-  "Velvet & Vine", "Coffee Culture", "Gadget Sphere", "Prism Fitness", "Modern Home"
+  "Velvet & Vine",
+  "Coffee Culture",
+  "Gadget Sphere",
+  "Prism Fitness",
+  "Modern Home",
 ];
 
 export const ChatBox = ({
@@ -26,16 +39,20 @@ export const ChatBox = ({
   isAuthenticated,
   initialRecipient,
   initialShopName,
-  inquirySlotId
+  inquirySlotId,
 }: ChatBoxProps) => {
   const { user } = useAuth();
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
-  const [inputText, setInputText] = useState('');
-  const [recipient, setRecipient] = useState<'admin' | 'shop'>(initialRecipient || 'shop');
+  const [inputText, setInputText] = useState("");
+  const [recipient, setRecipient] = useState<"admin" | "shop">(
+    initialRecipient || "shop",
+  );
   const [availableShops, setAvailableShops] = useState<string[]>(DEFAULT_SHOPS);
-  const [selectedShop, setSelectedShop] = useState(initialShopName || DEFAULT_SHOPS[0]);
-  const [viewMode, setViewMode] = useState<'list' | 'chat'>('list');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedShop, setSelectedShop] = useState(
+    initialShopName || DEFAULT_SHOPS[0],
+  );
+  const [viewMode, setViewMode] = useState<"list" | "chat">("list");
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Fetch true shops from DB
   useEffect(() => {
@@ -56,8 +73,14 @@ export const ChatBox = ({
 
   // Effect to handle prop changes (e.g. when changing shops via profile)
   useEffect(() => {
-    if (initialRecipient) { setRecipient(initialRecipient); setViewMode('chat'); }
-    if (initialShopName) { setSelectedShop(initialShopName); setViewMode('chat'); }
+    if (initialRecipient) {
+      setRecipient(initialRecipient);
+      setViewMode("chat");
+    }
+    if (initialShopName) {
+      setSelectedShop(initialShopName);
+      setViewMode("chat");
+    }
     // Clear messages when switching context to ensure isolation
     setDbMessages([]);
   }, [initialRecipient, initialShopName]);
@@ -67,7 +90,7 @@ export const ChatBox = ({
   const [dbMessages, setDbMessages] = useState<any[]>([]);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   // Poll for messages
@@ -75,8 +98,13 @@ export const ChatBox = ({
     if (!isOpen || !user?.email) return;
 
     const fetchMessages = async () => {
-      const { getConversationHistory } = await import('@/app/actions/chat-queries');
-      const history = await getConversationHistory(user.email, recipient, selectedShop);
+      const { getConversationHistory } =
+        await import("@/app/actions/chat-queries");
+      const history = await getConversationHistory(
+        user.email,
+        recipient,
+        selectedShop,
+      );
       setDbMessages(history);
     };
 
@@ -95,25 +123,32 @@ export const ChatBox = ({
 
   const handleSend = async (e: React.FormEvent, slotId?: string) => {
     e.preventDefault();
-    
+
     // When slotId is provided via the quick-share button, append it if we have custom text, or send a pre-formatted message
     let textToSend = inputText;
-    if (typeof slotId === 'string' && slotId) {
-      textToSend = inputText.trim() ? `${inputText} (Regarding Unit ${slotId})` : `Hello, I would like to inquire about leasing Unit ${slotId}.`;
+    if (typeof slotId === "string" && slotId) {
+      textToSend = inputText.trim()
+        ? `${inputText} (Regarding Unit ${slotId})`
+        : `Hello, I would like to inquire about leasing Unit ${slotId}.`;
     }
 
     if (!textToSend.trim()) return;
 
-    setInputText('');
+    setInputText("");
 
     if (user?.email) {
       // Optimistic update
       setDbMessages((prev) => [
         ...prev,
-        { id: Date.now().toString(), content: textToSend, sender: { email: user.email }, createdAt: new Date() }
+        {
+          id: Date.now().toString(),
+          content: textToSend,
+          sender: { email: user.email },
+          createdAt: new Date(),
+        },
       ]);
 
-      const { sendMessage } = await import('@/app/actions/chat');
+      const { sendMessage } = await import("@/app/actions/chat");
       await sendMessage({
         userId: user.email,
         recipientType: recipient,
@@ -130,87 +165,145 @@ export const ChatBox = ({
         {/* Header */}
         <div className="p-6 bg-primary flex items-center justify-between text-white shadow-md z-10 transition-all">
           <div className="flex items-center gap-3 sm:gap-4">
-            {viewMode === 'chat' && (
-              <button onClick={() => setViewMode('list')} className="p-1 hover:bg-white/20 rounded-full transition-colors active:scale-95 mr-1">
+            {viewMode === "chat" && (
+              <button
+                onClick={() => setViewMode("list")}
+                className="p-1 hover:bg-white/20 rounded-full transition-colors active:scale-95 mr-1"
+              >
                 <ArrowLeft size={20} />
               </button>
             )}
             <div className="relative">
               <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center font-black text-lg sm:text-xl shadow-inner">
-                {viewMode === 'chat' && recipient === 'shop' ? selectedShop.substring(0, 1).toUpperCase() : 'S'}
+                {viewMode === "chat" && recipient === "shop"
+                  ? selectedShop.substring(0, 1).toUpperCase()
+                  : "S"}
               </div>
               <div className="absolute -bottom-1 -right-1 w-3 h-3 sm:w-4 sm:h-4 bg-green-400 rounded-full border-2 border-primary animate-pulse"></div>
             </div>
             <div className="flex flex-col">
-              <h3 className="font-bold text-xs sm:text-sm tracking-tight">{viewMode === 'chat' && recipient === 'shop' ? selectedShop : 'Mall Messenger'}</h3>
-              <span className="text-[9px] sm:text-[10px] font-bold text-white/80 uppercase tracking-widest">{viewMode === 'chat' ? 'Active Conversation' : 'Live Connect'}</span>
+              <h3 className="font-bold text-xs sm:text-sm tracking-tight">
+                {viewMode === "chat" && recipient === "shop"
+                  ? selectedShop
+                  : "Mall Messenger"}
+              </h3>
+              <span className="text-[9px] sm:text-[10px] font-bold text-white/80 uppercase tracking-widest">
+                {viewMode === "chat" ? "Active Conversation" : "Live Connect"}
+              </span>
             </div>
           </div>
           <div className="flex items-center gap-1">
-            <button onClick={onClose} className="p-2 hover:bg-white/20 rounded-full transition-colors active:scale-95"><Minimize2 size={18} /></button>
-            <button onClick={onClose} className="p-2 hover:bg-white/20 rounded-full transition-colors active:scale-95"><X size={18} /></button>
+            <button
+              onClick={onClose}
+              className="p-2 hover:bg-white/20 rounded-full transition-colors active:scale-95"
+            >
+              <Minimize2 size={18} />
+            </button>
+            <button
+              onClick={onClose}
+              className="p-2 hover:bg-white/20 rounded-full transition-colors active:scale-95"
+            >
+              <X size={18} />
+            </button>
           </div>
         </div>
 
-        {viewMode === 'list' ? (
+        {viewMode === "list" ? (
           <div className="flex-1 overflow-y-auto bg-slate-50 dark:bg-black/20 custom-scrollbar">
             {isAuthenticated ? (
               <div className="p-3 sm:p-4 space-y-2">
                 <div className="px-2 mb-4 mt-1 flex flex-col gap-3">
-                   <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Your Conversations</h4>
-                   <div className="relative">
-                     <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                     <input 
-                       type="text" 
-                       placeholder="Search stores or admin..." 
-                       value={searchQuery}
-                       onChange={(e) => setSearchQuery(e.target.value)}
-                       className="w-full bg-white dark:bg-zinc-800 border border-slate-200 dark:border-white/10 rounded-xl py-2 pl-9 pr-3 text-xs font-medium text-charcoal dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-primary shadow-sm transition-all focus:ring-2 focus:ring-primary/20"
-                     />
-                   </div>
+                  <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+                    Your Conversations
+                  </h4>
+                  <div className="relative">
+                    <Search
+                      size={14}
+                      className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Search stores or admin..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-full bg-white dark:bg-zinc-800 border border-slate-200 dark:border-white/10 rounded-xl py-2 pl-9 pr-3 text-xs font-medium text-charcoal dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-primary shadow-sm transition-all focus:ring-2 focus:ring-primary/20"
+                    />
+                  </div>
                 </div>
-                
+
                 {/* Admin */}
-                {(!searchQuery || 'mall administration booking support admin'.includes(searchQuery.toLowerCase())) && (
+                {(!searchQuery ||
+                  "mall administration booking support admin".includes(
+                    searchQuery.toLowerCase(),
+                  )) && (
                   <div
-                    onClick={() => { setRecipient('admin'); setViewMode('chat'); }}
+                    onClick={() => {
+                      setRecipient("admin");
+                      setViewMode("chat");
+                    }}
                     className="flex items-center gap-4 p-4 bg-white dark:bg-zinc-800 rounded-xl hover:shadow-md cursor-pointer transition-all border border-slate-100 dark:border-white/5"
                   >
                     <div className="w-12 h-12 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold">
                       MA
                     </div>
                     <div className="flex-1">
-                      <h4 className="font-bold text-sm text-charcoal dark:text-white">Mall Administration</h4>
-                      <p className="text-xs text-slate-500 font-medium">Booking & Support Inquiries</p>
+                      <h4 className="font-bold text-sm text-charcoal dark:text-white">
+                        Mall Administration
+                      </h4>
+                      <p className="text-xs text-slate-500 font-medium">
+                        Booking & Support Inquiries
+                      </p>
                     </div>
                   </div>
                 )}
-                
+
                 {/* Shops */}
-                {availableShops.filter(shop => shop.toLowerCase().includes(searchQuery.toLowerCase())).map((shop) => (
-                  <div
-                    key={shop}
-                    onClick={() => { setRecipient('shop'); setSelectedShop(shop); setViewMode('chat'); }}
-                    className="flex items-center gap-4 p-4 bg-white dark:bg-zinc-800 rounded-xl hover:shadow-md cursor-pointer transition-all border border-slate-100 dark:border-white/5"
-                  >
-                    <div className="w-12 h-12 rounded-full bg-blue-500/10 text-blue-500 flex items-center justify-center font-bold">
-                      {shop.substring(0, 2).toUpperCase()}
+                {availableShops
+                  .filter((shop) =>
+                    shop.toLowerCase().includes(searchQuery.toLowerCase()),
+                  )
+                  .map((shop) => (
+                    <div
+                      key={shop}
+                      onClick={() => {
+                        setRecipient("shop");
+                        setSelectedShop(shop);
+                        setViewMode("chat");
+                      }}
+                      className="flex items-center gap-4 p-4 bg-white dark:bg-zinc-800 rounded-xl hover:shadow-md cursor-pointer transition-all border border-slate-100 dark:border-white/5"
+                    >
+                      <div className="w-12 h-12 rounded-full bg-blue-500/10 text-blue-500 flex items-center justify-center font-bold">
+                        {shop.substring(0, 2).toUpperCase()}
+                      </div>
+                      <div className="flex-1 overflow-hidden">
+                        <h4 className="font-bold text-sm text-charcoal dark:text-white truncate">
+                          {shop}
+                        </h4>
+                        <p className="text-xs text-slate-500 font-medium">
+                          Tenant Support
+                        </p>
+                      </div>
                     </div>
-                    <div className="flex-1 overflow-hidden">
-                      <h4 className="font-bold text-sm text-charcoal dark:text-white truncate">{shop}</h4>
-                      <p className="text-xs text-slate-500 font-medium">Tenant Support</p>
-                    </div>
-                  </div>
-                ))}
+                  ))}
               </div>
             ) : (
               <div className="h-full flex flex-col items-center justify-center p-6 text-center top-0 left-0 right-0 bottom-0 absolute bg-white/50 dark:bg-zinc-900/50 backdrop-blur-sm z-10 w-full">
-                 <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
-                   <MapPin size={32} className="text-primary" />
-                 </div>
-                 <h4 className="font-bold text-lg text-charcoal dark:text-white mb-2">Member Chat</h4>
-                 <p className="text-sm font-medium text-slate-500 mb-6 max-w-[200px] leading-relaxed">Connect securely with mall administration and individual stores.</p>
-                 <button onClick={() => setIsLoginModalOpen(true)} className="px-8 py-3 bg-primary text-white font-bold tracking-widest text-xs uppercase rounded-xl shadow-lg hover:bg-primary-hover hover:scale-105 transition-all">Sign In</button>
+                <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+                  <MapPin size={32} className="text-primary" />
+                </div>
+                <h4 className="font-bold text-lg text-charcoal dark:text-white mb-2">
+                  Member Chat
+                </h4>
+                <p className="text-sm font-medium text-slate-500 mb-6 max-w-[200px] leading-relaxed">
+                  Connect securely with mall administration and individual
+                  stores.
+                </p>
+                <button
+                  onClick={() => setIsLoginModalOpen(true)}
+                  className="px-8 py-3 bg-primary text-white font-bold tracking-widest text-xs uppercase rounded-xl shadow-lg hover:bg-primary-hover hover:scale-105 transition-all"
+                >
+                  Sign In
+                </button>
               </div>
             )}
           </div>
@@ -220,7 +313,9 @@ export const ChatBox = ({
             <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6 custom-scrollbar bg-slate-50/50 dark:bg-black/20">
               <div className="flex flex-col items-start animate-fade-in">
                 <div className="max-w-[85%] rounded-3xl px-5 py-3.5 shadow-sm text-sm font-medium leading-relaxed bg-white dark:bg-zinc-800 text-charcoal dark:text-slate-300 rounded-tl-sm border border-slate-100 dark:border-white/5">
-                  {isAuthenticated ? `Welcome back ${user?.name || ''}! How can we help you seamlessly access ${recipient === 'admin' ? 'Mall Administration' : selectedShop}?` : `Welcome to SR Mall. Login to start a conversation with Mall Admin or Tenants.`}
+                  {isAuthenticated
+                    ? `Welcome back ${user?.name || ""}! How can we help you seamlessly access ${recipient === "admin" ? "Mall Administration" : selectedShop}?`
+                    : `Welcome to SR Mall. Login to start a conversation with Mall Admin or Tenants.`}
                 </div>
               </div>
 
@@ -229,16 +324,22 @@ export const ChatBox = ({
                 return (
                   <div
                     key={msg.id}
-                    className={`flex flex-col ${isUserSender ? 'items-end' : 'items-start'} animate-fade-in`}
+                    className={`flex flex-col ${isUserSender ? "items-end" : "items-start"} animate-fade-in`}
                   >
-                    <div className={`max-w-[85%] rounded-3xl px-5 py-3.5 shadow-sm text-sm font-medium leading-relaxed ${isUserSender
-                        ? 'bg-primary text-white rounded-tr-sm'
-                        : 'bg-white dark:bg-zinc-800 text-charcoal dark:text-slate-300 rounded-tl-sm border border-slate-100 dark:border-white/5'
-                      }`}>
+                    <div
+                      className={`max-w-[85%] rounded-3xl px-5 py-3.5 shadow-sm text-sm font-medium leading-relaxed ${
+                        isUserSender
+                          ? "bg-primary text-white rounded-tr-sm"
+                          : "bg-white dark:bg-zinc-800 text-charcoal dark:text-slate-300 rounded-tl-sm border border-slate-100 dark:border-white/5"
+                      }`}
+                    >
                       {msg.content}
                     </div>
                     <div className="mt-1.5 px-2 text-[9px] font-bold uppercase tracking-widest text-slate-400">
-                      {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      {new Date(msg.createdAt).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
                     </div>
                   </div>
                 );
@@ -249,18 +350,27 @@ export const ChatBox = ({
             {/* Input Area */}
             {isAuthenticated && (
               <div className="p-3 sm:p-4 border-t border-slate-100 dark:border-white/5 bg-white dark:bg-zinc-900 shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.05)] z-10 relative">
-                {recipient === 'admin' && inquirySlotId && (
+                {recipient === "admin" && inquirySlotId && (
                   <div className="mb-3 px-1">
                     <button
                       onClick={(e) => handleSend(e, inquirySlotId)}
                       className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-green-600 bg-green-50 dark:bg-green-900/20 px-3 py-1.5 rounded-full border border-green-200 dark:border-green-900/50 hover:bg-green-100 transition-colors"
                     >
-                      <MapPin size={12} /> Share Inquiry For Unit {inquirySlotId}
+                      <MapPin size={12} /> Share Inquiry For Unit{" "}
+                      {inquirySlotId}
                     </button>
                   </div>
                 )}
-                <form onSubmit={handleSend} className="relative flex items-center gap-2 bg-slate-50 dark:bg-zinc-800/50 rounded-2xl border border-slate-200 dark:border-white/10 p-1.5 focus-within:ring-2 ring-primary/20 focus-within:border-primary transition-all">
-                  <button type="button" className="p-2 sm:p-2.5 text-slate-400 hover:text-primary transition-colors rounded-xl hover:bg-white dark:hover:bg-zinc-700 shrink-0"><Paperclip size={18} /></button>
+                <form
+                  onSubmit={handleSend}
+                  className="relative flex items-center gap-2 bg-slate-50 dark:bg-zinc-800/50 rounded-2xl border border-slate-200 dark:border-white/10 p-1.5 focus-within:ring-2 ring-primary/20 focus-within:border-primary transition-all"
+                >
+                  <button
+                    type="button"
+                    className="p-2 sm:p-2.5 text-slate-400 hover:text-primary transition-colors rounded-xl hover:bg-white dark:hover:bg-zinc-700 shrink-0"
+                  >
+                    <Paperclip size={18} />
+                  </button>
                   <input
                     type="text"
                     value={inputText}
@@ -268,7 +378,12 @@ export const ChatBox = ({
                     placeholder="Message..."
                     className="flex-1 px-1 sm:px-2 py-2 bg-transparent outline-none text-sm font-medium dark:text-white placeholder:text-slate-400 min-w-0"
                   />
-                  <button type="button" className="p-2 text-slate-400 hover:text-primary transition-colors sm:block hidden shrink-0"><Smile size={18} /></button>
+                  <button
+                    type="button"
+                    className="p-2 text-slate-400 hover:text-primary transition-colors sm:block hidden shrink-0"
+                  >
+                    <Smile size={18} />
+                  </button>
                   <button
                     type="submit"
                     disabled={!inputText.trim()}
@@ -281,7 +396,6 @@ export const ChatBox = ({
             )}
           </>
         )}
-
       </div>
 
       <LoginModal

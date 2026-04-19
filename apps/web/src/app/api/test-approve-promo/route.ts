@@ -1,60 +1,66 @@
-import { NextResponse } from 'next/server';
-import { prisma } from '@srmall/database';
+import { NextResponse } from "next/server";
+import { prisma } from "@srmall/database";
 
 export async function POST(request: Request) {
   try {
-    console.log('=== TEST: Approving a tenant promo ===');
-    
+    console.log("=== TEST: Approving a tenant promo ===");
+
     // Get the first pending promo
     const pendingPromo = await prisma.tenantPromo.findFirst({
-      where: { status: 'PENDING' },
+      where: { status: "PENDING" },
       include: {
         tenant: {
           include: {
             user: {
               select: {
                 name: true,
-                email: true
-              }
-            }
-          }
-        }
-      }
+                email: true,
+              },
+            },
+          },
+        },
+      },
     });
-    
+
     if (!pendingPromo) {
-      return NextResponse.json({ error: 'No pending promo found' }, { status: 404 });
+      return NextResponse.json(
+        { error: "No pending promo found" },
+        { status: 404 },
+      );
     }
-    
-    console.log('Found pending promo:', pendingPromo);
-    
+
+    console.log("Found pending promo:", pendingPromo);
+
     // Approve the promo
     const approvedPromo = await prisma.tenantPromo.update({
       where: { id: pendingPromo.id },
-      data: { status: 'APPROVED' },
+      data: { status: "APPROVED" },
       include: {
         tenant: {
           include: {
             user: {
               select: {
                 name: true,
-                email: true
-              }
-            }
-          }
-        }
-      }
+                email: true,
+              },
+            },
+          },
+        },
+      },
     });
-    
-    console.log('Approved promo:', approvedPromo);
-    
+
+    console.log("Approved promo:", approvedPromo);
+
     return NextResponse.json({
       success: true,
       promo: approvedPromo,
-      message: `Promo "${approvedPromo.title}" has been approved!`
+      message: `Promo "${approvedPromo.title}" has been approved!`,
     });
   } catch (error) {
-    console.error('TEST APPROVE PROMO ERROR:', error);
-    return NextResponse.json({ error: 'Failed to approve promo' }, { status: 500 });
+    console.error("TEST APPROVE PROMO ERROR:", error);
+    return NextResponse.json(
+      { error: "Failed to approve promo" },
+      { status: 500 },
+    );
   }
 }

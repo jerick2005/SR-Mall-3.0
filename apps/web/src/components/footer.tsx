@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Mail, Phone, MapPin, Instagram, Facebook, Globe } from 'lucide-react';
+import React, { useState } from "react";
+import { Mail, Phone, MapPin, Instagram, Facebook, Globe } from "lucide-react";
 
 export const Footer = () => {
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -10,21 +10,38 @@ export const Footer = () => {
         <div className="col-span-1">
           <div className="flex items-center gap-3 mb-6 group cursor-pointer">
             <div className="w-9 h-9 bg-white rounded-lg overflow-hidden shadow-lg border border-slate-200 dark:border-white/10 group-hover:border-primary/50 transition-all duration-500">
-              <img src="/images/srmall-logo/sr_logo2.jpg" alt="SR Mall Logo" className="w-full h-full object-cover" />
+              <img
+                src="/images/srmall-logo/sr_logo2.jpg"
+                alt="SR Mall Logo"
+                className="w-full h-full object-cover"
+              />
             </div>
-            <span className="text-xl font-black tracking-tighter text-charcoal dark:text-white">SR MALL</span>
+            <span className="text-xl font-black tracking-tighter text-charcoal dark:text-white">
+              SR MALL
+            </span>
           </div>
           <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed mb-6">
-            The ultimate destination for shopping, dining, and leisure in Misamis Oriental. We're committed to delivering a superior experience for all visitors.
+            The ultimate destination for shopping, dining, and leisure in
+            Misamis Oriental. We're committed to delivering a superior
+            experience for all visitors.
           </p>
           <div className="flex items-center gap-4">
-            <a href="#" className="hover:text-primary transition-colors text-slate-400">
+            <a
+              href="#"
+              className="hover:text-primary transition-colors text-slate-400"
+            >
               <Instagram size={20} />
             </a>
-            <a href="#" className="hover:text-primary transition-colors text-slate-400">
+            <a
+              href="#"
+              className="hover:text-primary transition-colors text-slate-400"
+            >
               <Facebook size={20} />
             </a>
-            <a href="#" className="hover:text-primary transition-colors text-slate-400">
+            <a
+              href="#"
+              className="hover:text-primary transition-colors text-slate-400"
+            >
               <Globe size={20} />
             </a>
           </div>
@@ -69,9 +86,13 @@ export const Footer = () => {
           <h3 className="text-lg font-bold mb-6">Contact Admin</h3>
           {isSubmitted ? (
             <div className="p-6 bg-primary/10 border border-primary/20 rounded-2xl text-center animate-fade-in">
-              <p className="text-primary font-bold text-sm mb-2">Inquiry Sent!</p>
-              <p className="text-slate-500 dark:text-slate-400 text-[10px] leading-relaxed uppercase tracking-widest">Our management will reach out to you shortly.</p>
-              <button 
+              <p className="text-primary font-bold text-sm mb-2">
+                Inquiry Sent!
+              </p>
+              <p className="text-slate-500 dark:text-slate-400 text-[10px] leading-relaxed uppercase tracking-widest">
+                Our management will reach out to you shortly.
+              </p>
+              <button
                 onClick={() => setIsSubmitted(false)}
                 className="mt-4 text-[10px] font-bold text-charcoal/50 dark:text-white/50 hover:text-primary dark:hover:text-white underline underline-offset-4"
               >
@@ -79,7 +100,7 @@ export const Footer = () => {
               </button>
             </div>
           ) : (
-            <form 
+            <form
               className="space-y-3"
               onSubmit={(e) => {
                 e.preventDefault();
@@ -98,7 +119,7 @@ export const Footer = () => {
                 rows={3}
                 className="w-full px-4 py-2 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg text-sm text-charcoal dark:text-white focus:outline-none focus:border-primary transition-colors"
               />
-              <button 
+              <button
                 type="submit"
                 className="w-full py-2 bg-primary text-white font-bold rounded-lg hover:bg-primary-hover transition-colors text-sm shadow-lg shadow-primary/20 active:scale-95"
               >

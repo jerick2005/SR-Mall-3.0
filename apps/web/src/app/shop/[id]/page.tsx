@@ -23,6 +23,7 @@ import { useAuth } from "@/app/providers";
 import { ChatBox } from "@/components/chat-box";
 import { FeedbackSection } from "@/components/feedback-section";
 import { LoginModal } from "@/components/login-modal";
+import { ProductDetailModal } from "@/components/product-detail-modal";
 import clsx from "clsx";
 
 // Premium Placeholders for Broken/Blob URLs
@@ -56,6 +57,7 @@ export default function ShopProfilePage() {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [productSearch, setProductSearch] = useState("");
+  const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
 
   useEffect(() => {
     async function loadShop() {
@@ -956,7 +958,9 @@ export default function ShopProfilePage() {
                     "flex",
                     "flex-col",
                     "hover:-translate-y-2",
+                    "cursor-pointer",
                   )}
+                  onClick={() => setSelectedProduct({ ...product, shopName: shop.shop_name })}
                 >
                   <div
                     className={clsx(
@@ -1064,7 +1068,13 @@ export default function ShopProfilePage() {
                       {product.description || "Curated for quality."}
                     </p>
 
-                    <button className="mt-4 py-2 bg-slate-50 dark:bg-zinc-950 border border-slate-100 dark:border-white/5 rounded-lg text-[6px] sm:text-[8px] font-black uppercase tracking-widest text-slate-400 group-hover:bg-primary group-hover:text-white group-hover:border-primary transition-all active:scale-95">
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedProduct({ ...product, shopName: shop.shop_name });
+                      }}
+                      className="mt-4 py-2 bg-slate-50 dark:bg-zinc-950 border border-slate-100 dark:border-white/5 rounded-lg text-[6px] sm:text-[8px] font-black uppercase tracking-widest text-slate-400 group-hover:bg-primary group-hover:text-white group-hover:border-primary transition-all active:scale-95"
+                    >
                       Investigate
                     </button>
                   </div>
@@ -1090,6 +1100,15 @@ export default function ShopProfilePage() {
       <LoginModal
         isOpen={isLoginModalOpen}
         onClose={() => setIsLoginModalOpen(false)}
+      />
+
+      <ProductDetailModal
+        product={selectedProduct}
+        onClose={() => setSelectedProduct(null)}
+        onInquire={(shopName) => {
+          setIsChatOpen(true);
+          setSelectedProduct(null);
+        }}
       />
     </div>
   );

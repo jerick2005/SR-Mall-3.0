@@ -6,44 +6,57 @@ description: How to start the SR-Mall development environment
 
 - Node.js 18+
 - Docker Desktop (Running)
-- pnpm `npm install -g pnpm`
+- npm (Standard with Node.js)
 
 ### Step 1: Install Dependencies
 
+Install all packages from the root directory:
+
 ```bash
-pnpm install
+npm install
 ```
 
 ### Step 2: Start PostgreSQL Container
+
+Spin up the local database using Docker:
 
 ```bash
 docker-compose up -d
 ```
 
-_Note: The database is mapped to port 5435 internally to avoid host conflicts._
+_Note: The database is mapped to port **5435** to avoid conflicts._
 
-### Step 3: Run Database Migrations
+### Step 3: Prepare the Database
 
-```bash
-pnpm --filter @srmall/database run db:push
-```
-
-### Step 4: Run Development Server
+Generate the Prisma client and push the schema to the local database:
 
 ```bash
-pnpm run dev
+npm run db:generate
+cd packages/database && npm run db:push
 ```
 
-### Step 5: (Optional) Seed Example Data
+### Step 4: Seed Initial Data
+
+Populate the database with the required admin and tenant accounts:
 
 // turbo
 
 ```bash
-node packages/database/seed_accounts.js
-node packages/database/seed_spaces.js
+npm run db:seed
 ```
 
-### Authentication Details
+### Step 5: Run Development Server
 
-- **Admin:** srmal@admin.com / 123123
-- **Tenant:** jerick@tenant.com / 123123
+Start the Next.js web application:
+
+```bash
+npm run dev
+```
+
+### Access & Credentials
+
+- **Web App:** [http://localhost:3000](http://localhost:3000)
+- **Admin Dashboard:** [http://localhost:3000/admindashboard](http://localhost:3000/admindashboard)
+  - `srmall@admin.com` / `123123`
+- **Tenant Dashboard:** [http://localhost:3000/tenantdashboard](http://localhost:3000/tenantdashboard)
+  - `jerick@tenant.com` / `123123`

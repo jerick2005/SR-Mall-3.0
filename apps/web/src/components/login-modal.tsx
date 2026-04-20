@@ -14,12 +14,15 @@ import {
   X,
   User,
   Facebook,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/app/providers";
 import { loginAction, signUpAction } from "@/app/actions/auth";
 import { supabase } from "@/utils/supabase";
 import clsx from "clsx";
+import { motion, AnimatePresence } from "framer-motion";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -42,7 +45,9 @@ export const LoginModal = ({ isOpen, onClose }: LoginModalProps) => {
   const { login } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const emailRef = React.useRef<HTMLInputElement | null>(null);
 
   const {
     register,
@@ -54,6 +59,16 @@ export const LoginModal = ({ isOpen, onClose }: LoginModalProps) => {
   });
 
   const router = useRouter();
+
+  // Auto-focus email input on open
+  React.useEffect(() => {
+    if (isOpen) {
+      setTimeout(() => {
+        const input = document.querySelector('input[type="email"]') as HTMLInputElement;
+        if (input) input.focus();
+      }, 100);
+    }
+  }, [isOpen, isSignUp]);
 
   if (!isOpen) return null;
 
@@ -149,34 +164,46 @@ export const LoginModal = ({ isOpen, onClose }: LoginModalProps) => {
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 overflow-hidden">
-      <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-md animate-fade-in"
-        onClick={onClose}
-      />
-
-      <div className="relative w-full max-w-md bg-white dark:bg-zinc-900 rounded-[2.5rem] shadow-2xl border border-slate-200 dark:border-white/5 overflow-hidden animate-fade-in-up">
-        <div className="relative h-32 bg-primary flex items-center justify-center overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl"></div>
-          <div className="relative z-10 flex flex-col items-center">
-            <div className="w-14 h-14 bg-white rounded-2xl overflow-hidden shadow-lg mb-2 p-0.5">
-              <img
-                src="/images/srmall-logo/sr_logo2.jpg"
-                alt="Logo"
-                className="w-full h-full object-cover rounded-xl"
-              />
-            </div>
-            <h2 className="text-white font-bold tracking-tight uppercase text-[10px] tracking-[0.3em]">
-              {isSignUp ? "Create an Account" : "SR MALL Member Login"}
-            </h2>
-          </div>
-          <button
+    <AnimatePresence>
+      {isOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 overflow-hidden">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 bg-black/60 backdrop-blur-md"
             onClick={onClose}
-            className="absolute top-6 right-6 p-2 text-white/60 hover:text-white transition-colors"
+          />
+
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 10 }}
+            transition={{ type: "spring", damping: 25, stiffness: 300 }}
+            className="relative w-full max-w-md bg-white dark:bg-zinc-900 rounded-[2.5rem] shadow-2xl border border-slate-200 dark:border-white/5 overflow-hidden"
           >
-            <X size={20} />
-          </button>
-        </div>
+            <div className="relative h-32 bg-primary flex items-center justify-center overflow-hidden">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl"></div>
+              <div className="relative z-10 flex flex-col items-center">
+                <div className="w-14 h-14 bg-white rounded-2xl overflow-hidden shadow-lg mb-2 p-0.5">
+                  <img
+                    src="/images/srmall-logo/sr_logo2.jpg"
+                    alt="Logo"
+                    className="w-full h-full object-cover rounded-xl"
+                  />
+                </div>
+                <h2 className="text-white font-bold tracking-tight uppercase text-[10px] tracking-[0.3em]">
+                  {isSignUp ? "Create an Account" : "SR MALL Member Login"}
+                </h2>
+              </div>
+              <button
+                onClick={onClose}
+                className="absolute top-6 right-6 p-2 text-white/60 hover:text-white transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
 
         <div className="p-10">
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -259,10 +286,17 @@ export const LoginModal = ({ isOpen, onClose }: LoginModalProps) => {
                   />
                   <input
                     {...register("password")}
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     placeholder="••••••••"
-                    className="w-full pl-14 pr-6 py-4 bg-slate-50 dark:bg-zinc-800 rounded-2xl border-2 border-transparent focus:border-primary outline-none transition-all text-sm font-bold text-charcoal dark:text-white"
+                    className="w-full pl-14 pr-12 py-4 bg-slate-50 dark:bg-zinc-800 rounded-2xl border-2 border-transparent focus:border-primary outline-none transition-all text-sm font-bold text-charcoal dark:text-white"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 p-2 text-slate-400 hover:text-primary transition-colors focus:outline-none"
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
                 </div>
                 {errors.password && (
                   <span className="text-[10px] text-red-500 px-1">
@@ -329,7 +363,9 @@ export const LoginModal = ({ isOpen, onClose }: LoginModalProps) => {
             </button>
           </p>
         </div>
-      </div>
+      </motion.div>
     </div>
+    )}
+  </AnimatePresence>
   );
 };

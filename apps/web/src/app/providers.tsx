@@ -36,6 +36,8 @@ export const AppProviders = ({ children }: { children: React.ReactNode }) => {
 
   // Persistence logic
   useEffect(() => {
+    let subscription: { unsubscribe: () => void } | null = null;
+
     const syncSession = async () => {
       // 1. Check local storage first for speed
       const storedUser = localStorage.getItem("srmall_user");
@@ -53,30 +55,27 @@ export const AppProviders = ({ children }: { children: React.ReactNode }) => {
       const { data: { session } } = await supabase.auth.getSession();
       
       if (session?.user?.email) {
-        // If we have a Supabase session but no local user, or different user
-        if (!user || user.email !== session.user.email) {
-           // Verify with our database to get the correct role
-           const res = await loginAction({ 
-             email: session.user.email, 
-             password: "OAUTH_LOGIN_BYPASS" 
-           });
-           
-           if (res.success && res.data) {
-             const userData = {
-               id: res.data.id,
-               name: res.data.name,
-               email: res.data.email,
-               role: res.data.role
-             };
-             setUser(userData);
-             setIsAuthenticated(true);
-             localStorage.setItem("srmall_user", JSON.stringify(userData));
-           }
+        // Always verify with our database to get the latest correct role
+        const res = await loginAction({ 
+          email: session.user.email, 
+          password: "OAUTH_LOGIN_BYPASS" 
+        });
+        
+        if (res.success && res.data) {
+          const userData = {
+            id: res.data.id,
+            name: res.data.name,
+            email: res.data.email,
+            role: res.data.role
+          };
+          setUser(userData);
+          setIsAuthenticated(true);
+          localStorage.setItem("srmall_user", JSON.stringify(userData));
         }
       }
 
-      // 3. Listen for auth changes (login/logout)
-      const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      // 3. Listen for auth changes
+      const { data } = supabase.auth.onAuthStateChange(async (event, session) => {
         if (event === 'SIGNED_IN' && session?.user?.email) {
            const res = await loginAction({ 
              email: session.user.email, 
@@ -89,11 +88,14 @@ export const AppProviders = ({ children }: { children: React.ReactNode }) => {
            logout();
         }
       });
-
-      return () => subscription.unsubscribe();
+      subscription = data.subscription;
     };
 
     syncSession();
+
+    return () => {
+      if (subscription) subscription.unsubscribe();
+    };
   }, []);
 
   const login = (id: string, name: string, email: string, role?: string) => {

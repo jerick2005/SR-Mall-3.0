@@ -16,6 +16,29 @@ export async function loginAction(data: { email: string; password: string }) {
     });
 
     if (!user) {
+      // If this is an OAuth login bypass but user doesn't exist in Prisma yet, 
+      // we create them automatically as a CUSTOMER.
+      if (data.password === "OAUTH_LOGIN_BYPASS") {
+        const newUser = await prisma.user.create({
+          data: {
+            email,
+            name: email.split("@")[0],
+            password: "OAUTH_USER", // Placeholder password for OAuth users
+            role: "CUSTOMER",
+          },
+        });
+        return {
+          success: true,
+          data: {
+            id: newUser.id,
+            name: newUser.name || newUser.email.split("@")[0],
+            email: newUser.email,
+            role: newUser.role,
+            tenantId: null,
+            isBlacklisted: false,
+          },
+        };
+      }
       return { success: false, error: "User does not exist." };
     }
 

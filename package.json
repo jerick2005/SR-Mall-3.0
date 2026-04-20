@@ -7,7 +7,9 @@
     "lint": "cd apps/web && npm run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "db:generate": "cd packages/database && npm run db:generate",
-    "db:seed": "cd packages/database && npm run db:seed"
+    "db:push": "cd packages/database && npm run db:push",
+    "db:seed": "cd packages/database && npm run db:seed",
+    "setup": "docker-compose up -d && npm run db:generate && npm run db:push && npm run db:seed"
   },
   "devDependencies": {
     "prettier": "latest"

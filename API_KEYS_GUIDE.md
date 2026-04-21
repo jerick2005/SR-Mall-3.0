@@ -1,0 +1,89 @@
+# 🔐 SR-Mall API Keys & Environment Variables Guide
+
+This guide provides a comprehensive list of all API keys and environment variables required to run the **SR-Mall 3.0** platform. Share this with your development team to ensure everyone has the correct credentials.
+
+---
+
+## 📂 Environment File Setup
+
+The project uses `.env` files for configuration. You should have:
+1.  `/.env` - Root configuration (Database & Global settings)
+2.  `/apps/web/.env.local` - Local development overrides for the web application.
+
+---
+
+## 🚀 Required Variables
+
+| Category | Variable | Description | Value |
+| :--- | :--- | :--- | :--- |
+| **Database** | `DATABASE_URL` | PostgreSQL connection string | `postgresql://postgres:admin123@localhost:5435/srmalldb` |
+| **App** | `NEXT_PUBLIC_APP_URL` | The base URL of your application | `http://192.168.0.112:3000` |
+| **Supabase** | `NEXT_PUBLIC_SUPABASE_URL` | Your Supabase project URL | `https://caywuflktxjcvxafbmnt.supabase.co` |
+| **Supabase** | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Your Supabase project Anon/Public key | `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...` (See .env) |
+| **Cloudinary** | `CLOUDINARY_CLOUD_NAME` | Cloudinary account name | `dpg3ooznl` |
+| **Cloudinary** | `CLOUDINARY_API_KEY` | Cloudinary API Key | `133911819249566` |
+| **Cloudinary** | `CLOUDINARY_API_SECRET` | Cloudinary secret Key | `gya1MhT0oGd8ts8GvRokecyNo6c` |
+| **Gmail** | `GMAIL_USER` | Your Gmail address | `jerickaradilla76@gmail.com` |
+| **Gmail** | `GMAIL_APP_PASSWORD` | 16-character App Password | `aqahkzjhkerpaffs` |
+
+---
+
+## 🛠️ Detailed Setup Instructions
+
+### 1. Database (Prisma)
+The project uses Prisma as an ORM.
+- **Local Development**: `postgresql://postgres:admin123@localhost:5435/srmalldb`
+- **Action**: Ensure Docker is running or you have a local Postgres instance on port 5435.
+
+### 2. Supabase (Auth & Realtime)
+Supabase handles user authentication and database hosting (if not local).
+- **URL**: `https://caywuflktxjcvxafbmnt.supabase.co`
+- **Anon Key**: `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNheXd1ZmxrdHhqY3Z4YWZibW50Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM4MDQ1MzQsImV4cCI6MjA3OTM4MDUzNH0.6z7EOj_t9eakulcAMuw3_1-733nWTpDxYPN94qLSbv8`
+
+### 3. Cloudinary (Asset Storage)
+Used for uploading images of stores, products, and ads.
+- **Cloud Name**: `dpg3ooznl`
+- **API Key**: `133911819249566`
+- **API Secret**: `gya1MhT0oGd8ts8GvRokecyNo6c`
+- **Upload Preset**: `ml_default`
+
+### 4. Gmail (Notifications)
+Used for sending automated emails to tenants and admins.
+- **User**: `jerickaradilla76@gmail.com`
+- **App Password**: `aqahkzjhkerpaffs`
+
+---
+
+## 📝 Template (.env.full)
+
+Copy the following into your `.env` and `apps/web/.env.local` files:
+
+```env
+# Database
+DATABASE_URL="postgresql://postgres:admin123@localhost:5435/srmalldb"
+
+# App
+NEXT_PUBLIC_APP_URL="http://192.168.0.112:3000"
+NODE_ENV="development"
+
+# Supabase
+NEXT_PUBLIC_SUPABASE_URL="https://caywuflktxjcvxafbmnt.supabase.co"
+NEXT_PUBLIC_SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNheXd1ZmxrdHhqY3Z4YWZibW50Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM4MDQ1MzQsImV4cCI6MjA3OTM4MDUzNH0.6z7EOj_t9eakulcAMuw3_1-733nWTpDxYPN94qLSbv8"
+
+# Cloudinary
+CLOUDINARY_CLOUD_NAME="dpg3ooznl"
+CLOUDINARY_API_KEY="133911819249566"
+CLOUDINARY_API_SECRET="gya1MhT0oGd8ts8GvRokecyNo6c"
+NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME="dpg3ooznl"
+NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET="ml_default"
+
+# Gmail
+GMAIL_USER="jerickaradilla76@gmail.com"
+GMAIL_APP_PASSWORD="aqahkzjhkerpaffs"
+```
+
+
+---
+
+> [!TIP]
+> Never commit actual `.env` files with real keys to GitHub. Always use `.env.example` as a template for other developers.

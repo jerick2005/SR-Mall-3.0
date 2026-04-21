@@ -2,13 +2,13 @@
   "name": "srmall-capstone",
   "private": true,
   "scripts": {
-    "build": "cd apps/web && npm run build",
-    "dev": "cd apps/web && npm run dev", 
-    "lint": "cd apps/web && npm run lint",
+    "build": "cp .env apps/web/.env && cd apps/web && npm run build",
+    "dev": "cp .env apps/web/.env && cd apps/web && npm run dev", 
+    "lint": "cp .env apps/web/.env && cd apps/web && npm run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
-    "db:generate": "cd packages/database && npm run db:generate",
-    "db:push": "cd packages/database && npm run db:push",
-    "db:seed": "cd packages/database && npm run db:seed",
+    "db:generate": "cp .env packages/database/.env && cd packages/database && npm run db:generate",
+    "db:push": "cp .env packages/database/.env && cd packages/database && npm run db:push",
+    "db:seed": "cp .env packages/database/.env && cd packages/database && npm run db:seed",
     "setup": "docker-compose up -d && npm run db:generate && npm run db:push && npm run db:seed"
   },
   "devDependencies": {

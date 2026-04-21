@@ -6,9 +6,10 @@ This guide provides a comprehensive list of all API keys and environment variabl
 
 ## 📂 Environment File Setup
 
-The project uses `.env` files for configuration. You should have:
-1.  `/.env` - Root configuration (Database & Global settings)
-2.  `/apps/web/.env.local` - Local development overrides for the web application.
+The project now uses a single **Unified Environment File** at the root of the project.
+
+1.  **File Location**: `/.env` (Root directory)
+2.  **Usage**: All applications (Web, Database) will read from this single file.
 
 ---
 

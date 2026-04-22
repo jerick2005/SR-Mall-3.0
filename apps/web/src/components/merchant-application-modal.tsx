@@ -354,9 +354,9 @@ export const MerchantApplicationModal = ({
                     onChange={(e) => handleChange("category", e.target.value)}
                     onBlur={() => handleBlur("category")}
                   >
-                    <option value="">Select a category...</option>
+                    <option value="" className="dark:bg-zinc-900 dark:text-white">Select a category...</option>
                     {categories.map((cat) => (
-                      <option key={cat} value={cat}>
+                      <option key={cat} value={cat} className="dark:bg-zinc-900 dark:text-white">
                         {cat}
                       </option>
                     ))}

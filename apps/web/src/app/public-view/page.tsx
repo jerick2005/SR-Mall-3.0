@@ -564,7 +564,7 @@ export default function PublicDigitalConcierge() {
                     size={22}
                     className={clsx("ml-5", "text-slate-400")}
                   />
-                  <input
+                  <input suppressHydrationWarning
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
@@ -582,7 +582,7 @@ export default function PublicDigitalConcierge() {
                       "placeholder:text-slate-400",
                     )}
                   />
-                  <button
+                  <button suppressHydrationWarning
                     onClick={handleSearchClick}
                     className={clsx(
                       "px-6",
@@ -615,7 +615,7 @@ export default function PublicDigitalConcierge() {
                       <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
                         Mall Predictions
                       </span>
-                      <button onClick={() => setSearchQuery("")}>
+                      <button suppressHydrationWarning onClick={() => setSearchQuery("")}>
                         <X size={14} className="text-slate-300" />
                       </button>
                     </div>
@@ -676,7 +676,7 @@ export default function PublicDigitalConcierge() {
                           )
                           .slice(0, 4)
                           .map((p) => (
-                            <button
+                            <button suppressHydrationWarning
                               key={p.id}
                               onClick={() => setSelectedProduct(p)}
                               className="w-full flex items-center gap-4 p-3 hover:bg-white dark:hover:bg-zinc-800 rounded-2xl transition-all group/item text-left"
@@ -1048,7 +1048,7 @@ export default function PublicDigitalConcierge() {
               {config?.videoDescription ||
                 "Watch our latest visual showcase highlighting the premier shopping and dining experiences waiting for you at SR Mall. Immerse yourself in the extraordinary."}
             </p>
-            <button
+            <button suppressHydrationWarning
               onClick={() => setIsVideoModalOpen(true)}
               className={clsx(
                 "px-6",
@@ -1245,19 +1245,91 @@ export default function PublicDigitalConcierge() {
               </div>
 
               {/* In-Section Search Input */}
-              <div className="w-full lg:w-96">
-                <div className="relative group">
+              <div className="w-full lg:w-96 flex flex-col items-start lg:items-end gap-4">
+                <Link
+                  href="/tenant-directory"
+                  className="group inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-primary hover:text-primary-hover transition-all"
+                >
+                  View All Tenant Directory
+                  <ArrowRight
+                    size={14}
+                    className="group-hover:translate-x-1 transition-transform"
+                  />
+                </Link>
+                <div className="relative group w-full">
                   <Search
                     size={20}
                     className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors"
                   />
-                  <input
+                  <input suppressHydrationWarning
                     type="text"
                     placeholder="Search stores, brands, or unit IDs..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="w-full bg-white dark:bg-zinc-900 border-2 border-slate-100 dark:border-white/5 rounded-[1.5rem] py-5 pl-14 pr-6 text-sm font-bold text-charcoal dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all shadow-xl shadow-slate-200/50 dark:shadow-none"
                   />
+
+                  {/* Predictive Search Panel */}
+                  {searchQuery && (
+                    <div className="absolute top-full left-0 w-full mt-2 sm:mt-3 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-2xl sm:rounded-3xl shadow-2xl z-[100] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300">
+                      <div className="p-3 sm:p-4 border-b border-slate-50 dark:border-white/5 flex justify-between items-center">
+                        <span className="text-[8px] sm:text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                          Recommended Matches
+                        </span>
+                        <button suppressHydrationWarning onClick={() => setSearchQuery("")} className="text-slate-400 hover:text-charcoal transition-colors">
+                          <X size={14} />
+                        </button>
+                      </div>
+                      <div className="max-h-60 sm:max-h-80 overflow-y-auto no-scrollbar">
+                        {shops
+                          .filter((s) =>
+                            s.shop_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                            s.unit_id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                            (s.description || "").toLowerCase().includes(searchQuery.toLowerCase())
+                          )
+                          .slice(0, 5)
+                          .map((s) => (
+                            <Link
+                              key={s.id}
+                              href={`/shop/${s.id}`}
+                              className="w-full p-3 sm:p-4 flex items-center gap-3 sm:gap-4 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors border-b border-slate-50 dark:border-white/5 last:border-0 text-left group/item"
+                            >
+                              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-slate-100 dark:bg-zinc-800 overflow-hidden shrink-0 border border-slate-200 dark:border-white/10">
+                                <img
+                                  src={s.logo_url || "/images/logo/logoshop.jpg"}
+                                  className="w-full h-full object-cover group-hover/item:scale-110 transition-transform"
+                                  alt="Shop Logo"
+                                />
+                              </div>
+                              <div className="flex-1">
+                                <p className="text-[10px] sm:text-xs font-black text-charcoal dark:text-white line-clamp-1 uppercase">
+                                  {s.shop_name}
+                                </p>
+                                <p className="text-[8px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                                  {s.unit_id} — Plaza Wing
+                                </p>
+                              </div>
+                              <Navigation
+                                size={12}
+                                className="text-slate-300 group-hover/item:text-primary transition-colors sm:size-[14px]"
+                              />
+                            </Link>
+                          ))}
+                        {shops.filter((s) =>
+                          s.shop_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          s.unit_id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          (s.description || "").toLowerCase().includes(searchQuery.toLowerCase())
+                        ).length === 0 && (
+                            <div className="p-6 sm:p-8 text-center text-slate-400">
+                              <Search size={24} className="mx-auto mb-2 opacity-20" />
+                              <p className="text-[8px] sm:text-[10px] font-bold uppercase tracking-widest">
+                                No matching shops found
+                              </p>
+                            </div>
+                          )}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -1297,7 +1369,7 @@ export default function PublicDigitalConcierge() {
               },
               { id: "Electronics", label: "Digital", icon: <Tag size={16} /> },
             ].map((cat) => (
-              <button
+              <button suppressHydrationWarning
                 key={cat.id}
                 onClick={() => setSelectedCategory(cat.id)}
                 className={clsx(
@@ -1357,22 +1429,54 @@ export default function PublicDigitalConcierge() {
                   </p>
                 </div>
               ) : visibleShopsArray.length > 0 ? (
-                visibleShopsArray.map((shop, index) => (
-                  <div
-                    key={shop.id}
-                    className="w-[85%] sm:w-full shrink-0 snap-center animate-fade-in-up"
-                    style={{ animationDelay: `${index * 50}ms` }}
+                <>
+                  {visibleShopsArray.map((shop, index) => (
+                    <div
+                      key={shop.id}
+                      className="w-[85%] sm:w-full shrink-0 snap-center animate-fade-in-up"
+                      style={{ animationDelay: `${index * 50}ms` }}
+                    >
+                      <ShopCard
+                        shop={shop}
+                        onMessage={(name) => {
+                          setChatInitialShopName(name);
+                          setChatRecipient("shop");
+                          setIsChatOpen(true);
+                        }}
+                      />
+                    </div>
+                  ))}
+
+                  {/* View All Mall Directory Card */}
+                  <Link
+                    href="/tenant-directory"
+                    className={clsx(
+                      "w-[85%] sm:w-full shrink-0 snap-center",
+                      "group relative aspect-[3/4] sm:aspect-auto sm:min-h-[400px] bg-slate-50 dark:bg-zinc-900 rounded-[2rem] sm:rounded-[3rem] overflow-hidden",
+                      "border-2 border-dashed border-slate-200 dark:border-white/10 hover:border-primary/50",
+                      "flex flex-col items-center justify-center gap-6 transition-all duration-700 cursor-pointer shadow-lg hover:shadow-2xl",
+                    )}
                   >
-                    <ShopCard
-                      shop={shop}
-                      onMessage={(name) => {
-                        setChatInitialShopName(name);
-                        setChatRecipient("shop");
-                        setIsChatOpen(true);
-                      }}
-                    />
-                  </div>
-                ))
+                    <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+
+                    <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-white dark:bg-zinc-800 text-primary flex items-center justify-center group-hover:scale-110 group-hover:bg-primary group-hover:text-white transition-all duration-500 shadow-xl z-10 border border-slate-100 dark:border-white/5">
+                      <ArrowRight size={32} />
+                    </div>
+
+                    <div className="text-center px-6 relative z-10">
+                      <p className="text-sm sm:text-base font-black text-charcoal dark:text-white uppercase tracking-tighter">
+                        View All <br />
+                        Tenant Directory
+                      </p>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-2 opacity-0 group-hover:opacity-100 transition-all duration-500 transform translate-y-2 group-hover:translate-y-0">
+                        Show Tenants Shops
+                      </p>
+                    </div>
+
+                    {/* Glass Border Effect on Hover */}
+                    <div className="absolute inset-4 border border-white/0 group-hover:border-white/20 rounded-[2.5rem] transition-all duration-700 z-20 pointer-events-none" />
+                  </Link>
+                </>
               ) : (
                 <div
                   className={clsx(
@@ -1418,7 +1522,7 @@ export default function PublicDigitalConcierge() {
 
           {hasMore && (
             <div className={clsx("mt-12 sm:mt-16 text-center")}>
-              <button
+              <button suppressHydrationWarning
                 onClick={handleLoadMore}
                 disabled={isLoadingMore}
                 className={clsx(
@@ -1558,7 +1662,7 @@ export default function PublicDigitalConcierge() {
             </div>
 
             <div className="flex flex-col sm:flex-row gap-4 w-full lg:w-auto">
-              <button
+              <button suppressHydrationWarning
                 className={clsx(
                   "inline-flex",
                   "items-center",
@@ -1850,7 +1954,7 @@ export default function PublicDigitalConcierge() {
 
           {hasMoreSlots && (
             <div className={clsx("mt-10 sm:mt-12 text-center")}>
-              <button
+              <button suppressHydrationWarning
                 onClick={handleLoadMoreSlots}
                 disabled={isLoadingMoreSlots}
                 className={clsx(
@@ -2115,7 +2219,7 @@ export default function PublicDigitalConcierge() {
       </section>
 
       {/* Floating Action Button for Chat - Available for all, but gated inside */}
-      <button
+      <button suppressHydrationWarning
         onClick={() => setIsChatOpen(!isChatOpen)}
         className={`fixed bottom-4 right-4 sm:bottom-10 sm:right-10 w-14 h-14 sm:w-20 sm:h-20 bg-primary text-white rounded-full flex items-center justify-center shadow-2xl shadow-primary/40 hover:scale-110 active:scale-95 transition-all z-50 group ${isChatOpen ? "rotate-90" : ""}`}
       >
@@ -2167,7 +2271,7 @@ export default function PublicDigitalConcierge() {
             "p-4",
           )}
         >
-          <button
+          <button suppressHydrationWarning
             onClick={() => setIsVideoModalOpen(false)}
             className={clsx(
               "absolute",

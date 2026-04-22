@@ -716,6 +716,43 @@ export default function PublicViewCMSPage() {
                   sub="Configure your featured cinematic asset."
                 />
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div className="md:col-span-2 bg-white dark:bg-zinc-900/50 border border-slate-100 dark:border-white/5 p-8 rounded-[2.5rem] shadow-sm">
+                    <p className="text-[11px] font-black uppercase tracking-widest text-slate-400 mb-6">
+                      Cinematic Asset (Video)
+                    </p>
+                    <div className="flex flex-col md:flex-row items-center gap-8">
+                      <div className="w-48 aspect-video bg-slate-100 dark:bg-zinc-800 rounded-3xl border-2 border-dashed border-slate-300 dark:border-white/10 flex items-center justify-center overflow-hidden group relative">
+                        <video
+                          key={config.featuredVideoUrl || "default"}
+                          src={config.featuredVideoUrl || "/vid/Download.mp4"}
+                          className="w-full h-full object-cover"
+                          controls
+                        />
+                        <label className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center cursor-pointer transition-opacity">
+                          <Plus size={24} className="text-white" />
+                          <input
+                            type="file"
+                            accept="video/*"
+                            className="hidden"
+                            onChange={(e) => handleImageUpload("featuredVideoUrl", e)}
+                          />
+                        </label>
+                      </div>
+                      <div className="flex-1 space-y-4 w-full">
+                        <InputGroup label="Cinema URL (Direct Video Link)" icon={Globe}>
+                          <input
+                            value={config.featuredVideoUrl ?? ""}
+                            onChange={(e) =>
+                              handleConfigChange("featuredVideoUrl", e.target.value)
+                            }
+                            className="w-full bg-slate-50 dark:bg-zinc-800 border-none rounded-2xl p-4 text-sm font-bold placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+                            placeholder="https://..."
+                          />
+                        </InputGroup>
+                      </div>
+                    </div>
+                  </div>
+
                   <InputGroup label="Engagement Title" icon={Sparkles}>
                     <input
                       value={config.videoTitle ?? ""}
@@ -726,17 +763,7 @@ export default function PublicViewCMSPage() {
                       placeholder="Discover Excellence"
                     />
                   </InputGroup>
-                  <InputGroup label="Cinema URL (YouTube/Vimeo)" icon={Globe}>
-                    <input
-                      value={config.featuredVideoUrl ?? ""}
-                      onChange={(e) =>
-                        handleConfigChange("featuredVideoUrl", e.target.value)
-                      }
-                      className="cms-input"
-                      placeholder="https://..."
-                    />
-                  </InputGroup>
-                  <div className="md:col-span-2">
+                  <div className="md:col-span-1">
                     <InputGroup label="Contextual Subtext" icon={Layers}>
                       <input
                         value={config.videoDescription ?? ""}

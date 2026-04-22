@@ -193,7 +193,7 @@ export const LoginModal = ({ isOpen, onClose }: LoginModalProps) => {
                   />
                 </div>
                 <h2 className="text-white font-bold tracking-tight uppercase text-[10px] tracking-[0.3em]">
-                  {isSignUp ? "Create an Account" : "SR MALL Member Login"}
+                  {isSignUp ? "Create an Account" : "SR MALL LOGIN"}
                 </h2>
               </div>
               <button

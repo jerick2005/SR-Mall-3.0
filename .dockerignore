@@ -3,8 +3,9 @@ node_modules
 dist
 .git
 *.log
-.env
-.env.*
+**/.env
+**/.env.*
+**/.gitignore
 .agent
 .vscode
 out
@@ -15,3 +16,4 @@ coverage
 **/node_modules
 **/dist
 **/.next
+apps/mobile

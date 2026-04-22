@@ -373,6 +373,7 @@ export const EventInquiryForm = ({
                   Authenticate to proceed.
                 </p>
                 <button
+                  suppressHydrationWarning
                   onClick={() => setIsLoginModalOpen(true)}
                   className="px-6 py-3 sm:px-12 sm:py-6 bg-charcoal dark:bg-white text-white dark:text-black font-black rounded-xl sm:rounded-2xl shadow-2xl hover:bg-primary transition-all text-[8px] sm:text-sm uppercase tracking-[0.2em] active:scale-95"
                 >
@@ -404,6 +405,7 @@ export const EventInquiryForm = ({
                   <div className="grid grid-cols-2 gap-1.5 sm:gap-3">
                     {eventTypes.map((type) => (
                       <button
+                        suppressHydrationWarning
                         key={type}
                         type="button"
                         onClick={() => setEventType(type)}
@@ -447,6 +449,7 @@ export const EventInquiryForm = ({
                       Date Selection
                     </label>
                     <input
+                      suppressHydrationWarning
                       type="date"
                       min={new Date().toISOString().split("T")[0]}
                       value={eventDate}
@@ -487,6 +490,7 @@ export const EventInquiryForm = ({
                       Time Selection
                     </label>
                     <input
+                      suppressHydrationWarning
                       type="time"
                       value={eventTime}
                       onChange={(e) => setEventTime(e.target.value)}
@@ -516,6 +520,7 @@ export const EventInquiryForm = ({
 
                 <div className="pt-2 sm:pt-6">
                   <button
+                    suppressHydrationWarning
                     type="submit"
                     disabled={isSubmitting}
                     className={clsx(

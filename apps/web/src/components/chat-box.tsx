@@ -222,6 +222,7 @@ export const ChatBox = ({
                       className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
                     />
                     <input
+                      suppressHydrationWarning
                       type="text"
                       placeholder="Search stores or admin..."
                       value={searchQuery}
@@ -366,12 +367,14 @@ export const ChatBox = ({
                   className="relative flex items-center gap-2 bg-slate-50 dark:bg-zinc-800/50 rounded-2xl border border-slate-200 dark:border-white/10 p-1.5 focus-within:ring-2 ring-primary/20 focus-within:border-primary transition-all"
                 >
                   <button
+                    suppressHydrationWarning
                     type="button"
                     className="p-2 sm:p-2.5 text-slate-400 hover:text-primary transition-colors rounded-xl hover:bg-white dark:hover:bg-zinc-700 shrink-0"
                   >
                     <Paperclip size={18} />
                   </button>
                   <input
+                    suppressHydrationWarning
                     type="text"
                     value={inputText}
                     onChange={(e) => setInputText(e.target.value)}
@@ -379,12 +382,14 @@ export const ChatBox = ({
                     className="flex-1 px-1 sm:px-2 py-2 bg-transparent outline-none text-sm font-medium dark:text-white placeholder:text-slate-400 min-w-0"
                   />
                   <button
+                    suppressHydrationWarning
                     type="button"
                     className="p-2 text-slate-400 hover:text-primary transition-colors sm:block hidden shrink-0"
                   >
                     <Smile size={18} />
                   </button>
                   <button
+                    suppressHydrationWarning
                     type="submit"
                     disabled={!inputText.trim()}
                     className="p-2.5 sm:p-3 bg-primary text-white rounded-xl hover:bg-primary-hover transition-all active:scale-95 disabled:opacity-50 disabled:scale-100 shadow-md shrink-0"

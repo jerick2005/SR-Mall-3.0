@@ -108,18 +108,21 @@ export const Footer = () => {
               }}
             >
               <input
+                suppressHydrationWarning
                 type="text"
                 required
                 placeholder="Your Name"
                 className="w-full px-4 py-2 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg text-sm text-charcoal dark:text-white focus:outline-none focus:border-primary transition-colors"
               />
               <textarea
+                suppressHydrationWarning
                 required
                 placeholder="How can we help?"
                 rows={3}
                 className="w-full px-4 py-2 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg text-sm text-charcoal dark:text-white focus:outline-none focus:border-primary transition-colors"
               />
               <button
+                suppressHydrationWarning
                 type="submit"
                 className="w-full py-2 bg-primary text-white font-bold rounded-lg hover:bg-primary-hover transition-colors text-sm shadow-lg shadow-primary/20 active:scale-95"
               >

@@ -286,6 +286,7 @@ export const Navbar = () => {
 
                   <div className="relative">
                     <button
+                      suppressHydrationWarning
                       onClick={() => setIsProfileOpen(!isProfileOpen)}
                       className={clsx(
                         "flex",
@@ -424,6 +425,7 @@ export const Navbar = () => {
                           {(user?.role === "CUSTOMER" ||
                             user?.role === "USER") && (
                             <button
+                              suppressHydrationWarning
                               onClick={() => {
                                 setIsMerchantModalOpen(true);
                                 setIsProfileOpen(false);
@@ -451,6 +453,7 @@ export const Navbar = () => {
 
                         <div className="p-2 border-t border-slate-100 dark:border-white/5">
                           <button
+                            suppressHydrationWarning
                             onClick={() => logout()}
                             className={clsx(
                               "w-full",
@@ -483,6 +486,7 @@ export const Navbar = () => {
                   <PublicThemeToggle />
                 </div>
                 <button
+                  suppressHydrationWarning
                   onClick={() => setIsLoginOpen(true)}
                   className="flex items-center justify-center w-10 h-10 sm:w-auto sm:px-8 sm:py-2.5 rounded-full bg-primary text-white font-bold text-sm hover:bg-primary-hover transition-all duration-300 shadow-xl shadow-primary/20 active:scale-95"
                 >
@@ -493,6 +497,7 @@ export const Navbar = () => {
             )}
 
             <button
+              suppressHydrationWarning
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               className="md:hidden p-2 text-charcoal dark:text-white hover:bg-slate-100 dark:hover:bg-zinc-800 rounded-lg transition-colors"
             >

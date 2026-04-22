@@ -22,14 +22,19 @@ import {
   Sparkles,
   RefreshCcw,
   MoreHorizontal,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import clsx from "clsx";
 
 export default function UserManagement() {
   const [activeTab, setActiveTab] = useState<"users" | "feedback">("users");
+  const [selectedUser, setSelectedUser] = useState<any | null>(null);
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [roleFilter, setRoleFilter] = useState("ALL");
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [reviews, setReviews] = useState<any[]>([]);
   const [reviewsLoading, setReviewsLoading] = useState(false);
   const [isProcessing, setIsProcessing] = useState<string | null>(null);
@@ -160,6 +165,12 @@ export default function UserManagement() {
     setIsProcessing(null);
   };
 
+  const filteredUsers = users.filter((u) => {
+    const matchesSearch = u.name?.toLowerCase().includes(searchQuery.toLowerCase()) || u.email?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesRole = roleFilter === "ALL" || u.role === roleFilter;
+    return matchesSearch && matchesRole;
+  });
+
   const blacklistedUsers = users.filter((u) => u.isBlacklisted);
 
   return (
@@ -249,17 +260,78 @@ export default function UserManagement() {
                 </div>
               </div>
 
-              <div className="flex items-center gap-3">
-                <div className="relative group/search">
+              <div className="flex flex-col md:flex-row items-center gap-3 w-full md:w-auto">
+                {/* Role Filter */}
+                <div className="flex items-center gap-1 p-1 bg-slate-100/50 dark:bg-white/5 rounded-2xl border border-slate-200 dark:border-white/5 w-full md:w-auto overflow-x-auto custom-scrollbar">
+                  {["ALL", "CUSTOMER", "TENANT", "ADMIN"].map((role) => (
+                    <button
+                      key={role}
+                      onClick={() => setRoleFilter(role)}
+                      className={clsx(
+                        "px-4 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap",
+                        roleFilter === role
+                          ? "bg-white dark:bg-zinc-800 text-charcoal dark:text-white shadow-sm"
+                          : "text-slate-400 hover:text-charcoal dark:hover:text-white"
+                      )}
+                    >
+                      {role}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Search Bar */}
+                <div className="relative group/search w-full md:w-auto" onBlur={() => setTimeout(() => setIsSearchFocused(false), 200)}>
                   <Search
                     size={18}
-                    className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within/search:text-primary transition-colors"
+                    className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within/search:text-primary transition-colors z-10"
                   />
                   <input
                     type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onFocus={() => setIsSearchFocused(true)}
                     placeholder="FILTER IDENTITY..."
-                    className="pl-12 pr-6 py-4 bg-white dark:bg-black border border-slate-200 dark:border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest w-full md:w-64 focus:ring-4 focus:ring-primary/10 transition-all outline-none"
+                    className="pl-12 pr-6 py-4 bg-white dark:bg-black border border-slate-200 dark:border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest w-full md:w-72 focus:ring-4 focus:ring-primary/10 transition-all outline-none relative z-10"
                   />
+
+                  {/* Recommended Matches Dropdown */}
+                  {isSearchFocused && searchQuery.length > 0 && (
+                    <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-2xl shadow-2xl overflow-hidden z-50 animate-fade-in-up">
+                      <div className="p-3 border-b border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02]">
+                        <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Recommended Matches</p>
+                      </div>
+                      <div className="max-h-60 overflow-y-auto custom-scrollbar">
+                        {filteredUsers.slice(0, 5).length === 0 ? (
+                          <div className="p-4 text-center">
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">No Matches Found</p>
+                          </div>
+                        ) : (
+                          filteredUsers.slice(0, 5).map((u) => (
+                            <div
+                              key={u.id}
+                              className="px-4 py-3 hover:bg-slate-50 dark:hover:bg-white/[0.02] cursor-pointer flex items-center gap-3 transition-colors border-b border-slate-50 dark:border-white/5 last:border-0"
+                              onClick={() => {
+                                setSelectedUser(u);
+                                setSearchQuery("");
+                                setIsSearchFocused(false);
+                              }}
+                            >
+                              <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-black text-xs shrink-0">
+                                {u.name ? u.name.charAt(0).toUpperCase() : "U"}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-black uppercase text-charcoal dark:text-white truncate">{u.name || "ANONYMOUS"}</p>
+                                <p className="text-[9px] font-bold text-slate-400 truncate">{u.email}</p>
+                              </div>
+                              <div className="px-2 py-0.5 bg-slate-100 dark:bg-zinc-800 rounded-full text-[8px] font-black uppercase text-slate-500 shrink-0">
+                                {u.role}
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -291,111 +363,123 @@ export default function UserManagement() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-white/5">
-                    {users.map((item) => (
-                      <tr
-                        key={item.id}
-                        className="hover:bg-slate-50/80 dark:hover:bg-white/[0.02] transition-colors group/row"
-                      >
-                        <td className="px-8 py-8">
-                          <div className="flex items-center gap-5">
-                            <div
-                              className={clsx(
-                                "w-14 h-14 rounded-[1.5rem] font-black text-lg flex items-center justify-center border transition-all shadow-sm",
-                                item.isBlacklisted
-                                  ? "bg-red-500 text-white border-red-400"
-                                  : "bg-slate-100 dark:bg-zinc-800 text-slate-500 dark:text-slate-400 border-transparent",
-                              )}
-                            >
-                              {item.name
-                                ? item.name.charAt(0).toUpperCase()
-                                : "U"}
-                            </div>
-                            <div>
-                              <p
-                                className={clsx(
-                                  "text-base font-black uppercase tracking-tight italic",
-                                  item.isBlacklisted
-                                    ? "text-red-500 line-through opacity-60"
-                                    : "text-charcoal dark:text-white",
-                                )}
-                              >
-                                {item.name || "ANONYMOUS"}
-                              </p>
-                              <p className="text-[10px] font-bold text-slate-400 mt-0.5 tracking-wider">
-                                {item.email}
-                              </p>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-8 py-8">
-                          <div className="flex items-center gap-3">
-                            <div className="p-2 bg-primary/10 text-primary rounded-xl">
-                              <Shield size={16} />
-                            </div>
-                            <select
-                              value={item.role}
-                              onChange={(e) =>
-                                handleRoleChange(item.id, e.target.value)
-                              }
-                              disabled={isProcessing === item.id}
-                              className="bg-transparent text-[11px] font-black uppercase tracking-widest text-charcoal dark:text-white hover:text-primary transition-colors cursor-pointer outline-none border-none p-0 focus:ring-0"
-                            >
-                              <option value="CUSTOMER">Customer Segment</option>
-                              <option value="TENANT">Merchant Partner</option>
-                              <option value="ADMIN">System Admin</option>
-                            </select>
-                            {isProcessing === item.id && (
-                              <Loader2
-                                size={14}
-                                className="animate-spin text-primary"
-                              />
-                            )}
-                          </div>
-                        </td>
-                        <td className="px-8 py-8">
-                          {item.isBlacklisted ? (
-                            <span className="inline-flex items-center gap-2 px-3 py-1 bg-red-500/10 text-red-500 text-[9px] font-black uppercase tracking-widest rounded-full border border-red-500/20">
-                              <Ban size={10} /> Blacklisted
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-500/10 text-emerald-500 text-[9px] font-black uppercase tracking-widest rounded-full border border-emerald-500/20">
-                              <Activity size={10} className="animate-pulse" />{" "}
-                              Active Uplink
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-8 py-8 text-right">
-                          <div className="flex items-center justify-end gap-3 opacity-0 group-hover/row:opacity-100 transition-all duration-300">
-                            <button
-                              onClick={() =>
-                                handleToggleBlacklist(
-                                  item.id,
-                                  item.isBlacklisted,
-                                )
-                              }
-                              disabled={isProcessing === item.id}
-                              className={clsx(
-                                "px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-xl active:scale-95 disabled:opacity-50",
-                                item.isBlacklisted
-                                  ? "bg-emerald-500 text-white shadow-emerald-500/20"
-                                  : "bg-red-500 text-white shadow-red-500/20",
-                              )}
-                            >
-                              {item.isBlacklisted
-                                ? "Restore Access"
-                                : "Revoke Authorization"}
-                            </button>
-                            <button
-                              onClick={() => handleDelete(item.id)}
-                              disabled={isProcessing === item.id}
-                              className="p-3.5 bg-slate-100 dark:bg-zinc-800 text-slate-400 hover:text-red-500 rounded-xl transition-all"
-                            >
-                              <Trash2 size={18} />
-                            </button>
-                          </div>
+                    {filteredUsers.length === 0 ? (
+                      <tr>
+                        <td colSpan={4} className="px-8 py-20 text-center">
+                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">
+                            No identities matched the filter criteria.
+                          </p>
                         </td>
                       </tr>
-                    ))}
+                    ) : (
+                      filteredUsers.map((item) => (
+                        <tr
+                          key={item.id}
+                          className="hover:bg-slate-50/80 dark:hover:bg-white/[0.02] transition-colors group/row"
+                        >
+                          <td
+                            className="px-8 py-8 cursor-pointer"
+                            onClick={() => setSelectedUser(item)}
+                          >
+                            <div className="flex items-center gap-5">
+                              <div
+                                className={clsx(
+                                  "w-14 h-14 rounded-[1.5rem] font-black text-lg flex items-center justify-center border transition-all shadow-sm",
+                                  item.isBlacklisted
+                                    ? "bg-red-500 text-white border-red-400"
+                                    : "bg-slate-100 dark:bg-zinc-800 text-slate-500 dark:text-slate-400 border-transparent",
+                                )}
+                              >
+                                {item.name
+                                  ? item.name.charAt(0).toUpperCase()
+                                  : "U"}
+                              </div>
+                              <div>
+                                <p
+                                  className={clsx(
+                                    "text-base font-black uppercase tracking-tight italic",
+                                    item.isBlacklisted
+                                      ? "text-red-500 line-through opacity-60"
+                                      : "text-charcoal dark:text-white",
+                                  )}
+                                >
+                                  {item.name || "ANONYMOUS"}
+                                </p>
+                                <p className="text-[10px] font-bold text-slate-400 mt-0.5 tracking-wider">
+                                  {item.email}
+                                </p>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-8 py-8">
+                            <div className="flex items-center gap-3">
+                              <div className="p-2 bg-primary/10 text-primary rounded-xl">
+                                <Shield size={16} />
+                              </div>
+                              <select
+                                value={item.role}
+                                onChange={(e) =>
+                                  handleRoleChange(item.id, e.target.value)
+                                }
+                                disabled={isProcessing === item.id}
+                                className="bg-transparent text-[11px] font-black uppercase tracking-widest text-charcoal dark:text-white hover:text-primary transition-colors cursor-pointer outline-none border-none p-0 focus:ring-0"
+                              >
+                                <option value="CUSTOMER">Customer Segment</option>
+                                <option value="TENANT">Merchant Partner</option>
+                                <option value="ADMIN">System Admin</option>
+                              </select>
+                              {isProcessing === item.id && (
+                                <Loader2
+                                  size={14}
+                                  className="animate-spin text-primary"
+                                />
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-8 py-8">
+                            {item.isBlacklisted ? (
+                              <span className="inline-flex items-center gap-2 px-3 py-1 bg-red-500/10 text-red-500 text-[9px] font-black uppercase tracking-widest rounded-full border border-red-500/20">
+                                <Ban size={10} /> Blacklisted
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-500/10 text-emerald-500 text-[9px] font-black uppercase tracking-widest rounded-full border border-emerald-500/20">
+                                <Activity size={10} className="animate-pulse" />{" "}
+                                Active Uplink
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-8 py-8 text-right">
+                            <div className="flex items-center justify-end gap-3 opacity-0 group-hover/row:opacity-100 transition-all duration-300">
+                              <button
+                                onClick={() =>
+                                  handleToggleBlacklist(
+                                    item.id,
+                                    item.isBlacklisted,
+                                  )
+                                }
+                                disabled={isProcessing === item.id}
+                                className={clsx(
+                                  "px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-xl active:scale-95 disabled:opacity-50",
+                                  item.isBlacklisted
+                                    ? "bg-emerald-500 text-white shadow-emerald-500/20"
+                                    : "bg-red-500 text-white shadow-red-500/20",
+                                )}
+                              >
+                                {item.isBlacklisted
+                                  ? "Restore Access"
+                                  : "Revoke Authorization"}
+                              </button>
+                              <button
+                                onClick={() => handleDelete(item.id)}
+                                disabled={isProcessing === item.id}
+                                className="p-3.5 bg-slate-100 dark:bg-zinc-800 text-slate-400 hover:text-red-500 rounded-xl transition-all"
+                              >
+                                <Trash2 size={18} />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      )))}
                   </tbody>
                 </table>
               )}
@@ -610,6 +694,81 @@ export default function UserManagement() {
                 className="w-full py-4 bg-white text-primary rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-xl shadow-black/10 active:scale-95 transition-all"
               >
                 Execute Sync
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {selectedUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in" onClick={() => setSelectedUser(null)}>
+          <div
+            className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-[3rem] w-full max-w-lg shadow-2xl overflow-hidden animate-fade-in-up"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-8 border-b border-slate-100 dark:border-white/5 flex items-center justify-between">
+              <h3 className="text-xl font-black text-charcoal dark:text-white uppercase tracking-tighter italic">
+                Entity <span className="text-primary">Manifest.</span>
+              </h3>
+              <button
+                onClick={() => setSelectedUser(null)}
+                className="w-10 h-10 rounded-full bg-slate-100 dark:bg-zinc-800 text-slate-500 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all shadow-sm"
+              >
+                <X size={16} strokeWidth={3} />
+              </button>
+            </div>
+
+            <div className="p-8 space-y-8">
+              <div className="flex items-center gap-6">
+                <div className={clsx("w-20 h-20 rounded-[2rem] font-black text-3xl flex items-center justify-center border-4 shadow-xl transition-all",
+                  selectedUser.isBlacklisted ? "bg-red-500/10 text-red-500 border-red-500/20" : "bg-primary/10 text-primary border-primary/20"
+                )}>
+                  {selectedUser.name ? selectedUser.name.charAt(0).toUpperCase() : "U"}
+                </div>
+                <div>
+                  <h4 className={clsx("text-2xl font-black uppercase tracking-tight italic", selectedUser.isBlacklisted ? "text-red-500 line-through opacity-60" : "text-charcoal dark:text-white")}>
+                    {selectedUser.name || "ANONYMOUS"}
+                  </h4>
+                  <p className="text-sm font-bold text-slate-400 tracking-wider mt-1">
+                    {selectedUser.email}
+                  </p>
+                  <div className="mt-3 flex gap-2">
+                    <span className="inline-flex items-center gap-1 px-3 py-1 bg-slate-100 dark:bg-zinc-800 text-slate-500 text-[9px] font-black uppercase tracking-widest rounded-full">
+                      ID: {selectedUser.id}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-5 bg-slate-50 dark:bg-white/[0.02] rounded-3xl border border-slate-100 dark:border-white/5">
+                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 flex items-center gap-1"><Shield size={10} /> Privilege Level</p>
+                  <p className="text-sm font-black text-charcoal dark:text-white uppercase">{selectedUser.role}</p>
+                </div>
+                <div className="p-5 bg-slate-50 dark:bg-white/[0.02] rounded-3xl border border-slate-100 dark:border-white/5">
+                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 flex items-center gap-1"><Activity size={10} /> Security Status</p>
+                  <p className={clsx("text-sm font-black uppercase", selectedUser.isBlacklisted ? "text-red-500" : "text-emerald-500")}>
+                    {selectedUser.isBlacklisted ? "Blacklisted" : "Active"}
+                  </p>
+                </div>
+                <div className="p-5 bg-slate-50 dark:bg-white/[0.02] rounded-3xl border border-slate-100 dark:border-white/5">
+                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Created At</p>
+                  <p className="text-sm font-bold text-charcoal dark:text-white">
+                    {selectedUser.createdAt ? new Date(selectedUser.createdAt).toLocaleDateString() : "Unknown"}
+                  </p>
+                </div>
+                <div className="p-5 bg-slate-50 dark:bg-white/[0.02] rounded-3xl border border-slate-100 dark:border-white/5">
+                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Last Login</p>
+                  <p className="text-sm font-bold text-charcoal dark:text-white">
+                    {selectedUser.lastLogin ? new Date(selectedUser.lastLogin).toLocaleDateString() : "N/A"}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-6 bg-slate-50 dark:bg-white/[0.02] border-t border-slate-100 dark:border-white/5 flex justify-end">
+              <button onClick={() => setSelectedUser(null)} className="px-8 py-4 bg-charcoal dark:bg-white text-white dark:text-black rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl hover:scale-105 active:scale-95 transition-all">
+                Acknowledge
               </button>
             </div>
           </div>

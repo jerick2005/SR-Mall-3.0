@@ -48,7 +48,7 @@ async function main() {
         shopName: 'Jerick Hub',
         unitId: 'L1-105',
         description: 'Elite tenant shop.',
-        galleryUrls: '[]'
+        galleryUrls: []
       }
     });
     console.log('✅ Tenant profile linked: Jerick Hub');

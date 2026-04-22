@@ -9,7 +9,7 @@
     "db:generate": "node -e \"require('fs').copyFileSync('.env', 'packages/database/.env')\" && cd packages/database && npm run db:generate",
     "db:push": "node -e \"require('fs').copyFileSync('.env', 'packages/database/.env')\" && cd packages/database && npm run db:push",
     "db:seed": "node -e \"require('fs').copyFileSync('.env', 'packages/database/.env')\" && cd packages/database && npm run db:seed",
-    "setup": "docker-compose up -d && npm run db:generate && npm run db:push && npm run db:seed"
+    "setup": "docker-compose up -d db && npm run db:generate && npm run db:push && npm run db:seed"
   },
   "devDependencies": {
     "prettier": "latest"

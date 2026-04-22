@@ -642,6 +642,7 @@ export const FeedbackSection = ({
                       Sign in to share your journey.
                     </p>
                     <button
+                      suppressHydrationWarning
                       onClick={() => setIsLoginModalOpen(true)}
                       className={clsx(
                         "w-full",
@@ -703,6 +704,7 @@ export const FeedbackSection = ({
                       <div className={clsx("flex", "gap-1.5")}>
                         {[1, 2, 3, 4, 5].map((star) => (
                           <button
+                            suppressHydrationWarning
                             key={star}
                             onClick={() => setRating(star)}
                             disabled={isSubmitting}
@@ -769,6 +771,7 @@ export const FeedbackSection = ({
                     </div>
 
                     <button
+                      suppressHydrationWarning
                       onClick={handleSubmit}
                       disabled={isSubmitting || rating === 0}
                       className={clsx(

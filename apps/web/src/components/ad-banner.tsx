@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { Search, X, Navigation, Tag } from "lucide-react";
+import Link from "next/link";
 
 // Default SR-MANAGE Ad when nothing is live
 const DEFAULT_AD = {
@@ -17,10 +19,22 @@ export const AdBanner = ({
   ads,
   tenantPromos,
   extraItems,
+  searchQuery = "",
+  setSearchQuery = () => {},
+  handleSearchClick = () => {},
+  shops = [],
+  allFeaturedProducts = [],
+  setSelectedProduct = () => {},
 }: {
   ads?: any[];
   tenantPromos?: any[];
   extraItems?: any[];
+  searchQuery?: string;
+  setSearchQuery?: (val: string) => void;
+  handleSearchClick?: () => void;
+  shops?: any[];
+  allFeaturedProducts?: any[];
+  setSelectedProduct?: (val: any) => void;
 }) => {
   const [localAds, setLocalAds] = useState<any[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -66,7 +80,7 @@ export const AdBanner = ({
     if (localAds.length <= 1) return;
 
     const interval = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % localAds.length);
+      setCurrentIndex((prev: number) => (prev + 1) % localAds.length);
     }, 8000);
     return () => clearInterval(interval);
   }, [localAds.length]);
@@ -111,7 +125,7 @@ export const AdBanner = ({
 
   return (
     <div className="relative w-full h-[280px] sm:h-[380px] md:h-[500px] overflow-hidden group">
-      {localAds.map((ad, index) => (
+      {localAds.map((ad: any, index: number) => (
         <div
           key={ad.id}
           className={`absolute inset-0 transition-opacity duration-1000 ${index === currentIndex ? "opacity-100 z-10" : "opacity-0 z-0"}`}
@@ -143,7 +157,7 @@ export const AdBanner = ({
             );
           })()}
           <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent flex items-center">
-            <div className="max-w-7xl mx-auto px-5 sm:px-10 w-full">
+            <div className="max-w-7xl mx-auto px-5 sm:px-10 w-full flex flex-col lg:flex-row lg:items-center justify-between gap-10">
               <div className="max-w-xs sm:max-w-xl animate-fade-in-up">
                 <span className="inline-block px-3 sm:px-4 py-1 sm:py-1.5 bg-primary text-white text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.2em] mb-3 sm:mb-6 rounded-full shadow-lg shadow-primary/30">
                   {ad.tenantId ? "Tenant Spotlight" : "Experience SR Mall"}
@@ -164,6 +178,74 @@ export const AdBanner = ({
                   </button>
                 </div>
               </div>
+
+              {/* Search Bar - Positioned on the side within the banner */}
+              <div className="hidden lg:block w-full max-w-md animate-fade-in-up delay-200">
+                <div className="relative group">
+                  <div className="absolute -inset-1 bg-gradient-to-r from-primary to-blue-600 rounded-3xl blur opacity-25 group-hover:opacity-40 transition duration-1000"></div>
+                  <div className="relative flex items-center bg-white/10 backdrop-blur-xl rounded-2xl p-2 border border-white/20 shadow-2xl">
+                    <Search size={20} className="ml-4 text-white/60" />
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Search shops or products..."
+                      className="w-full px-4 py-3 bg-transparent text-white focus:outline-none text-sm font-medium placeholder:text-white/40"
+                    />
+                    <button
+                      onClick={handleSearchClick}
+                      className="px-6 py-3 bg-primary text-white font-bold rounded-xl hover:bg-white hover:text-primary transition-all active:scale-95 shadow-lg"
+                    >
+                      Search
+                    </button>
+                  </div>
+
+                  {/* Predictive Search Panel inside Banner */}
+                  {searchQuery && (
+                    <div className="absolute top-full left-0 w-full mt-3 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-3xl shadow-3xl z-[100] overflow-hidden animate-in fade-in slide-in-from-top-2">
+                      <div className="p-4 border-b border-slate-50 dark:border-white/5 flex items-center justify-between">
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Quick Results</span>
+                        <button onClick={() => setSearchQuery("")}>
+                          <X size={14} className="text-slate-300" />
+                        </button>
+                      </div>
+                      <div className="max-h-60 overflow-y-auto no-scrollbar p-2">
+                        {shops
+                          .filter((s: any) => s.shop_name.toLowerCase().includes(searchQuery.toLowerCase()))
+                          .slice(0, 2)
+                          .map((s: any) => (
+                            <Link key={s.id} href={`/shop/${s.id}`} className="flex items-center gap-3 p-2 hover:bg-slate-50 dark:hover:bg-white/5 rounded-xl transition-all group/item">
+                              <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-zinc-800 overflow-hidden shrink-0">
+                                <img src={s.logo_url || "/images/logo/logoshop.jpg"} className="w-full h-full object-cover" alt="" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-[11px] font-black text-charcoal dark:text-white truncate uppercase">{s.shop_name}</p>
+                                <p className="text-[9px] font-bold text-slate-400 uppercase">{s.unit_id}</p>
+                              </div>
+                              <Navigation size={10} className="text-slate-300 group-hover/item:text-primary" />
+                            </Link>
+                          ))}
+                        
+                        {allFeaturedProducts
+                          .filter((p: any) => (p.name || "").toLowerCase().includes(searchQuery.toLowerCase()))
+                          .slice(0, 2)
+                          .map((p: any) => (
+                            <button key={p.id} onClick={() => setSelectedProduct(p)} className="w-full flex items-center gap-3 p-2 hover:bg-slate-50 dark:hover:bg-white/5 rounded-xl transition-all group/item text-left">
+                              <div className="w-8 h-8 rounded-lg bg-white dark:bg-black overflow-hidden shrink-0 border border-slate-100 dark:border-white/10">
+                                <img src={p.image_url} className="w-full h-full object-cover" alt="" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-[11px] font-black text-charcoal dark:text-white truncate">{p.name}</p>
+                                <p className="text-[9px] font-bold text-primary uppercase">{p.price}</p>
+                              </div>
+                              <Tag size={10} className="text-slate-300 group-hover/item:text-primary" />
+                            </button>
+                          ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -172,7 +254,7 @@ export const AdBanner = ({
       {/* Slide Indicators */}
       {localAds.length > 1 && (
         <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 z-20 bg-white/50 dark:bg-charcoal/50 backdrop-blur-md px-3 py-2 rounded-full border border-slate-200 dark:border-white/10">
-          {localAds.map((_, index) => (
+          {localAds.map((_: any, index: number) => (
             <button
               key={index}
               onClick={() => setCurrentIndex(index)}

@@ -5,6 +5,7 @@ import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
 import { ShopCard } from "@/components/shop-card";
 import { AdBanner } from "@/components/ad-banner";
+import { UpcomingEventsSlider } from "@/components/upcoming-events-slider";
 import { FeedbackSection } from "@/components/feedback-section";
 import { ChatBox } from "@/components/chat-box";
 import { EventInquiryForm } from "@/components/event-inquiry-form";
@@ -288,13 +289,23 @@ export default function PublicDigitalConcierge() {
       <Navbar />
 
       {/* High Impact Hero Carousel */}
+      {/* High Impact Hero Carousel with Search */}
       <section className={clsx("w-full", "relative", "bg-black", "pt-20")}>
         <AdBanner
           ads={ads}
           tenantPromos={tenantPromos}
           extraItems={carouselItems}
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          handleSearchClick={handleSearchClick}
+          shops={shops}
+          allFeaturedProducts={allFeaturedProducts}
+          setSelectedProduct={setSelectedProduct}
         />
       </section>
+
+      {/* Upcoming Events Slider */}
+      <UpcomingEventsSlider />
 
       {/* Hero Content Section */}
       {config?.isMaintenance ? (
@@ -513,228 +524,7 @@ export default function PublicDigitalConcierge() {
                 </p>
               </div>
 
-              <div
-                className={clsx(
-                  "relative",
-                  "max-w-xl",
-                  "sm:max-w-2xl",
-                  "mx-auto",
-                  "group",
-                  "animate-fade-in-up",
-                  "delay-200",
-                  "px-2",
-                  "sm:px-0",
-                  "z-40",
-                )}
-              >
-                <div
-                  className={clsx(
-                    "absolute",
-                    "-inset-1",
-                    "bg-gradient-to-r",
-                    "from-primary",
-                    "to-blue-600",
-                    "rounded-3xl",
-                    "blur",
-                    "opacity-25",
-                    "group-hover:opacity-40",
-                    "transition",
-                    "duration-1000",
-                    "group-hover:duration-200",
-                  )}
-                ></div>
-                <div
-                  className={clsx(
-                    "relative",
-                    "flex",
-                    "flex-col",
-                    "sm:flex-row",
-                    "items-center",
-                    "bg-slate-100/95",
-                    "dark:bg-zinc-900/95",
-                    "backdrop-blur-xl",
-                    "rounded-2xl",
-                    "shadow-2xl",
-                    "p-2",
-                    "border",
-                    "border-white/20",
-                  )}
-                >
-                  <Search
-                    size={22}
-                    className={clsx("ml-5", "text-slate-400")}
-                  />
-                  <input suppressHydrationWarning
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Find a shop, service, or event space..."
-                    className={clsx(
-                      "w-full",
-                      "px-5",
-                      "py-4",
-                      "bg-transparent",
-                      "text-charcoal",
-                      "dark:text-white",
-                      "focus:outline-none",
-                      "text-sm",
-                      "font-medium",
-                      "placeholder:text-slate-400",
-                    )}
-                  />
-                  <button suppressHydrationWarning
-                    onClick={handleSearchClick}
-                    className={clsx(
-                      "px-6",
-                      "sm:px-10",
-                      "py-3",
-                      "sm:py-4",
-                      "bg-primary",
-                      "text-white",
-                      "font-bold",
-                      "rounded-xl",
-                      "hover:bg-primary-hover",
-                      "transition-all",
-                      "active:scale-95",
-                      "shadow-xl",
-                      "shadow-primary/30",
-                      "mt-2",
-                      "sm:mt-0",
-                      "w-full",
-                      "sm:w-auto",
-                    )}
-                  >
-                    {config?.primaryBtnText || "Explore Now"}
-                  </button>
-                </div>
-
-                {/* Global Mall Predictive Search Panel */}
-                {searchQuery && (
-                  <div className="absolute top-full left-0 w-full mt-3 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-[2rem] shadow-3xl z-[100] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-300">
-                    <div className="p-4 border-b border-slate-50 dark:border-white/5 flex items-center justify-between">
-                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                        Mall Predictions
-                      </span>
-                      <button suppressHydrationWarning onClick={() => setSearchQuery("")}>
-                        <X size={14} className="text-slate-300" />
-                      </button>
-                    </div>
-                    <div className="max-h-[70vh] overflow-y-auto no-scrollbar">
-                      {/* Shop Suggestions */}
-                      <div className="p-3">
-                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-3 mb-2 block">
-                          Shops & Boutiques
-                        </span>
-                        {shops
-                          .filter((s) =>
-                            s.shop_name
-                              .toLowerCase()
-                              .includes(searchQuery.toLowerCase()),
-                          )
-                          .slice(0, 3)
-                          .map((s) => (
-                            <Link
-                              key={s.id}
-                              href={`/shop/${s.id}`}
-                              className="flex items-center gap-4 p-3 hover:bg-slate-50 dark:hover:bg-white/5 rounded-2xl transition-all group/item"
-                            >
-                              <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-zinc-800 overflow-hidden shrink-0 border border-slate-200 dark:border-white/10">
-                                <img
-                                  src={
-                                    s.logo_url || "/images/logo/logoshop.jpg"
-                                  }
-                                  className="w-full h-full object-cover"
-                                  alt="Shop"
-                                />
-                              </div>
-                              <div className="flex-1">
-                                <p className="text-xs font-black text-charcoal dark:text-white uppercase">
-                                  {s.shop_name}
-                                </p>
-                                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">
-                                  {s.unit_id} — Plaza Wing
-                                </p>
-                              </div>
-                              <Navigation
-                                size={12}
-                                className="text-slate-300 group-hover/item:text-primary transition-colors"
-                              />
-                            </Link>
-                          ))}
-                      </div>
-
-                      {/* Product Suggestions */}
-                      <div className="p-3 bg-slate-50/50 dark:bg-white/5 border-t border-slate-100 dark:border-white/5">
-                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-3 mb-2 block">
-                          Trending Products
-                        </span>
-                        {allFeaturedProducts
-                          .filter((p) =>
-                            (p.name || "")
-                              .toLowerCase()
-                              .includes(searchQuery.toLowerCase()),
-                          )
-                          .slice(0, 4)
-                          .map((p) => (
-                            <button suppressHydrationWarning
-                              key={p.id}
-                              onClick={() => setSelectedProduct(p)}
-                              className="w-full flex items-center gap-4 p-3 hover:bg-white dark:hover:bg-zinc-800 rounded-2xl transition-all group/item text-left"
-                            >
-                              <div className="w-10 h-10 rounded-xl bg-white dark:bg-black overflow-hidden shrink-0 border border-slate-100 dark:border-white/10">
-                                <img
-                                  src={p.image_url}
-                                  className="w-full h-full object-cover"
-                                  alt="Product"
-                                />
-                              </div>
-                              <div className="flex-1">
-                                <p className="text-xs font-black text-charcoal dark:text-white">
-                                  {p.name}
-                                </p>
-                                <div className="flex items-center gap-2">
-                                  <p className="text-[9px] font-bold text-primary uppercase">
-                                    {p.price}
-                                  </p>
-                                  <div className="w-1 h-1 rounded-full bg-slate-300"></div>
-                                  <p className="text-[9px] font-bold text-slate-400 uppercase">
-                                    {p.shopName}
-                                  </p>
-                                </div>
-                              </div>
-                              <Tag
-                                size={12}
-                                className="text-slate-300 group-hover/item:text-primary transition-colors"
-                              />
-                            </button>
-                          ))}
-                      </div>
-
-                      {/* No Results */}
-                      {shops.filter((s) =>
-                        s.shop_name
-                          .toLowerCase()
-                          .includes(searchQuery.toLowerCase()),
-                      ).length === 0 &&
-                        allFeaturedProducts.filter((p) =>
-                          (p.name || "")
-                            .toLowerCase()
-                            .includes(searchQuery.toLowerCase()),
-                        ).length === 0 && (
-                          <div className="py-12 text-center text-slate-400">
-                            <Search
-                              size={24}
-                              className="mx-auto mb-2 opacity-20"
-                            />
-                            <p className="text-[10px] font-bold uppercase tracking-widest">
-                              No Mall Matches for "{searchQuery}"
-                            </p>
-                          </div>
-                        )}
-                    </div>
-                  </div>
-                )}
-              </div>
+              {/* Search Bar has been moved to AdBanner */}
 
               <div
                 className={clsx(
@@ -887,7 +677,7 @@ export default function PublicDigitalConcierge() {
                   href="/products"
                   className="group inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-primary hover:text-primary-hover transition-all"
                 >
-                  View All Items
+                  View All Products
                   <ArrowRight
                     size={14}
                     className="group-hover:translate-x-1 transition-transform"
@@ -914,34 +704,40 @@ export default function PublicDigitalConcierge() {
                   />
                 ))}
 
-                {/* View All Item Card */}
+                {/* View All Products Card - Matched to ProductCard Design */}
                 <Link
                   href="/products"
                   className={clsx(
                     "w-[62%] sm:w-full shrink-0 snap-center",
-                    "group relative aspect-[3/4] bg-slate-50 dark:bg-zinc-900 rounded-[2rem] overflow-hidden",
-                    "border-2 border-dashed border-slate-200 dark:border-white/10 hover:border-primary/50",
-                    "flex flex-col items-center justify-center gap-6 transition-all duration-700 cursor-pointer shadow-lg hover:shadow-2xl",
+                    "group relative aspect-[3/4] bg-white dark:bg-zinc-900 rounded-[2rem] overflow-hidden",
+                    "border-2 border-slate-100 dark:border-white/5 hover:border-primary/30",
+                    "shadow-lg hover:shadow-[0_30px_60px_-15px_rgba(190,30,45,0.25)]",
+                    "transition-all duration-700 cursor-pointer",
                   )}
                 >
-                  <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-
-                  <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-white dark:bg-zinc-800 text-primary flex items-center justify-center group-hover:scale-110 group-hover:bg-primary group-hover:text-white transition-all duration-500 shadow-xl z-10 border border-slate-100 dark:border-white/5">
-                    <ArrowRight size={32} />
+                  {/* Background/Overlay */}
+                  <div className="absolute inset-0 bg-slate-50 dark:bg-zinc-950 flex items-center justify-center">
+                    <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent opacity-60 group-hover:opacity-80 transition-opacity duration-700 z-10" />
+                    <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-white dark:bg-zinc-800 text-primary flex items-center justify-center group-hover:scale-110 group-hover:bg-primary group-hover:text-white transition-all duration-500 shadow-xl z-20 border border-slate-100 dark:border-white/5">
+                      <ArrowRight size={32} />
+                    </div>
                   </div>
 
-                  <div className="text-center px-6 relative z-10">
-                    <p className="text-sm sm:text-base font-black text-charcoal dark:text-white uppercase tracking-tighter">
-                      View All <br />
-                      Mall Items
-                    </p>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-2 opacity-0 group-hover:opacity-100 transition-all duration-500 transform translate-y-2 group-hover:translate-y-0">
-                      Explore Full Directory
-                    </p>
+                  {/* Content Overlay */}
+                  <div className="absolute bottom-0 left-0 right-0 p-6 z-30 text-left">
+                    <div className="space-y-1">
+                      <p className="text-[10px] font-black text-primary uppercase tracking-[0.3em]">
+                        Collection
+                      </p>
+                      <p className="text-2xl font-black text-white uppercase tracking-tighter">
+                        View All <br />
+                        Products
+                      </p>
+                    </div>
                   </div>
 
                   {/* Glass Border Effect on Hover */}
-                  <div className="absolute inset-4 border border-white/0 group-hover:border-white/20 rounded-[2.5rem] transition-all duration-700 z-20 pointer-events-none" />
+                  <div className="absolute inset-4 border border-white/0 group-hover:border-white/20 rounded-[2.5rem] transition-all duration-700 z-40 pointer-events-none" />
                 </Link>
               </div>
             </div>
@@ -1447,34 +1243,43 @@ export default function PublicDigitalConcierge() {
                     </div>
                   ))}
 
-                  {/* View All Mall Directory Card */}
+                  {/* View All Shops Card - Matched to ShopCard Design */}
                   <Link
                     href="/tenant-directory"
                     className={clsx(
                       "w-[85%] sm:w-full shrink-0 snap-center",
-                      "group relative aspect-[3/4] sm:aspect-auto sm:min-h-[400px] bg-slate-50 dark:bg-zinc-900 rounded-[2rem] sm:rounded-[3rem] overflow-hidden",
-                      "border-2 border-dashed border-slate-200 dark:border-white/10 hover:border-primary/50",
-                      "flex flex-col items-center justify-center gap-6 transition-all duration-700 cursor-pointer shadow-lg hover:shadow-2xl",
+                      "group relative bg-white dark:bg-zinc-950 rounded-[2.5rem] overflow-hidden shadow-[0_10px_40px_-10px_rgba(0,0,0,0.08)] hover:shadow-[0_40px_80px_-15px_rgba(190,30,45,0.25)] transition-all duration-700 border-2 border-slate-100 dark:border-white/5 hover:border-primary/20 cursor-pointer",
                     )}
                   >
-                    <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-
-                    <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-white dark:bg-zinc-800 text-primary flex items-center justify-center group-hover:scale-110 group-hover:bg-primary group-hover:text-white transition-all duration-500 shadow-xl z-10 border border-slate-100 dark:border-white/5">
-                      <ArrowRight size={32} />
+                    {/* Top Media Area */}
+                    <div className="relative h-48 sm:h-64 md:h-72 overflow-hidden bg-slate-50 dark:bg-zinc-900 flex items-center justify-center">
+                      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-60 group-hover:opacity-100 transition-opacity" />
+                      <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-white dark:bg-zinc-800 text-primary flex items-center justify-center group-hover:scale-110 group-hover:bg-primary group-hover:text-white transition-all duration-500 shadow-xl z-10 border border-slate-100 dark:border-white/5">
+                        <ArrowRight size={32} />
+                      </div>
                     </div>
 
-                    <div className="text-center px-6 relative z-10">
-                      <p className="text-sm sm:text-base font-black text-charcoal dark:text-white uppercase tracking-tighter">
-                        View All <br />
-                        Tenant Directory
-                      </p>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-2 opacity-0 group-hover:opacity-100 transition-all duration-500 transform translate-y-2 group-hover:translate-y-0">
-                        Show Tenants Shops
-                      </p>
+                    {/* Bottom Info Area */}
+                    <div className="p-6 sm:p-10 relative">
+                      <div className="flex flex-col gap-2">
+                        <h3 className="text-3xl font-black text-charcoal dark:text-white tracking-tighter group-hover:text-primary transition-colors leading-none mb-3 uppercase">
+                          View All <br />
+                          Shops
+                        </h3>
+                        <div className="flex items-center gap-3">
+                          <div className="px-3 py-1 bg-primary/5 border border-primary/20 rounded-md flex items-center gap-2">
+                            <Tag size={12} className="text-primary" />
+                            <span className="text-[10px] font-black text-primary uppercase tracking-widest">
+                              Directory
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1.5 text-[9px] font-bold text-slate-400 uppercase tracking-widest">
+                            <div className="w-1 h-1 rounded-full bg-slate-300"></div>
+                            Full Listing
+                          </div>
+                        </div>
+                      </div>
                     </div>
-
-                    {/* Glass Border Effect on Hover */}
-                    <div className="absolute inset-4 border border-white/0 group-hover:border-white/20 rounded-[2.5rem] transition-all duration-700 z-20 pointer-events-none" />
                   </Link>
                 </>
               ) : (
@@ -1565,21 +1370,19 @@ export default function PublicDigitalConcierge() {
       <section
         id="availability"
         className={clsx(
-          "py-20",
-          "sm:py-24",
-          "lg:py-32",
-          "bg-gradient-to-b",
-          "from-slate-50",
-          "to-slate-100",
-          "dark:from-black",
-          "dark:to-zinc-950",
+          "py-24 sm:py-32 lg:py-40",
+          "bg-white dark:bg-black",
           "relative",
           "overflow-hidden",
         )}
       >
-        {/* Subtle background accents */}
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
-        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-blue-500/5 rounded-full blur-[100px] translate-y-1/2 -translate-x-1/2 pointer-events-none"></div>
+        {/* Professional Background Accents */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full pointer-events-none">
+          <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-primary/5 rounded-full blur-[150px] -translate-y-1/2 translate-x-1/3 opacity-50"></div>
+          <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-blue-600/5 rounded-full blur-[120px] translate-y-1/2 -translate-x-1/3 opacity-50"></div>
+          {/* Subtle Grid Pattern */}
+          <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-[0.03] dark:opacity-[0.05] invert dark:invert-0"></div>
+        </div>
 
         <div
           className={clsx(
@@ -1661,7 +1464,17 @@ export default function PublicDigitalConcierge() {
               </p>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-4 w-full lg:w-auto">
+            <div className="flex flex-col items-start lg:items-end gap-4 w-full lg:w-auto">
+              <Link
+                href="/available-spaces"
+                className="group inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-primary hover:text-primary-hover transition-all"
+              >
+                View All Spaces
+                <ArrowRight
+                  size={14}
+                  className="group-hover:translate-x-1 transition-transform"
+                />
+              </Link>
               <button suppressHydrationWarning
                 className={clsx(
                   "inline-flex",
@@ -1682,6 +1495,7 @@ export default function PublicDigitalConcierge() {
                   "active:scale-95",
                   "shadow-[0_20px_40px_-10px_rgba(190,30,45,0.4)]",
                   "justify-center",
+                  "w-full sm:w-auto",
                 )}
                 onClick={() => {
                   setChatInitialShopName("Leasing Inquiry");
@@ -1737,13 +1551,13 @@ export default function PublicDigitalConcierge() {
                     onClick={() => setSelectedSlot(slot)}
                     className={clsx(
                       "w-[85%] sm:w-full",
-                      "shrink-0 snap-center group relative bg-white dark:bg-zinc-900 rounded-[2.5rem] border-2 border-slate-100 dark:border-white/5 overflow-hidden hover:border-primary/20 transition-all duration-500 cursor-pointer shadow-[0_10px_40px_-15px_rgba(0,0,0,0.05)] hover:shadow-[0_40px_80px_-20px_rgba(190,30,45,0.15)] animate-fade-in-up",
+                      "shrink-0 snap-center group relative bg-white dark:bg-zinc-900 rounded-[2rem] border border-slate-100 dark:border-white/5 overflow-hidden transition-all duration-700 cursor-pointer shadow-sm hover:shadow-2xl hover:-translate-y-2 animate-fade-in-up",
                     )}
                     style={{ animationDelay: `${idx * 100}ms` }}
                   >
                     <div
                       className={clsx(
-                        "aspect-[4/3]",
+                        "aspect-[16/10]",
                         "relative",
                         "overflow-hidden",
                         "bg-slate-100",
@@ -1754,32 +1568,33 @@ export default function PublicDigitalConcierge() {
                         <img
                           src={slot.space_images[0]}
                           alt={`Space ${slot.unit_id}`}
-                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000"
+                          className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
                         />
                       ) : (
-                        <div className="absolute inset-0 flex flex-col items-center justify-center p-8 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-zinc-900 dark:to-black">
-                          <ShoppingBag className="w-16 h-16 text-slate-200 dark:text-zinc-800 mb-4" />
+                        <div className="absolute inset-0 flex flex-col items-center justify-center p-8 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-zinc-900 dark:to-zinc-950">
+                          <ShoppingBag className="w-12 h-12 text-slate-200 dark:text-zinc-800 mb-4" />
                           <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest text-center">
-                            Architectural Render <br />
-                            Coming Soon
+                            Premium Unit <br />
+                            Preview Pending
                           </p>
                         </div>
                       )}
 
-                      {/* Visual Overlay Indicators */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent group-hover:from-primary/90 transition-all duration-700"></div>
-                      <div className={clsx("absolute", "top-4", "right-4")}>
+                      {/* Professional Glassmorphism Overlay */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60 group-hover:opacity-80 transition-opacity duration-500"></div>
+                      
+                      <div className={clsx("absolute", "top-6", "right-6")}>
                         <div
                           className={clsx(
-                            "backdrop-blur-md px-4 py-2 rounded-full border text-[8px] font-black uppercase tracking-widest transition-all shadow-xl",
+                            "backdrop-blur-xl px-4 py-2 rounded-full border text-[9px] font-black uppercase tracking-[0.2em] transition-all shadow-2xl",
                             slot.status === "AVAILABLE"
-                              ? "bg-emerald-500/80 border-emerald-400/50 text-white shadow-emerald-500/20"
-                              : "bg-amber-500/80 border-amber-400/50 text-white shadow-amber-500/20",
+                              ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-400"
+                              : "bg-amber-500/20 border-amber-500/40 text-amber-400",
                           )}
                         >
                           {slot.status === "AVAILABLE"
-                            ? "Selection Open"
-                            : "Interest Registered"}
+                            ? "Available Now"
+                            : "Reserved"}
                         </div>
                       </div>
 
@@ -1787,124 +1602,74 @@ export default function PublicDigitalConcierge() {
                         className={clsx(
                           "absolute",
                           "bottom-6",
-                          "left-6",
-                          "right-6",
+                          "left-8",
+                          "right-8",
                         )}
                       >
-                        <div
-                          className={clsx(
-                            "flex",
-                            "items-center",
-                            "gap-2",
-                            "mb-2",
-                          )}
-                        >
-                          <div
-                            className={clsx(
-                              "w-2",
-                              "h-2",
-                              "rounded-full scale-110 shadow-lg",
-                              slot.status === "AVAILABLE"
-                                ? "bg-emerald-400 shadow-emerald-400/50 animate-pulse"
-                                : "bg-amber-400 shadow-amber-400/50",
-                            )}
-                          />
-                          <span
-                            className={clsx(
-                              "text-[9px] font-black uppercase tracking-[0.2em]",
-                              slot.status === "AVAILABLE"
-                                ? "text-emerald-400"
-                                : "text-amber-400",
-                            )}
-                          >
-                            {slot.status === "AVAILABLE"
-                              ? "Premier Unit"
-                              : "Verification Pending"}
-                          </span>
-                        </div>
                         <h4
                           className={clsx(
-                            "text-3xl font-black text-white tracking-tighter uppercase",
+                            "text-3xl font-black text-white tracking-tighter uppercase leading-none",
                           )}
                         >
                           Unit {slot.unit_id}
                         </h4>
-                        <p className="text-[10px] font-bold text-white/50 uppercase tracking-widest mt-1">
-                          {slot.status === "AVAILABLE"
-                            ? "Ready for Occupancy"
-                            : "Reserved for Approval"}
-                        </p>
+                        <div className="flex items-center gap-2 mt-2">
+                           <div className={clsx("w-1.5 h-1.5 rounded-full", slot.status === "AVAILABLE" ? "bg-emerald-400 animate-pulse" : "bg-amber-400")}></div>
+                           <p className="text-[10px] font-bold text-white/70 uppercase tracking-widest">
+                             Plaza Wing — Level 1
+                           </p>
+                        </div>
                       </div>
 
-                      {/* Hover Call to Action */}
-                      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                        <span className="bg-white text-primary px-6 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest shadow-2xl transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
-                          View Details
-                        </span>
+                      {/* Action Button on Hover */}
+                      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-500 bg-black/20 backdrop-blur-[2px]">
+                        <div className="px-8 py-3 bg-white text-black text-[10px] font-black uppercase tracking-widest rounded-full shadow-3xl transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
+                          Inquire Details
+                        </div>
                       </div>
                     </div>
 
                     <div
                       className={clsx(
-                        "p-6",
+                        "p-8",
                         "flex",
                         "items-center",
                         "justify-between",
                         "bg-white",
-                        "dark:bg-zinc-900",
+                        "dark:bg-zinc-900/50",
                       )}
                     >
-                      <div className="space-y-1">
+                      <div className="space-y-1.5">
                         <p
                           className={clsx(
-                            "text-[9px]",
-                            "font-bold",
+                            "text-[10px]",
+                            "font-black",
                             "text-slate-400",
-                            "dark:text-zinc-500",
                             "uppercase",
-                            "tracking-[0.2em]",
+                            "tracking-[0.3em]",
                           )}
                         >
                           Floor Area
                         </p>
-                        <p
-                          className={clsx(
-                            "text-2xl",
-                            "font-black",
-                            "text-charcoal",
-                            "dark:text-white",
-                            "tracking-tight",
-                          )}
-                        >
-                          {slot.sqm_size}{" "}
-                          <span className="text-[10px] font-bold text-slate-300">
-                            SQM
-                          </span>
-                        </p>
+                        <div className="flex items-baseline gap-1">
+                          <p
+                            className={clsx(
+                              "text-3xl",
+                              "font-black",
+                              "text-charcoal",
+                              "dark:text-white",
+                              "tracking-tighter",
+                            )}
+                          >
+                            {slot.sqm_size}
+                          </p>
+                          <span className="text-xs font-black text-primary">SQM</span>
+                        </div>
                       </div>
-                      <div
-                        className={clsx(
-                          "w-12",
-                          "h-12",
-                          "rounded-2xl",
-                          "bg-slate-50",
-                          "dark:bg-black",
-                          "border",
-                          "border-slate-100",
-                          "dark:border-white/5",
-                          "flex",
-                          "items-center",
-                          "justify-center",
-                          "text-slate-400",
-                          "group-hover:bg-primary",
-                          "group-hover:text-white",
-                          "group-hover:border-primary",
-                          "group-hover:rotate-12",
-                          "transition-all",
-                          "duration-500",
-                        )}
-                      >
-                        <ArrowRight size={20} />
+                      
+                      <div className="flex flex-col items-end gap-1">
+                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Lease Terms</span>
+                         <span className="text-xs font-black text-charcoal dark:text-white uppercase">Flexible</span>
                       </div>
                     </div>
                   </div>
@@ -1936,6 +1701,49 @@ export default function PublicDigitalConcierge() {
                     No spaces currently available for lease.
                   </p>
                 </div>
+              )}
+
+              {/* View All Spaces Card - Matched to Slot Card Design */}
+              {!loadingSlots && (
+                <Link
+                  href="/available-spaces"
+                  className={clsx(
+                    "w-[85%] sm:w-full shrink-0 snap-center",
+                    "group relative bg-white dark:bg-zinc-900 rounded-[2rem] border border-slate-100 dark:border-white/5 overflow-hidden transition-all duration-700 cursor-pointer shadow-sm hover:shadow-2xl hover:-translate-y-2",
+                  )}
+                >
+                  <div className={clsx("aspect-[16/10]", "relative", "overflow-hidden", "bg-slate-50", "dark:bg-zinc-950", "flex items-center justify-center")}>
+                    <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-60 group-hover:opacity-100 transition-opacity" />
+                    <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-white dark:bg-zinc-800 text-primary flex items-center justify-center group-hover:scale-110 group-hover:bg-primary group-hover:text-white transition-all duration-500 shadow-xl z-10 border border-slate-100 dark:border-white/5">
+                      <ArrowRight size={32} />
+                    </div>
+                  </div>
+
+                  <div
+                    className={clsx(
+                      "p-8",
+                      "flex",
+                      "items-center",
+                      "justify-between",
+                      "bg-white",
+                      "dark:bg-zinc-900/50",
+                    )}
+                  >
+                    <div className="space-y-1.5">
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">
+                        Inventory
+                      </p>
+                      <p className="text-2xl font-black text-charcoal dark:text-white uppercase tracking-tighter">
+                        View All <br />
+                        Spaces
+                      </p>
+                    </div>
+                    <div className="text-right">
+                       <p className="text-[10px] font-bold text-primary uppercase tracking-widest">Explore</p>
+                       <p className="text-[9px] font-bold text-slate-400 uppercase">Full Map</p>
+                    </div>
+                  </div>
+                </Link>
               )}
             </div>
 

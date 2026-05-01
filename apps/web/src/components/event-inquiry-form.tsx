@@ -24,6 +24,8 @@ export const EventInquiryForm = ({
   const [eventType, setEventType] = useState("Esports & Gaming Events");
   const [eventDate, setEventDate] = useState("");
   const [eventTime, setEventTime] = useState("");
+  const [message, setMessage] = useState("");
+  const [imageFile, setImageFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitMessage, setSubmitMessage] = useState<{
     type: "success" | "error";
@@ -60,11 +62,34 @@ export const EventInquiryForm = ({
     setIsSubmitting(true);
     setSubmitMessage(null);
 
+    let imageUrl = "";
+    let storageKey = "";
+
+    if (imageFile) {
+      try {
+        const { getCloudStorageProvider } = await import("@/lib/cloud-storage");
+        const storage = getCloudStorageProvider();
+        const uploadResult = await storage.uploadFile(imageFile, "inquiries");
+        imageUrl = uploadResult.url;
+        storageKey = uploadResult.key;
+      } catch (err) {
+        setSubmitMessage({
+          type: "error",
+          message: "Failed to upload the image. Please try again or remove it.",
+        });
+        setIsSubmitting(false);
+        return;
+      }
+    }
+
     const result = await submitInquiryAction({
       userId: user.id,
       eventType: eventType,
       eventDate: new Date(eventDate),
       eventTime: eventTime,
+      message: message,
+      imageUrl: imageUrl || undefined,
+      storageKey: storageKey || undefined,
     });
 
     if (result.success) {
@@ -74,6 +99,8 @@ export const EventInquiryForm = ({
       });
       setEventDate("");
       setEventTime("");
+      setMessage("");
+      setImageFile(null);
       setEventType(eventTypes[0]);
     } else {
       setSubmitMessage({
@@ -516,6 +543,90 @@ export const EventInquiryForm = ({
                       required
                     />
                   </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label
+                    className={clsx(
+                      "text-[8px] sm:text-[11px]",
+                      "font-black",
+                      "text-slate-400",
+                      "uppercase",
+                      "tracking-widest",
+                      "ml-1",
+                    )}
+                  >
+                    Inquiry Comment (Optional)
+                  </label>
+                  <textarea
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    rows={3}
+                    placeholder="Tell us more about your event..."
+                    className={clsx(
+                      "w-full",
+                      "px-3",
+                      "py-3 sm:px-6 sm:py-4",
+                      "bg-white",
+                      "dark:bg-black",
+                      "border",
+                      "sm:border-2",
+                      "border-slate-100",
+                      "dark:border-white/5",
+                      "focus:border-primary",
+                      "rounded-xl sm:rounded-2xl",
+                      "text-[10px] sm:text-sm",
+                      "font-medium",
+                      "text-black",
+                      "dark:text-white",
+                      "outline-none",
+                      "transition-all",
+                    )}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label
+                    className={clsx(
+                      "text-[8px] sm:text-[11px]",
+                      "font-black",
+                      "text-slate-400",
+                      "uppercase",
+                      "tracking-widest",
+                      "ml-1",
+                    )}
+                  >
+                    Event Image Attachment (Optional)
+                  </label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      if (e.target.files && e.target.files[0]) {
+                        setImageFile(e.target.files[0]);
+                      }
+                    }}
+                    className={clsx(
+                      "w-full",
+                      "px-3",
+                      "py-2 sm:px-6 sm:py-3",
+                      "bg-white",
+                      "dark:bg-black",
+                      "border",
+                      "sm:border-2",
+                      "border-slate-100",
+                      "dark:border-white/5",
+                      "focus:border-primary",
+                      "rounded-xl sm:rounded-2xl",
+                      "text-[10px] sm:text-sm",
+                      "font-medium",
+                      "text-black",
+                      "dark:text-white",
+                      "outline-none",
+                      "transition-all",
+                      "file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-primary file:text-white hover:file:bg-primary-hover file:cursor-pointer",
+                    )}
+                  />
                 </div>
 
                 <div className="pt-2 sm:pt-6">

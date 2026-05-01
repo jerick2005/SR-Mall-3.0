@@ -568,6 +568,20 @@ export default function MasterBookingsPage() {
                           <p className="text-xs text-charcoal dark:text-white/80 leading-relaxed line-clamp-2">
                             "{inq.message || "No contextual message provided."}"
                           </p>
+                          {inq.imageUrl && (
+                            <div className="mt-4 pt-4 border-t border-slate-200 dark:border-white/5">
+                              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-2">
+                                <Sparkles size={12} /> Attached Image
+                              </p>
+                              <div className="aspect-video w-full rounded-xl overflow-hidden bg-slate-100 dark:bg-zinc-800">
+                                <img
+                                  src={inq.imageUrl}
+                                  alt="Inquiry Attachment"
+                                  className="w-full h-full object-cover"
+                                />
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </div>
                       <div className="flex gap-3">

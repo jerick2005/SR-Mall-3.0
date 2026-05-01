@@ -11,6 +11,7 @@ import {
   deleteCarouselItemAction,
   toggleCarouselItemAction,
 } from "@/app/actions/cms";
+import { getApprovedEventsWithImagesAction, updateInquiryImageAction } from "@/app/actions/inquiry";
 import {
   Plus,
   Trash2,
@@ -31,6 +32,7 @@ import {
   ChevronRight,
   Sparkles,
   Globe,
+  Calendar as CalendarIcon,
 } from "lucide-react";
 import clsx from "clsx";
 
@@ -112,6 +114,8 @@ export default function PublicViewCMSPage() {
     storageKey: "",
   });
 
+  const [approvedEvents, setApprovedEvents] = useState<any[]>([]);
+
   const [toast, setToast] = useState<{
     msg: string;
     type: "success" | "error";
@@ -125,9 +129,10 @@ export default function PublicViewCMSPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [configData, carouselData] = await Promise.all([
+        const [configData, carouselData, eventsData] = await Promise.all([
           getPublicViewConfigAction(),
           getAllCarouselItemsAction(),
+          getApprovedEventsWithImagesAction(),
         ]);
 
         if (configData) {
@@ -139,6 +144,9 @@ export default function PublicViewCMSPage() {
         }
 
         setCarouselItems(carouselData || []);
+        if (eventsData?.success) {
+          setApprovedEvents(eventsData.data || []);
+        }
       } catch (error) {
         console.error("Error fetching data:", error);
       } finally {
@@ -200,6 +208,36 @@ export default function PublicViewCMSPage() {
     } catch (error) {
       console.error("Upload error:", error);
       showToast("Failed to upload carousel media", "error");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleEventImageUpload = async (
+    eventId: string,
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setIsSaving(true);
+    try {
+      const { getCloudStorageProvider } = await import("@/lib/cloud-storage");
+      const storageProvider = getCloudStorageProvider();
+      const result = await storageProvider.uploadFile(file, "inquiries");
+
+      const updateResult = await updateInquiryImageAction(eventId, result.url, result.key);
+      if (updateResult.success) {
+        setApprovedEvents((prev) =>
+          prev.map((ev) => (ev.id === eventId ? { ...ev, imageUrl: result.url, storageKey: result.key } : ev))
+        );
+        showToast("Event image updated successfully", "success");
+      } else {
+        showToast("Failed to update event image in DB", "error");
+      }
+    } catch (error) {
+      console.error("Upload error:", error);
+      showToast("Failed to upload event media", "error");
     } finally {
       setIsSaving(false);
     }
@@ -347,6 +385,7 @@ export default function PublicViewCMSPage() {
       desc: "About & Video",
     },
     { id: "carousel", label: "Billboards", icon: Layout, desc: "Ad Sliders" },
+    { id: "events", label: "Upcoming Events", icon: CalendarIcon, desc: "Approved Event Images" },
   ];
 
   return (
@@ -902,6 +941,72 @@ export default function PublicViewCMSPage() {
                             <Trash2 size={16} />
                           </button>
                         </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
+
+          {activeTab === "events" && (
+            <div className="space-y-10">
+              <SectionHeader
+                icon={CalendarIcon}
+                title="Upcoming Events"
+                sub="Manage images for approved upcoming events."
+              />
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {approvedEvents.length === 0 ? (
+                  <div className="md:col-span-2 p-10 bg-white dark:bg-zinc-900 border border-slate-100 dark:border-white/5 rounded-3xl flex items-center justify-center text-slate-400 font-bold uppercase tracking-widest text-xs">
+                    No approved events found.
+                  </div>
+                ) : (
+                  approvedEvents.map((ev) => (
+                    <div
+                      key={ev.id}
+                      className="bg-white dark:bg-zinc-900 border border-slate-100 dark:border-white/5 rounded-[2.5rem] p-6 shadow-sm flex flex-col justify-between"
+                    >
+                      <div className="flex items-center justify-between mb-4">
+                        <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-[10px] font-black uppercase tracking-widest border border-primary/20">
+                          {ev.eventType}
+                        </span>
+                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+                          {new Date(ev.eventDate).toLocaleDateString()}
+                        </span>
+                      </div>
+                      <h3 className="text-xl font-black text-charcoal dark:text-white uppercase tracking-tight mb-6">
+                        {ev.eventName || ev.eventType}
+                      </h3>
+                      <div className="aspect-[16/9] w-full bg-slate-100 dark:bg-zinc-800 rounded-3xl overflow-hidden relative group">
+                        {ev.imageUrl ? (
+                          <img
+                            src={ev.imageUrl}
+                            className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex flex-col items-center justify-center text-slate-400">
+                            <ImageIcon size={32} className="mb-2" />
+                            <span className="text-[10px] font-black uppercase tracking-widest">
+                              No Image Provided
+                            </span>
+                          </div>
+                        )}
+                        <label className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center cursor-pointer transition-opacity backdrop-blur-sm">
+                          <div className="flex flex-col items-center">
+                            <Plus size={24} className="text-white mb-2" />
+                            <span className="text-[10px] font-black text-white uppercase tracking-widest">
+                              {ev.imageUrl ? "Update Image" : "Upload Image"}
+                            </span>
+                          </div>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => handleEventImageUpload(ev.id, e)}
+                          />
+                        </label>
                       </div>
                     </div>
                   ))

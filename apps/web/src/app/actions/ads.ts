@@ -36,6 +36,20 @@ export async function createMallAd(data: {
       ...data,
       adminId: data.adminId,
     });
+
+    let validAdminId = data.adminId;
+    const userExists = await prisma.user.findUnique({ where: { id: data.adminId } });
+    
+    if (!userExists) {
+      const fallbackAdmin = await prisma.user.findFirst({ where: { role: "ADMIN" } });
+      if (fallbackAdmin) {
+        validAdminId = fallbackAdmin.id;
+        console.warn(`[ADS_ACTION]: Provided adminId ${data.adminId} not found. Using fallback admin: ${validAdminId}`);
+      } else {
+        throw new Error("No valid ADMIN user found in the database. Please ensure your user record is synced to the database.");
+      }
+    }
+
     // Using any cast to bypass stale generated client types while dev server holds files
     // Using any cast to ensure compatibility with all client versions
     const ad = await (prisma as any).mallAd.create({
@@ -47,7 +61,7 @@ export async function createMallAd(data: {
         priority: data.priority,
         startDate: data.startDate,
         endDate: data.endDate,
-        adminId: data.adminId,
+        adminId: validAdminId,
         storageKey: data.storageKey || null,
         isGlobal: true,
       },

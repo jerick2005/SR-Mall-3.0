@@ -127,8 +127,8 @@ export const AdBanner = ({
     <div className="relative w-full h-[280px] sm:h-[380px] md:h-[500px] overflow-hidden group">
       {localAds.map((ad: any, index: number) => (
         <div
-          key={ad.id}
-          className={`absolute inset-0 transition-opacity duration-1000 ${index === currentIndex ? "opacity-100 z-10" : "opacity-0 z-0"}`}
+          key={`${ad.id}-${index}`}
+          className={`absolute inset-0 transition-opacity duration-1000 ${index === currentIndex ? "opacity-100 z-10 pointer-events-auto" : "opacity-0 z-0 pointer-events-none"}`}
         >
           {(() => {
             // Enhanced media detection
@@ -171,6 +171,7 @@ export const AdBanner = ({
                 </p>
                 <div className="flex flex-wrap gap-2 sm:gap-4">
                   <button
+                    suppressHydrationWarning
                     onClick={() => handleAdClick(ad)}
                     className="px-5 sm:px-10 py-3 sm:py-5 bg-primary text-white text-[10px] sm:text-xs font-black uppercase tracking-widest rounded-full hover:bg-white hover:text-primary transition-all active:scale-95 shadow-xl shadow-primary/20"
                   >
@@ -193,6 +194,7 @@ export const AdBanner = ({
                       className="w-full px-4 py-3 bg-transparent text-white focus:outline-none text-sm font-medium placeholder:text-white/40"
                     />
                     <button
+                      suppressHydrationWarning
                       onClick={handleSearchClick}
                       className="px-6 py-3 bg-primary text-white font-bold rounded-xl hover:bg-white hover:text-primary transition-all active:scale-95 shadow-lg"
                     >
@@ -205,7 +207,7 @@ export const AdBanner = ({
                     <div className="absolute top-full left-0 w-full mt-3 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-3xl shadow-3xl z-[100] overflow-hidden animate-in fade-in slide-in-from-top-2">
                       <div className="p-4 border-b border-slate-50 dark:border-white/5 flex items-center justify-between">
                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Quick Results</span>
-                        <button onClick={() => setSearchQuery("")}>
+                        <button suppressHydrationWarning onClick={() => setSearchQuery("")}>
                           <X size={14} className="text-slate-300" />
                         </button>
                       </div>
@@ -230,7 +232,7 @@ export const AdBanner = ({
                           .filter((p: any) => (p.name || "").toLowerCase().includes(searchQuery.toLowerCase()))
                           .slice(0, 2)
                           .map((p: any) => (
-                            <button key={p.id} onClick={() => setSelectedProduct(p)} className="w-full flex items-center gap-3 p-2 hover:bg-slate-50 dark:hover:bg-white/5 rounded-xl transition-all group/item text-left">
+                            <button suppressHydrationWarning key={p.id} onClick={() => setSelectedProduct(p)} className="w-full flex items-center gap-3 p-2 hover:bg-slate-50 dark:hover:bg-white/5 rounded-xl transition-all group/item text-left">
                               <div className="w-8 h-8 rounded-lg bg-white dark:bg-black overflow-hidden shrink-0 border border-slate-100 dark:border-white/10">
                                 <img src={p.image_url} className="w-full h-full object-cover" alt="" />
                               </div>
@@ -256,6 +258,7 @@ export const AdBanner = ({
         <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 z-20 bg-white/50 dark:bg-charcoal/50 backdrop-blur-md px-3 py-2 rounded-full border border-slate-200 dark:border-white/10">
           {localAds.map((_: any, index: number) => (
             <button
+              suppressHydrationWarning
               key={index}
               onClick={() => setCurrentIndex(index)}
               className={`w-1.5 h-1.5 rounded-full transition-all ${index === currentIndex ? "bg-primary w-4" : "bg-slate-400 dark:bg-white/50 hover:bg-primary dark:hover:bg-white"}`}

@@ -240,6 +240,10 @@ model EventInquiry {
   eventType String
   eventDate DateTime
   eventTime String
+  eventName String?
+  message   String?
+  imageUrl  String?
+  storageKey String?
   status    String   @default("PENDING")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

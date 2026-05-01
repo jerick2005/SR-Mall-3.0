@@ -8,6 +8,9 @@ export async function submitInquiryAction(data: {
   eventType: string;
   eventDate: Date;
   eventTime: string;
+  message?: string;
+  imageUrl?: string;
+  storageKey?: string;
 }) {
   try {
     const inquiry = await prisma.eventInquiry.create({
@@ -16,6 +19,9 @@ export async function submitInquiryAction(data: {
         eventType: data.eventType,
         eventDate: data.eventDate,
         eventTime: data.eventTime,
+        message: data.message,
+        imageUrl: data.imageUrl,
+        storageKey: data.storageKey,
         status: "PENDING",
       },
     });
@@ -67,6 +73,8 @@ export async function submitInquiryAction(data: {
               <p><strong>Event Type:</strong> ${data.eventType}</p>
               <p><strong>Date:</strong> ${new Date(data.eventDate).toLocaleDateString()}</p>
               <p><strong>Time:</strong> ${data.eventTime}</p>
+              <p><strong>Message:</strong> ${data.message || 'No additional message'}</p>
+              <p><strong>Image attached:</strong> ${data.imageUrl ? 'Yes' : 'No'}</p>
               <p><strong>User ID:</strong> ${data.userId}</p>
               <hr />
               <p>Please log in to the admin dashboard to review and respond.</p>
@@ -216,5 +224,45 @@ export async function updateInquiryStatusAction(
   } catch (error) {
     console.error("Failed to update inquiry status:", error);
     return { success: false, error: "Failed to update inquiry" };
+  }
+}
+
+export async function getApprovedEventsWithImagesAction() {
+  try {
+    const events = await prisma.eventInquiry.findMany({
+      where: {
+        status: "ACCEPTED",
+        imageUrl: { not: null }
+      },
+      orderBy: {
+        eventDate: "asc",
+      },
+    });
+    return { success: true, data: events };
+  } catch (error) {
+    console.error("Failed to get approved events:", error);
+    return { success: false, data: [] };
+  }
+}
+
+export async function updateInquiryImageAction(
+  id: string,
+  imageUrl: string,
+  storageKey?: string,
+) {
+  try {
+    const inquiry = await prisma.eventInquiry.update({
+      where: { id },
+      data: {
+        imageUrl,
+        storageKey,
+      },
+    });
+    
+    revalidatePath("/public-view");
+    return { success: true, data: inquiry };
+  } catch (error) {
+    console.error("Failed to update inquiry image:", error);
+    return { success: false, error: "Failed to update inquiry image" };
   }
 }

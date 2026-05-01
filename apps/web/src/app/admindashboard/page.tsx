@@ -243,7 +243,7 @@ export default function AdminDashboard() {
           label:
             space.status === "OCCUPIED"
               ? tenants.find((t: any) => t.unit_id === space.unit_id)
-                  ?.shop_name || "Occupied"
+                ?.shop_name || "Occupied"
               : undefined,
           price:
             space.status === "AVAILABLE"
@@ -262,7 +262,7 @@ export default function AdminDashboard() {
         adEngagement: 12450 + Math.floor(Math.random() * 1000),
         urgentAlerts:
           contracts.filter((c) => c.urgent).length +
-            activity.filter((a) => a.urgent).length || 4,
+          activity.filter((a) => a.urgent).length || 4,
         paidCount: paidCount || 19,
         overdueCount: overdueCount || 5,
         expiringContracts:
@@ -275,17 +275,17 @@ export default function AdminDashboard() {
         displaySlots.length > 0
           ? displaySlots
           : [
-              { id: "L1-01", status: "occupied", label: "Coffee Culture" },
-              { id: "L1-02", status: "available", price: "₱15k" },
-              { id: "L1-03", status: "occupied", label: "Gadget Sphere" },
-              { id: "L1-04", status: "available", price: "₱12k" },
-              { id: "L1-05", status: "pending", label: "Under Review" },
-              { id: "L1-06", status: "occupied", label: "Prism Fitness" },
-              { id: "L1-07", status: "occupied", label: "Velvet & Vine" },
-              { id: "L1-08", status: "available", price: "₱18k" },
-              { id: "L1-09", status: "pending", label: "Under Review" },
-              { id: "L1-10", status: "occupied", label: "Urban Threads" },
-            ],
+            { id: "L1-01", status: "occupied", label: "Coffee Culture" },
+            { id: "L1-02", status: "available", price: "₱15k" },
+            { id: "L1-03", status: "occupied", label: "Gadget Sphere" },
+            { id: "L1-04", status: "available", price: "₱12k" },
+            { id: "L1-05", status: "pending", label: "Under Review" },
+            { id: "L1-06", status: "occupied", label: "Prism Fitness" },
+            { id: "L1-07", status: "occupied", label: "Velvet & Vine" },
+            { id: "L1-08", status: "available", price: "₱18k" },
+            { id: "L1-09", status: "pending", label: "Under Review" },
+            { id: "L1-10", status: "occupied", label: "Urban Threads" },
+          ],
       );
 
       setLastUpdated(new Date());

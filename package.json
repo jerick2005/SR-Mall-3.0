@@ -1,6 +1,10 @@
 {
   "name": "srmall-capstone",
   "packageManager": "npm@11.8.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "private": true,
   "scripts": {
     "build": "node -e \"if(require('fs').existsSync('.env')) require('fs').copyFileSync('.env', 'apps/web/.env')\" && npx turbo run build",

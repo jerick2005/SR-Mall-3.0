@@ -165,7 +165,7 @@ export async function createTenantPromo(data: {
 
     if (admins.length > 0) {
       await prisma.notification.createMany({
-        data: admins.map((admin) => ({
+        data: admins.map((admin: { id: string }) => ({
           userId: admin.id,
           type: "AD_SUBMISSION_RECEIVED",
           title: "New Promo Submission",

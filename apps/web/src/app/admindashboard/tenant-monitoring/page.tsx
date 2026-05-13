@@ -186,6 +186,13 @@ export default function TenantMonitoring() {
     rentCost: 0,
     description: "",
   });
+  const [isBillModalOpen, setIsBillModalOpen] = useState(false);
+  const [billFormData, setBillFormData] = useState({
+    amount: 0,
+    month: "",
+    dueDate: "",
+    description: "Manual Billing - Rent & Utilities",
+  });
 
   const loadTenants = async () => {
     setLoading(true);
@@ -444,59 +451,54 @@ export default function TenantMonitoring() {
     window.location.href = `/admindashboard/messages?tenantId=${selectedTenant.id}`;
   };
 
-  const handlePostMonthlyBill = async () => {
+  const handlePostMonthlyBill = () => {
     if (!selectedTenant) return;
+    setBillFormData({
+      amount: selectedTenant.rentCost || 3000,
+      month: new Date().toLocaleString("default", { month: "short", year: "numeric" }),
+      dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+      description: "Manual Billing - Rent & Utilities",
+    });
+    setIsBillModalOpen(true);
+  };
 
-    const amountStr = window.prompt(
-      "Post Monthly Bill\nEnter amount to bill (₱):",
-      (selectedTenant.rentCost || 3000).toString(),
-    );
-    if (!amountStr) return;
-    const amount = parseFloat(amountStr);
-    if (isNaN(amount) || amount <= 0) {
+  const handleSubmitBill = async () => {
+    if (!selectedTenant) return;
+    
+    if (billFormData.amount <= 0) {
       setToast({ msg: "Invalid amount", type: "error" });
       return;
     }
 
-    const month = window.prompt(
-      "Enter billing month (e.g. Nov 2026):",
-      new Date().toLocaleString("default", { month: "short", year: "numeric" }),
-    );
-    if (!month) return;
-
-    const defaultDueDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
-      .toISOString()
-      .split("T")[0];
-    const dueDateStr = window.prompt(
-      "Enter due date (YYYY-MM-DD):",
-      defaultDueDate,
-    );
-    if (!dueDateStr) return;
-    const dueDate = new Date(dueDateStr);
+    const dueDate = new Date(billFormData.dueDate);
     if (isNaN(dueDate.getTime())) {
       setToast({ msg: "Invalid date format", type: "error" });
       return;
     }
 
+    setLoading(true);
     setToast({ msg: "Posting monthly bill...", type: "success" });
 
     try {
       const res = await generateInvoice({
         tenantId: selectedTenant.id,
-        month,
-        amount,
+        month: billFormData.month,
+        amount: billFormData.amount,
         dueDate: dueDate,
-        description: `Manual Billing - Rent & Utilities`,
+        description: billFormData.description,
       });
 
       if (res.success) {
         setToast({ msg: "Invoice successfully generated!", type: "success" });
+        setIsBillModalOpen(false);
         loadTenants();
       } else {
         setToast({ msg: "Failed: " + res.error, type: "error" });
       }
     } catch (err: any) {
       setToast({ msg: "Error: " + err.message, type: "error" });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -804,6 +806,162 @@ export default function TenantMonitoring() {
                   ) : (
                     <>
                       <CheckCircle size={16} /> Save Changes
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bill Tenant Modal */}
+      {isBillModalOpen && selectedTenant && (
+        <div
+          className={clsx(
+            "fixed",
+            "inset-0",
+            "z-[250]",
+            "flex",
+            "items-center",
+            "justify-center",
+            "p-4",
+          )}
+        >
+          <div
+            className={clsx(
+              "absolute",
+              "inset-0",
+              "bg-black/60",
+              "backdrop-blur-sm",
+            )}
+            onClick={() => setIsBillModalOpen(false)}
+          />
+          <div
+            className={clsx(
+              "relative",
+              "w-full",
+              "max-w-lg",
+              "bg-white",
+              "dark:bg-zinc-950",
+              "rounded-[2rem]",
+              "shadow-2xl",
+              "overflow-hidden",
+              "animate-fade-in-up",
+            )}
+          >
+            <div
+              className={clsx("bg-[#BE1E2D]", "p-8", "text-white", "relative")}
+            >
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-md">
+                  <Receipt size={24} />
+                </div>
+                <div>
+                  <h2 className="text-xl font-black uppercase tracking-tight">
+                    Post Monthly Bill
+                  </h2>
+                  <p className="text-xs text-white/70 font-bold uppercase tracking-widest">
+                    Billing Information
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsBillModalOpen(false)}
+                className="absolute top-8 right-8 text-white/60 hover:text-white transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="p-8 space-y-5">
+              <div>
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-2">
+                  Amount to Bill (₱)
+                </label>
+                <input
+                  type="number"
+                  value={billFormData.amount}
+                  onChange={(e) =>
+                    setBillFormData({
+                      ...billFormData,
+                      amount: Number(e.target.value),
+                    })
+                  }
+                  className="w-full px-4 py-3 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-white/5 rounded-xl text-sm font-black text-emerald-500 focus:border-[#BE1E2D] focus:outline-none transition-all"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-2">
+                    Billing Month
+                  </label>
+                  <input
+                    type="text"
+                    value={billFormData.month}
+                    onChange={(e) =>
+                      setBillFormData({
+                        ...billFormData,
+                        month: e.target.value,
+                      })
+                    }
+                    placeholder="e.g. Nov 2026"
+                    className="w-full px-4 py-3 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-white/5 rounded-xl text-sm font-bold focus:border-[#BE1E2D] focus:outline-none transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-2">
+                    Due Date
+                  </label>
+                  <input
+                    type="date"
+                    value={billFormData.dueDate}
+                    onChange={(e) =>
+                      setBillFormData({
+                        ...billFormData,
+                        dueDate: e.target.value,
+                      })
+                    }
+                    className="w-full px-4 py-3 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-white/5 rounded-xl text-sm font-bold focus:border-[#BE1E2D] focus:outline-none transition-all"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-2">
+                  Description
+                </label>
+                <textarea
+                  value={billFormData.description}
+                  onChange={(e) =>
+                    setBillFormData({
+                      ...billFormData,
+                      description: e.target.value,
+                    })
+                  }
+                  rows={2}
+                  className="w-full px-4 py-3 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-white/5 rounded-xl text-sm font-medium focus:border-[#BE1E2D] focus:outline-none transition-all resize-none"
+                />
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  onClick={() => setIsBillModalOpen(false)}
+                  className="flex-1 py-3.5 bg-slate-100 dark:bg-zinc-900 text-slate-600 dark:text-slate-400 font-bold text-xs uppercase tracking-widest rounded-xl hover:bg-slate-200 transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSubmitBill}
+                  disabled={loading}
+                  className="flex-[2] py-3.5 bg-[#BE1E2D] text-white font-black text-xs uppercase tracking-widest rounded-xl shadow-xl shadow-red-500/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2"
+                >
+                  {loading ? (
+                    <RefreshCw size={16} className="animate-spin" />
+                  ) : (
+                    <>
+                      <CheckCircle size={16} /> Post Bill
                     </>
                   )}
                 </button>

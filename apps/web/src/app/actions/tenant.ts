@@ -36,6 +36,7 @@ export async function updateStorefrontAction(
         logoUrl: profile.logo_url,
         galleryUrls: profile.gallery_urls,
         products: profile.products as any,
+        postSales: profile.post_sales as any,
       },
       create: {
         userId,
@@ -46,6 +47,7 @@ export async function updateStorefrontAction(
         logoUrl: profile.logo_url,
         galleryUrls: profile.gallery_urls || [],
         products: (profile.products || []) as any,
+        postSales: (profile.post_sales || []) as any,
       },
     });
 
@@ -64,6 +66,7 @@ export async function updateStorefrontAction(
         logo_url: tenant.logoUrl,
         gallery_urls: tenant.galleryUrls,
         products: tenant.products as any,
+        post_sales: tenant.postSales as any,
       } as DigitalStorefront,
     };
   } catch (error: any) {
@@ -150,6 +153,7 @@ export async function getStorefrontAction(userId: string) {
         logo_url: tenant.logoUrl,
         gallery_urls: tenant.galleryUrls,
         products: tenant.products as any,
+        post_sales: tenant.postSales as any,
       } as DigitalStorefront,
     };
   } catch (error: any) {
@@ -227,6 +231,7 @@ export async function getAllStorefrontsAction() {
             logo_url: t.logoUrl,
             gallery_urls: t.galleryUrls,
             products: t.products as any,
+            post_sales: t.postSales as any,
           }) as DigitalStorefront,
       ),
     };
@@ -238,6 +243,8 @@ export async function getAllStorefrontsAction() {
     };
   }
 }
+
+
 
 export async function getAllTenantsAction() {
   try {
@@ -278,6 +285,7 @@ export async function getAllTenantsAction() {
           logoUrl: t.logoUrl,
           galleryUrls: t.galleryUrls,
           products: t.products,
+          postSales: t.postSales,
           avgRating,
           reviewCount: t.reviews.length,
         };
@@ -314,6 +322,7 @@ export async function getStorefrontByIdAction(id: string) {
         logo_url: tenant.logoUrl,
         gallery_urls: tenant.galleryUrls,
         products: tenant.products as any,
+        post_sales: tenant.postSales as any,
       } as DigitalStorefront,
     };
   } catch (error: any) {
@@ -878,3 +887,87 @@ export async function adminUpdateTenantAction(
     };
   }
 }
+
+/**
+ * Fetch all post sales for Admin monitoring
+ */
+export async function getAllPostSalesAction() {
+  try {
+    const tenants = await prisma.tenant.findMany({
+      select: {
+        id: true,
+        shopName: true,
+        postSales: true,
+      },
+    });
+
+    const allPostSales = tenants.flatMap((tenant) => {
+      const sales = Array.isArray(tenant.postSales) ? tenant.postSales : [];
+      return sales.map((sale: any) => ({
+        ...sale,
+        tenantId: tenant.id,
+        shopName: tenant.shopName,
+      }));
+    });
+
+    return { success: true, data: allPostSales };
+  } catch (error: any) {
+    console.error("[GET_ALL_POST_SALES_ERROR]:", error);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Delete a specific post sale by admin
+ */
+export async function deleteAdminPostSaleAction(tenantId: string, saleId: string) {
+  try {
+    const tenant = await prisma.tenant.findUnique({ where: { id: tenantId } });
+    if (!tenant) return { success: false, error: "Tenant not found" };
+
+    const sales = Array.isArray(tenant.postSales) ? tenant.postSales : [];
+    const updatedSales = sales.filter((s: any) => s.id !== saleId);
+
+    await prisma.tenant.update({
+      where: { id: tenantId },
+      data: { postSales: updatedSales as any },
+    });
+
+    revalidatePath("/admindashboard/public-view-cms");
+    revalidatePath("/public-view");
+
+    return { success: true };
+  } catch (error: any) {
+    console.error("[DELETE_POST_SALE_ERROR]:", error);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Update a specific post sale by admin
+ */
+export async function updateAdminPostSaleAction(tenantId: string, saleId: string, newImageUrl: string, newTitle: string) {
+  try {
+    const tenant = await prisma.tenant.findUnique({ where: { id: tenantId } });
+    if (!tenant) return { success: false, error: "Tenant not found" };
+
+    const sales = Array.isArray(tenant.postSales) ? tenant.postSales : [];
+    const updatedSales = sales.map((s: any) => 
+      s.id === saleId ? { ...s, image_url: newImageUrl, title: newTitle } : s
+    );
+
+    await prisma.tenant.update({
+      where: { id: tenantId },
+      data: { postSales: updatedSales as any },
+    });
+
+    revalidatePath("/admindashboard/public-view-cms");
+    revalidatePath("/public-view");
+
+    return { success: true };
+  } catch (error: any) {
+    console.error("[UPDATE_POST_SALE_ERROR]:", error);
+    return { success: false, error: error.message };
+  }
+}
+

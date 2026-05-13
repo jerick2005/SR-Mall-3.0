@@ -60,7 +60,7 @@ export default function DigitalStorefrontPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<
-    "identity" | "gallery" | "catalog"
+    "identity" | "gallery" | "catalog" | "postsales"
   >("identity");
   const [toast, setToast] = useState<{
     msg: string;
@@ -200,6 +200,41 @@ export default function DigitalStorefrontPage() {
     }
   };
 
+  const addPostSale = () => {
+    const id = typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 11);
+    const p = { id, title: "", image_url: "", date: new Date().toISOString() };
+    setProfile(prev => ({ ...prev, post_sales: [...(prev.post_sales || []), p] }));
+  };
+
+  const updatePostSale = (i: number, field: string, value: string) => {
+    setProfile(prev => {
+      const updated = [...(prev.post_sales || [])];
+      if (updated[i]) { updated[i] = { ...updated[i], [field]: value }; }
+      return { ...prev, post_sales: updated };
+    });
+  };
+
+  const removePostSale = (i: number) => {
+    setProfile(prev => {
+      const updated = [...(prev.post_sales || [])];
+      updated.splice(i, 1);
+      return { ...prev, post_sales: updated };
+    });
+  };
+
+  const handlePostSaleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const toBase64 = (f: File): Promise<string> => new Promise((res, rej) => {
+      const r = new FileReader(); r.readAsDataURL(f);
+      r.onload = () => res(r.result as string); r.onerror = rej;
+    });
+    try {
+      const base64 = await toBase64(file);
+      updatePostSale(index, "image_url", base64);
+    } catch (err) { console.error(err); }
+  };
+
   const galleryUrls = getGalleryUrls(profile.gallery_urls);
   const previewShop: DigitalStorefront = {
     id: "preview",
@@ -217,6 +252,7 @@ export default function DigitalStorefrontPage() {
     { id: "identity", label: "Brand Identity", icon: Store },
     { id: "gallery", label: "Gallery", icon: ImageIcon },
     { id: "catalog", label: "Products", icon: ShoppingBag },
+    { id: "postsales", label: "Post Sales", icon: Tag },
   ] as const;
 
   if (loading || !isAuthenticated) {
@@ -682,6 +718,115 @@ export default function DigitalStorefrontPage() {
                       </p>
                       <p className="text-xs text-slate-400 font-medium mt-1">
                         Add products to showcase them on your public storefront
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* ── Tab: Post Sales ── */}
+            {activeTab === "postsales" && (
+              <div className="bg-white dark:bg-zinc-900 border border-slate-100 dark:border-white/5 rounded-2xl sm:rounded-3xl shadow-sm p-5 sm:p-6 lg:p-8 animate-fade-in space-y-5">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-black text-charcoal dark:text-white text-sm">
+                      Shop Sales & Promos
+                    </h3>
+                    <p className="text-[10px] text-slate-400 font-medium mt-0.5">
+                      Post your latest sales, discounts, or announcements
+                    </p>
+                  </div>
+                  <button
+                    onClick={addPostSale}
+                    className="flex items-center gap-1.5 px-3 py-2 bg-primary text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-primary/90 transition-colors shadow-md shadow-primary/20"
+                  >
+                    <Plus size={13} /> Add Post
+                  </button>
+                </div>
+
+                <div className="space-y-4">
+                  {profile.post_sales?.map((post, index) => (
+                    <div
+                      key={post.id}
+                      className="group relative p-4 sm:p-5 bg-slate-50 dark:bg-zinc-800/50 border border-slate-100 dark:border-white/5 rounded-2xl flex flex-col sm:flex-row gap-4"
+                    >
+                      <button
+                        onClick={() => removePostSale(index)}
+                        className="absolute top-3 right-3 w-6 h-6 bg-red-500 text-white rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow-md z-10"
+                      >
+                        <X size={11} />
+                      </button>
+
+                      {/* Post Image */}
+                      <label className="shrink-0 w-full sm:w-40 h-32 sm:h-auto rounded-2xl bg-white dark:bg-zinc-900 border-2 border-dashed border-slate-200 dark:border-zinc-700 flex items-center justify-center cursor-pointer overflow-hidden hover:border-primary transition-all group/img mx-auto sm:mx-0">
+                        <input
+                          type="file"
+                          hidden
+                          accept="image/*,video/*"
+                          onChange={(e) => handlePostSaleImageUpload(e, index)}
+                        />
+                        {post.image_url ? (
+                          post.image_url.startsWith("data:video") || post.image_url.match(/\.(mp4|webm|ogg)$/i) ? (
+                            <video
+                              src={post.image_url}
+                              autoPlay
+                              muted
+                              loop
+                              playsInline
+                              className="w-full h-full object-cover group-hover/img:opacity-70 transition-opacity"
+                            />
+                          ) : (
+                            <img
+                              src={post.image_url}
+                              className="w-full h-full object-cover group-hover/img:opacity-70 transition-opacity"
+                              alt="Post Sale"
+                            />
+                          )
+                        ) : (
+                          <div className="text-center p-2">
+                            <Camera
+                              size={18}
+                              className="mx-auto text-slate-300 group-hover/img:text-primary transition-colors"
+                            />
+                            <p className="text-[9px] text-slate-400 font-bold mt-1 uppercase">
+                              Media
+                            </p>
+                          </div>
+                        )}
+                      </label>
+
+                      {/* Fields */}
+                      <div className="flex-1 space-y-3">
+                        <div>
+                          <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">
+                            Sale Title / Announcement
+                          </label>
+                          <input
+                            type="text"
+                            value={post.title}
+                            onChange={(e) =>
+                              updatePostSale(index, "title", e.target.value)
+                            }
+                            placeholder="e.g. 50% OFF Summer Sale!"
+                            className="w-full px-3 py-2.5 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-xl text-xs font-bold text-charcoal dark:text-white focus:outline-none focus:border-primary transition-all"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+
+                  {(!profile.post_sales || profile.post_sales.length === 0) && (
+                    <div className="py-14 border-2 border-dashed border-slate-100 dark:border-white/5 rounded-2xl text-center">
+                      <Tag
+                        size={36}
+                        className="mx-auto text-slate-200 dark:text-zinc-700 mb-3"
+                      />
+                      <p className="text-sm font-black text-slate-400">
+                        No posts yet
+                      </p>
+                      <p className="text-xs text-slate-400 font-medium mt-1">
+                        Add a post to show your shop sales on the main directory
                       </p>
                     </div>
                   )}

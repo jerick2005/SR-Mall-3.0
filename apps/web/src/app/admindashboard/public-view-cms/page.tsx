@@ -11,7 +11,9 @@ import {
   deleteCarouselItemAction,
   toggleCarouselItemAction,
 } from "@/app/actions/cms";
-import { getApprovedEventsWithImagesAction, updateInquiryImageAction } from "@/app/actions/inquiry";
+import { getApprovedEventsWithImagesAction, updateInquiryImageAction, deleteInquiryAction, updateEventInfoAction } from "@/app/actions/inquiry";
+import { Info } from "lucide-react";
+import { getAllPostSalesAction, deleteAdminPostSaleAction, updateAdminPostSaleAction } from "@/app/actions/tenant";
 import {
   Plus,
   Trash2,
@@ -115,6 +117,49 @@ export default function PublicViewCMSPage() {
   });
 
   const [approvedEvents, setApprovedEvents] = useState<any[]>([]);
+  const [allPostSales, setAllPostSales] = useState<any[]>([]);
+
+  const [isEventInfoModalOpen, setIsEventInfoModalOpen] = useState(false);
+  const [editingEventId, setEditingEventId] = useState<string | null>(null);
+  const [eventInfoForm, setEventInfoForm] = useState({
+    fbAccount: "",
+    contactNumber: "",
+  });
+
+  const openEventInfoModal = (ev: any) => {
+    setEditingEventId(ev.id);
+    setEventInfoForm({
+      fbAccount: ev.fbAccount || "",
+      contactNumber: ev.contactNumber || "",
+    });
+    setIsEventInfoModalOpen(true);
+  };
+
+  const handleUpdateEventInfo = async () => {
+    if (!editingEventId) return;
+    try {
+      const res = await updateEventInfoAction(
+        editingEventId,
+        eventInfoForm.fbAccount,
+        eventInfoForm.contactNumber
+      );
+      if (res.success) {
+        showToast("Event info updated successfully", "success");
+        setApprovedEvents((prev) =>
+          prev.map((ev) =>
+            ev.id === editingEventId
+              ? { ...ev, fbAccount: eventInfoForm.fbAccount, contactNumber: eventInfoForm.contactNumber }
+              : ev
+          )
+        );
+        setIsEventInfoModalOpen(false);
+      } else {
+        showToast(res.error || "Failed to update info", "error");
+      }
+    } catch (e) {
+      showToast("Error updating event info", "error");
+    }
+  };
 
   const [toast, setToast] = useState<{
     msg: string;
@@ -146,6 +191,10 @@ export default function PublicViewCMSPage() {
         setCarouselItems(carouselData || []);
         if (eventsData?.success) {
           setApprovedEvents(eventsData.data || []);
+        }
+        const postSalesData = await getAllPostSalesAction();
+        if (postSalesData?.success) {
+          setAllPostSales(postSalesData.data || []);
         }
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -243,6 +292,72 @@ export default function PublicViewCMSPage() {
     }
   };
 
+  const handleDeleteEvent = async (id: string) => {
+    if (!confirm("Are you sure you want to completely delete this event inquiry?")) return;
+
+    setIsSaving(true);
+    try {
+      const result = await deleteInquiryAction(id);
+      if (result.success) {
+        setApprovedEvents((prev: any[]) => prev.filter((ev: any) => ev.id !== id));
+        showToast("Event purged successfully", "success");
+      } else {
+        showToast("Failed to delete event", "error");
+      }
+    } catch (error) {
+      console.error("Error deleting event:", error);
+      showToast("Failed to purge event", "error");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDeletePostSale = async (tenantId: string, saleId: string) => {
+    if (!confirm("Are you sure you want to delete this tenant's post sale?")) return;
+    setIsSaving(true);
+    try {
+      const result = await deleteAdminPostSaleAction(tenantId, saleId);
+      if (result.success) {
+        setAllPostSales((prev: any[]) => prev.filter((s: any) => s.id !== saleId));
+        showToast("Post sale deleted successfully", "success");
+      } else {
+        showToast("Failed to delete post sale", "error");
+      }
+    } catch (error) {
+      console.error("Error deleting post sale:", error);
+      showToast("Failed to delete post sale", "error");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleUpdatePostSaleImage = async (tenantId: string, saleId: string, currentTitle: string, event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setIsSaving(true);
+    try {
+      const { getCloudStorageProvider } = await import("@/lib/cloud-storage");
+      const storageProvider = getCloudStorageProvider();
+      const result = await storageProvider.uploadFile(file, "postsales");
+
+      const updateResult = await updateAdminPostSaleAction(tenantId, saleId, result.url, currentTitle);
+      if (updateResult.success) {
+        setAllPostSales((prev: any[]) =>
+          prev.map((s: any) => (s.id === saleId ? { ...s, image_url: result.url } : s))
+        );
+        showToast("Post sale media updated", "success");
+      } else {
+        showToast("Failed to update post sale media", "error");
+      }
+    } catch (error) {
+      console.error("Error updating media:", error);
+      showToast("Failed to upload media", "error");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const handleSaveConfig = async () => {
     setIsSaving(true);
     try {
@@ -279,7 +394,7 @@ export default function PublicViewCMSPage() {
     setIsSaving(true);
     try {
       const newItem = await createCarouselItemAction(carouselForm);
-      setCarouselItems((prev) => [...prev, newItem]);
+      setCarouselItems((prev: any[]) => [...prev, newItem]);
       closeCarouselModal();
       showToast("Billboard item deployed!", "success");
     } catch (error) {
@@ -299,8 +414,8 @@ export default function PublicViewCMSPage() {
         editingCarouselItem.id,
         carouselForm,
       );
-      setCarouselItems((prev) =>
-        prev.map((item) =>
+      setCarouselItems((prev: any[]) =>
+        prev.map((item: any) =>
           item.id === editingCarouselItem.id ? updatedItem : item,
         ),
       );
@@ -320,7 +435,7 @@ export default function PublicViewCMSPage() {
     setIsSaving(true);
     try {
       await deleteCarouselItemAction(id);
-      setCarouselItems((prev) => prev.filter((item) => item.id !== id));
+      setCarouselItems((prev: any[]) => prev.filter((item: any) => item.id !== id));
       showToast("Content purged from system", "success");
     } catch (error) {
       console.error("Error deleting carousel item:", error);
@@ -334,8 +449,8 @@ export default function PublicViewCMSPage() {
     setIsSaving(true);
     try {
       const updatedItem = await toggleCarouselItemAction(id);
-      setCarouselItems((prev) =>
-        prev.map((item) => (item.id === id ? updatedItem : item)),
+      setCarouselItems((prev: any[]) =>
+        prev.map((item: any) => (item.id === id ? updatedItem : item)),
       );
       showToast(
         updatedItem.isActive ? "Segment is now live" : "Segment archived",
@@ -373,10 +488,10 @@ export default function PublicViewCMSPage() {
       desc: "Naming & Contact",
     },
     {
-      id: "hero",
-      label: "Hero Experience",
+      id: "postsales",
+      label: "Shop Sales Monitoring",
       icon: Monitor,
-      desc: "Primary Landing",
+      desc: "Manage Tenant Sales Posts",
     },
     {
       id: "content",
@@ -586,104 +701,73 @@ export default function PublicViewCMSPage() {
             </div>
           )}
 
-          {activeTab === "hero" && (
+          {activeTab === "postsales" && (
             <div className="space-y-10">
               <SectionHeader
                 icon={Monitor}
-                title="Landing Experience"
-                sub="The 'Wow' factor. Configure your primary hero section."
+                title="Shop Sales Monitoring"
+                sub="Manage tenant promotional posts and sales announcements."
               />
 
-              <div className="bg-white dark:bg-zinc-900/50 border border-slate-100 dark:border-white/5 rounded-[2.5rem] overflow-hidden shadow-sm">
-                <div className="aspect-[21/9] bg-slate-200 dark:bg-zinc-800 relative group">
-                  {config.heroBgUrl ? (
-                    <img
-                      src={config.heroBgUrl}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-slate-400 uppercase font-black tracking-widest text-xs">
-                      No Background Selected
-                    </div>
-                  )}
-                  <div
-                    className="absolute inset-0 flex items-center justify-center"
-                    style={{
-                      backgroundColor: `rgba(0, 0, 0, ${(config.heroOverlayDark ?? 40) / 100})`,
-                    }}
-                  >
-                    <div className="text-center space-y-4 max-w-xl px-4">
-                      <span className="inline-block px-3 py-1 bg-primary text-white text-[10px] font-black uppercase tracking-widest rounded-full">
-                        {config.heroBadge || "BADGE"}
-                      </span>
-                      <h2 className="text-3xl md:text-4xl font-black text-white italic uppercase tracking-tighter leading-none">
-                        {config.heroTitle || "Your Headline Here"}
-                      </h2>
-                    </div>
-                  </div>
-                  <label className="absolute bottom-6 right-6 p-4 bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl text-white cursor-pointer hover:bg-white/20 transition-all">
-                    <ImageIcon size={20} />
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={(e) => handleImageUpload("heroBgUrl", e)}
-                    />
-                  </label>
-                </div>
-
-                <div className="p-10 grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <InputGroup label="Hero Badge" icon={Sparkles}>
-                    <input
-                      value={config.heroBadge ?? ""}
-                      onChange={(e) =>
-                        handleConfigChange("heroBadge", e.target.value)
-                      }
-                      className="cms-input"
-                      placeholder="WINTER 2024"
-                    />
-                  </InputGroup>
-                  <InputGroup label="Hero Headline" icon={Layers}>
-                    <input
-                      value={config.heroTitle ?? ""}
-                      onChange={(e) =>
-                        handleConfigChange("heroTitle", e.target.value)
-                      }
-                      className="cms-input"
-                      placeholder="Luxury Redefined"
-                    />
-                  </InputGroup>
-                  <div className="md:col-span-2">
-                    <InputGroup label="Value Proposition Subtext" icon={Globe}>
-                      <textarea
-                        value={config.heroSubtitle ?? ""}
-                        onChange={(e) =>
-                          handleConfigChange("heroSubtitle", e.target.value)
-                        }
-                        className="cms-input min-h-[80px] resize-none"
-                        placeholder="Experience the future of shopping..."
-                      />
-                    </InputGroup>
-                  </div>
-                  <div className="md:col-span-2 pt-4">
-                    <p className="text-[11px] font-black uppercase tracking-widest text-slate-400 mb-4">
-                      Overlay Density: {config.heroOverlayDark}%
+              <div className="bg-white dark:bg-zinc-900/50 border border-slate-100 dark:border-white/5 rounded-[2.5rem] p-6 shadow-sm">
+                {allPostSales.length === 0 ? (
+                  <div className="py-20 text-center">
+                    <Monitor size={48} className="mx-auto text-slate-300 mb-4" />
+                    <h3 className="text-xl font-black text-slate-400 uppercase tracking-widest">
+                      No Active Posts
+                    </h3>
+                    <p className="text-slate-500 mt-2 font-medium">
+                      Tenants haven't posted any sales yet.
                     </p>
-                    <input
-                      type="range"
-                      min="0"
-                      max="100"
-                      value={config.heroOverlayDark ?? 0}
-                      onChange={(e) =>
-                        handleConfigChange(
-                          "heroOverlayDark",
-                          parseInt(e.target.value),
-                        )
-                      }
-                      className="w-full h-1.5 bg-slate-200 dark:bg-zinc-800 rounded-full appearance-none accent-primary cursor-pointer"
-                    />
                   </div>
-                </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {allPostSales.map((sale: any) => (
+                      <div key={sale.id} className="group relative bg-slate-50 dark:bg-zinc-800/50 rounded-3xl border border-slate-200 dark:border-white/10 overflow-hidden flex flex-col">
+                        <div className="aspect-video relative overflow-hidden bg-black/5">
+                          {sale.image_url && (sale.image_url.startsWith("data:video") || sale.image_url.match(/\.(mp4|webm|ogg)$/i)) ? (
+                            <video src={sale.image_url} className="w-full h-full object-cover" autoPlay muted loop />
+                          ) : sale.image_url ? (
+                            <img src={sale.image_url} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full bg-slate-200 dark:bg-zinc-800 flex items-center justify-center">
+                              <ImageIcon size={32} className="text-slate-400" />
+                            </div>
+                          )}
+                          <div className="absolute top-3 left-3 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest text-white border border-white/10">
+                            {sale.shopName}
+                          </div>
+
+                          {/* Admin Media Update */}
+                          <label className="absolute top-3 right-3 p-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-xl text-white cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity hover:bg-white/30">
+                            <ImageIcon size={14} />
+                            <input
+                              type="file"
+                              accept="image/*,video/*"
+                              className="hidden"
+                              onChange={(e) => handleUpdatePostSaleImage(sale.tenantId, sale.id, sale.title, e)}
+                            />
+                          </label>
+                        </div>
+                        <div className="p-5 flex-1 flex flex-col justify-between">
+                          <h4 className="font-black text-charcoal dark:text-white uppercase tracking-tight text-sm mb-2">{sale.title}</h4>
+                          <div className="flex items-center justify-between mt-4 pt-4 border-t border-slate-200 dark:border-white/10">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                              {new Date(sale.date || new Date()).toLocaleDateString()}
+                            </span>
+                            <button
+                              onClick={() => handleDeletePostSale(sale.tenantId, sale.id)}
+                              className="w-8 h-8 flex items-center justify-center bg-red-500/10 text-red-500 rounded-lg hover:bg-red-500 hover:text-white transition-colors"
+                              title="Delete Post"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -877,7 +961,7 @@ export default function PublicViewCMSPage() {
                     </p>
                   </div>
                 ) : (
-                  carouselItems.map((item) => (
+                  carouselItems.map((item: any) => (
                     <div
                       key={item.id}
                       className="bg-white dark:bg-zinc-900/50 border border-slate-100 dark:border-white/5 rounded-[2.5rem] overflow-hidden group shadow-sm hover:shadow-xl transition-all"
@@ -963,7 +1047,7 @@ export default function PublicViewCMSPage() {
                     No approved events found.
                   </div>
                 ) : (
-                  approvedEvents.map((ev) => (
+                  approvedEvents.map((ev: any) => (
                     <div
                       key={ev.id}
                       className="bg-white dark:bg-zinc-900 border border-slate-100 dark:border-white/5 rounded-[2.5rem] p-6 shadow-sm flex flex-col justify-between"
@@ -972,9 +1056,25 @@ export default function PublicViewCMSPage() {
                         <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-[10px] font-black uppercase tracking-widest border border-primary/20">
                           {ev.eventType}
                         </span>
-                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
-                          {new Date(ev.eventDate).toLocaleDateString()}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+                            {new Date(ev.eventDate).toLocaleDateString()}
+                          </span>
+                          <button
+                            onClick={() => openEventInfoModal(ev)}
+                            className="p-1.5 text-slate-400 hover:text-blue-500 hover:bg-blue-500/10 rounded-lg transition-colors"
+                            title="Edit Event Info"
+                          >
+                            <Info size={14} />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteEvent(ev.id)}
+                            className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
+                            title="Delete Event"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
                       </div>
                       <h3 className="text-xl font-black text-charcoal dark:text-white uppercase tracking-tight mb-6">
                         {ev.eventName || ev.eventType}
@@ -1044,7 +1144,7 @@ export default function PublicViewCMSPage() {
                   <input
                     value={carouselForm.title}
                     onChange={(e) =>
-                      setCarouselForm((prev) => ({
+                      setCarouselForm((prev: any) => ({
                         ...prev,
                         title: e.target.value,
                       }))
@@ -1057,7 +1157,7 @@ export default function PublicViewCMSPage() {
                     type="number"
                     value={carouselForm.priority}
                     onChange={(e) =>
-                      setCarouselForm((prev) => ({
+                      setCarouselForm((prev: any) => ({
                         ...prev,
                         priority: parseInt(e.target.value) || 0,
                       }))
@@ -1070,7 +1170,7 @@ export default function PublicViewCMSPage() {
                     <textarea
                       value={carouselForm.description}
                       onChange={(e) =>
-                        setCarouselForm((prev) => ({
+                        setCarouselForm((prev: any) => ({
                           ...prev,
                           description: e.target.value,
                         }))
@@ -1085,7 +1185,7 @@ export default function PublicViewCMSPage() {
                       <input
                         value={carouselForm.imageUrl}
                         onChange={(e) =>
-                          setCarouselForm((prev) => ({
+                          setCarouselForm((prev: any) => ({
                             ...prev,
                             imageUrl: e.target.value,
                           }))
@@ -1109,7 +1209,7 @@ export default function PublicViewCMSPage() {
                   <input
                     value={carouselForm.linkUrl}
                     onChange={(e) =>
-                      setCarouselForm((prev) => ({
+                      setCarouselForm((prev: any) => ({
                         ...prev,
                         linkUrl: e.target.value,
                       }))
@@ -1121,7 +1221,7 @@ export default function PublicViewCMSPage() {
                 <div className="flex items-center gap-3 pt-8">
                   <div
                     onClick={() =>
-                      setCarouselForm((prev) => ({
+                      setCarouselForm((prev: any) => ({
                         ...prev,
                         isActive: !prev.isActive,
                       }))
@@ -1169,6 +1269,74 @@ export default function PublicViewCMSPage() {
                   <Save size={16} />
                 )}
                 Deploy Billboard
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Event Info Modal */}
+      {isEventInfoModalOpen && (
+        <div className="fixed inset-0 bg-charcoal/80 backdrop-blur-md z-[100] flex items-center justify-center p-6 animate-fade-in">
+          <div className="bg-white dark:bg-zinc-900 w-full max-w-md rounded-[3rem] border border-white/10 shadow-2xl overflow-hidden animate-scale-in">
+            <div className="p-8 border-b border-slate-100 dark:border-white/5 flex items-center justify-between bg-slate-50/50 dark:bg-white/5">
+              <div>
+                <h3 className="text-xl font-black text-charcoal dark:text-white uppercase italic tracking-tighter">
+                  Event <span className="text-primary">Info.</span>
+                </h3>
+                <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mt-1">
+                  Add Join Event Info
+                </p>
+              </div>
+              <button
+                onClick={() => setIsEventInfoModalOpen(false)}
+                className="w-10 h-10 rounded-2xl bg-slate-100 dark:bg-zinc-800 text-slate-500 flex items-center justify-center hover:scale-110 active:scale-90 transition-all"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="p-8 space-y-6">
+              <InputGroup label="FB Account URL/Name" icon={Globe}>
+                <input
+                  value={eventInfoForm.fbAccount}
+                  onChange={(e) =>
+                    setEventInfoForm((prev) => ({
+                      ...prev,
+                      fbAccount: e.target.value,
+                    }))
+                  }
+                  className="cms-input"
+                  placeholder="e.g. fb.com/events"
+                />
+              </InputGroup>
+              <InputGroup label="Contact Number" icon={Monitor}>
+                <input
+                  value={eventInfoForm.contactNumber}
+                  onChange={(e) =>
+                    setEventInfoForm((prev) => ({
+                      ...prev,
+                      contactNumber: e.target.value,
+                    }))
+                  }
+                  className="cms-input"
+                  placeholder="e.g. 09123456789"
+                />
+              </InputGroup>
+            </div>
+
+            <div className="p-8 bg-slate-50/50 dark:bg-white/5 border-t border-slate-100 dark:border-white/5 flex gap-4">
+              <button
+                onClick={() => setIsEventInfoModalOpen(false)}
+                className="flex-1 py-3 text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-charcoal transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleUpdateEventInfo}
+                className="flex-[2] py-3 bg-primary text-white font-black text-[10px] uppercase tracking-[0.2em] rounded-2xl shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all"
+              >
+                Save Info
               </button>
             </div>
           </div>

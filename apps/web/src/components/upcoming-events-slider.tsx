@@ -5,6 +5,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Calendar, ArrowRight, ArrowLeft } from "lucide-react";
 import clsx from "clsx";
 import { getApprovedEventsWithImagesAction } from "@/app/actions/inquiry";
+import { useAuth } from "@/app/providers";
+import { LoginModal } from "@/components/login-modal";
+import { X, Globe, Phone } from "lucide-react";
 
 interface Event {
   id: string;
@@ -12,6 +15,8 @@ interface Event {
   date: string;
   imageUrl: string;
   category: string;
+  fbAccount: string;
+  contactNumber: string;
 }
 
 // MOCK_EVENTS removed as per user request
@@ -21,6 +26,10 @@ export const UpcomingEventsSlider = () => {
   const [direction, setDirection] = useState(0);
   const [events, setEvents] = useState<Event[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const { isAuthenticated } = useAuth();
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isJoinModalOpen, setIsJoinModalOpen] = useState(false);
+  const [selectedEventInfo, setSelectedEventInfo] = useState<Event | null>(null);
 
   useEffect(() => {
     const fetchEvents = async () => {
@@ -36,6 +45,8 @@ export const UpcomingEventsSlider = () => {
           }),
           imageUrl: inq.imageUrl || "",
           category: inq.eventType,
+          fbAccount: inq.fbAccount || "Not provided",
+          contactNumber: inq.contactNumber || "Not provided",
         }));
         setEvents(mappedEvents);
       } else {
@@ -87,6 +98,15 @@ export const UpcomingEventsSlider = () => {
   }
 
   const currentEvent = events[currentIndex];
+
+  const handleJoinClick = () => {
+    if (!isAuthenticated) {
+      setIsLoginModalOpen(true);
+    } else {
+      setSelectedEventInfo(currentEvent);
+      setIsJoinModalOpen(true);
+    }
+  };
 
   return (
     <section id="events" className="py-20 bg-white dark:bg-black overflow-hidden">
@@ -175,7 +195,11 @@ export const UpcomingEventsSlider = () => {
                   </div>
                 </div>
                 
-                <button suppressHydrationWarning className="group flex items-center gap-4 px-8 py-5 bg-primary text-white font-black uppercase tracking-widest rounded-2xl hover:bg-white hover:text-primary transition-all active:scale-95 shadow-2xl shadow-primary/40 shrink-0">
+                <button 
+                  onClick={handleJoinClick}
+                  suppressHydrationWarning 
+                  className="group flex items-center gap-4 px-8 py-5 bg-primary text-white font-black uppercase tracking-widest rounded-2xl hover:bg-white hover:text-primary transition-all active:scale-95 shadow-2xl shadow-primary/40 shrink-0"
+                >
                   Join Event
                   <ArrowRight size={20} className="group-hover:translate-x-2 transition-transform" />
                 </button>
@@ -202,6 +226,65 @@ export const UpcomingEventsSlider = () => {
           </div>
         </div>
       </div>
+
+      <LoginModal
+        isOpen={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
+      />
+
+      {isJoinModalOpen && selectedEventInfo && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={() => setIsJoinModalOpen(false)}
+          />
+          <div className="relative w-full max-w-lg bg-white dark:bg-zinc-950 rounded-[2rem] shadow-2xl overflow-hidden animate-fade-in-up border border-slate-100 dark:border-white/5">
+            <div className="bg-primary p-8 text-white relative">
+              <h2 className="text-2xl font-black uppercase tracking-tight">
+                Join Event Info
+              </h2>
+              <p className="text-xs text-white/80 font-bold uppercase tracking-widest mt-1">
+                {selectedEventInfo.title}
+              </p>
+              <button
+                onClick={() => setIsJoinModalOpen(false)}
+                className="absolute top-8 right-8 text-white/60 hover:text-white transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div className="p-8 space-y-6">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
+                  <Globe size={14} className="text-primary" />
+                  Facebook Account
+                </label>
+                <div className="w-full px-4 py-3 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-white/5 rounded-xl text-sm font-bold text-charcoal dark:text-white">
+                  {selectedEventInfo.fbAccount}
+                </div>
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
+                  <Phone size={14} className="text-primary" />
+                  Contact Number
+                </label>
+                <div className="w-full px-4 py-3 bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-white/5 rounded-xl text-sm font-bold text-charcoal dark:text-white">
+                  {selectedEventInfo.contactNumber}
+                </div>
+              </div>
+              <p className="text-[11px] font-medium text-slate-500 mt-4 leading-relaxed">
+                Please use the provided contact details to coordinate your participation with the organizers. We look forward to seeing you at the event!
+              </p>
+              <button
+                onClick={() => setIsJoinModalOpen(false)}
+                className="w-full py-4 bg-primary text-white font-black text-xs uppercase tracking-widest rounded-xl hover:bg-primary/90 transition-all mt-4"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 };

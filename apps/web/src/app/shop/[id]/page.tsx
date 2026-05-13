@@ -193,6 +193,7 @@ export default function ShopProfilePage() {
         "pb-24",
         "lg:pb-0",
         "relative",
+        "overflow-x-hidden",
       )}
     >
       {/* Premium Background Elements */}

@@ -79,9 +79,8 @@ export const ShopCard = ({ shop, onClick, onMessage }: ShopCardProps) => {
           onClick();
         }
       }}
-      className={`group relative bg-white dark:bg-zinc-950 rounded-[2.5rem] overflow-hidden shadow-[0_10px_40px_-10px_rgba(0,0,0,0.08)] dark:shadow-none hover:shadow-[0_40px_80px_-15px_rgba(190,30,45,0.25)] transition-all duration-700 border-2 border-slate-100 dark:border-white/5 hover:border-primary/20 cursor-pointer block ${
-        !is_open ? "opacity-85" : ""
-      }`}
+      className={`group relative bg-white dark:bg-zinc-950 rounded-[2.5rem] overflow-hidden shadow-[0_10px_40px_-10px_rgba(0,0,0,0.08)] dark:shadow-none hover:shadow-[0_40px_80px_-15px_rgba(190,30,45,0.25)] transition-all duration-700 border-2 border-slate-100 dark:border-white/5 hover:border-primary/20 cursor-pointer block ${!is_open ? "opacity-85" : ""
+        }`}
     >
       {/* Image Container with Hover Zoom & Grayscale Logic */}
       <div
@@ -103,11 +102,10 @@ export const ShopCard = ({ shop, onClick, onMessage }: ShopCardProps) => {
 
         {/* Status Badge */}
         <div
-          className={`absolute top-5 left-5 flex items-center gap-2 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-[0.2em] backdrop-blur-xl transition-all duration-500 border border-white/20 shadow-xl ${
-            is_open
-              ? "bg-emerald-500/80 text-white"
-              : "bg-zinc-800/80 text-zinc-100"
-          }`}
+          className={`absolute top-5 left-5 flex items-center gap-2 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-[0.2em] backdrop-blur-xl transition-all duration-500 border border-white/20 shadow-xl ${is_open
+            ? "bg-emerald-500/80 text-white"
+            : "bg-zinc-800/80 text-zinc-100"
+            }`}
         >
           <div
             className={`w-1.5 h-1.5 rounded-full ${is_open ? "bg-white shadow-[0_0_8px_white] animate-pulse" : "bg-zinc-400"}`}
@@ -118,11 +116,10 @@ export const ShopCard = ({ shop, onClick, onMessage }: ShopCardProps) => {
         {/* Favorite Icon */}
         <button
           onClick={toggleFavorite}
-          className={`absolute top-5 right-5 w-10 h-10 rounded-full flex items-center justify-center transition-all duration-500 border border-white/20 backdrop-blur-xl shadow-xl ${
-            isFavorited
-              ? "bg-primary text-white scale-110 shadow-primary/40"
-              : "bg-white/30 text-white hover:bg-white hover:text-primary hover:scale-110"
-          }`}
+          className={`absolute top-5 right-5 w-10 h-10 rounded-full flex items-center justify-center transition-all duration-500 border border-white/20 backdrop-blur-xl shadow-xl ${isFavorited
+            ? "bg-primary text-white scale-110 shadow-primary/40"
+            : "bg-white/30 text-white hover:bg-white hover:text-primary hover:scale-110"
+            }`}
         >
           <Heart size={18} fill={isFavorited ? "currentColor" : "none"} />
         </button>

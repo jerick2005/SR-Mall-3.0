@@ -40,6 +40,7 @@ model Tenant {
   userId      String        @unique
   status      String        @default("ACTIVE")
   products    Json          @default("[]")
+  postSales   Json          @default("[]")
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
   user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -245,6 +246,8 @@ model EventInquiry {
   imageUrl  String?
   storageKey String?
   status    String   @default("PENDING")
+  fbAccount String?
+  contactNumber String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)

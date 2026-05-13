@@ -266,3 +266,52 @@ export async function updateInquiryImageAction(
     return { success: false, error: "Failed to update inquiry image" };
   }
 }
+
+export async function updateEventInfoAction(
+  id: string,
+  fbAccount: string,
+  contactNumber: string,
+) {
+  try {
+    const inquiry = await prisma.eventInquiry.update({
+      where: { id },
+      data: {
+        fbAccount,
+        contactNumber,
+      },
+    });
+    
+    revalidatePath("/public-view");
+    return { success: true, data: inquiry };
+  } catch (error) {
+    console.error("Failed to update event info:", error);
+    return { success: false, error: "Failed to update event info" };
+  }
+}
+
+export async function deleteInquiryAction(id: string) {
+  try {
+    const inquiry = await prisma.eventInquiry.findUnique({ where: { id } });
+    if (inquiry && inquiry.storageKey) {
+      try {
+        const { getCloudStorageProvider } = await import("@/lib/cloud-storage");
+        const storageProvider = getCloudStorageProvider();
+        await storageProvider.deleteFile(inquiry.storageKey);
+      } catch (err) {
+        console.error("Failed to delete image from storage:", err);
+      }
+    }
+
+    await prisma.eventInquiry.delete({
+      where: { id },
+    });
+    
+    revalidatePath("/admin/inquiry");
+    revalidatePath("/admindashboard/public-view-cms");
+    revalidatePath("/public-view");
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to delete inquiry:", error);
+    return { success: false, error: "Failed to delete inquiry" };
+  }
+}

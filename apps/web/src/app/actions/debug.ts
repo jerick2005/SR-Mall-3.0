@@ -21,7 +21,7 @@ export async function debugDatabaseAction() {
       success: true,
       data: {
         userCount,
-        users: users.map((u) => ({
+        users: users.map((u: any) => ({
           ...u,
           password: "[HIDDEN]",
         })),

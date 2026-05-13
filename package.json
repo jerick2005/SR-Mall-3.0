@@ -2,13 +2,13 @@
   "name": "srmall-capstone",
   "private": true,
   "scripts": {
-    "build": "node -e \"require('fs').copyFileSync('.env', 'apps/web/.env')\" && cd apps/web && npm run build",
-    "dev": "node -e \"require('fs').copyFileSync('.env', 'apps/web/.env')\" && cd apps/web && npm run dev", 
-    "lint": "node -e \"require('fs').copyFileSync('.env', 'apps/web/.env')\" && cd apps/web && npm run lint",
+    "build": "node -e \"if(require('fs').existsSync('.env')) require('fs').copyFileSync('.env', 'apps/web/.env')\" && npx turbo run build",
+    "dev": "node -e \"if(require('fs').existsSync('.env')) require('fs').copyFileSync('.env', 'apps/web/.env')\" && npx turbo run dev",
+    "lint": "npx turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
-    "db:generate": "node -e \"require('fs').copyFileSync('.env', 'packages/database/.env')\" && cd packages/database && npm run db:generate",
-    "db:push": "node -e \"require('fs').copyFileSync('.env', 'packages/database/.env')\" && cd packages/database && npm run db:push",
-    "db:seed": "node -e \"require('fs').copyFileSync('.env', 'packages/database/.env')\" && cd packages/database && npm run db:seed",
+    "db:generate": "node -e \"if(require('fs').existsSync('.env')) require('fs').copyFileSync('.env', 'packages/database/.env')\" && npx turbo run db:generate",
+    "db:push": "node -e \"if(require('fs').existsSync('.env')) require('fs').copyFileSync('.env', 'packages/database/.env')\" && npx turbo run db:push",
+    "db:seed": "node -e \"if(require('fs').existsSync('.env')) require('fs').copyFileSync('.env', 'packages/database/.env')\" && npx turbo run db:seed",
     "setup": "docker-compose up -d db && npm run db:generate && npm run db:push && npm run db:seed"
   },
   "devDependencies": {

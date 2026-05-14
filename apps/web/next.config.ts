@@ -3,6 +3,7 @@ import os from "os";
 
 // Dynamically discover local network IPs to avoid manual updates when switching Wi-Fi
 const getLocalOrigins = () => {
+  if (process.env.NODE_ENV === "production") return [];
   const interfaces = os.networkInterfaces();
   const origins = ["localhost", "127.0.0.1", "0.0.0.0"];
 
@@ -38,11 +39,9 @@ const nextConfig: NextConfig = {
   ],
   experimental: {
     serverActions: {
-      allowedOrigins: ["*"],
+      allowedOrigins: ["*", ...getLocalOrigins()],
     },
   },
-  // Automatically allows current local IP for HMR and Dev Server access from other devices
-  allowedDevOrigins: getLocalOrigins(),
 };
 
 export default nextConfig;

@@ -2,12 +2,29 @@
   "$schema": "https://turbo.build/schema.json",
   "globalEnv": [
     "POSTGRES_URL",
-    "NEXT_PUBLIC_API_URL"
+    "DATABASE_URL",
+    "NEXT_PUBLIC_API_URL",
+    "NEXT_IGNORE_INCORRECT_LOCKFILE",
+    "CLOUDINARY_API_KEY",
+    "CLOUDINARY_CLOUD_NAME",
+    "CLOUDINARY_API_SECRET",
+    "GMAIL_USER",
+    "GMAIL_APP_PASSWORD",
+    "GMAIL_CLIENT_ID",
+    "GMAIL_CLIENT_SECRET",
+    "GMAIL_REFRESH_TOKEN",
+    "NODE_ENV"
   ],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "outputs": [".next/**", "!.next/cache/**", "dist/**"]
+      "outputs": [
+        ".next/**",
+        "!.next/cache/**",
+        "dist/**",
+        "node_modules/.prisma/**",
+        "node_modules/@prisma/client/**"
+      ]
     },
     "lint": {
       "dependsOn": ["^lint"]
@@ -15,6 +32,16 @@
     "dev": {
       "cache": false,
       "persistent": true
+    },
+    "db:generate": {
+      "cache": true,
+      "outputs": ["node_modules/.prisma/**", "node_modules/@prisma/client/**"]
+    },
+    "db:push": {
+      "cache": false
+    },
+    "db:seed": {
+      "cache": false
     }
   }
 }

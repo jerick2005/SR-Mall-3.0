@@ -1,7 +1,8 @@
 {
   "name": "srmall-capstone",
+  "version": "1.0.0",
+  "packageManager": "npm@10.2.4",
   "private": true,
-  "packageManager": "npm@10.8.2",
   "workspaces": [
     "apps/*",
     "packages/*"
@@ -25,11 +26,13 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.103.3",
-    "autoprefixer": "^10.4.14",
     "enhanced-resolve": "^5.20.1",
     "jspdf": "^4.2.1",
-    "jspdf-autotable": "^5.0.7",
-    "postcss": "^8.4.24",
-    "tailwindcss": "^3.4.0"
+    "jspdf-autotable": "^5.0.7"
+  },
+  "optionalDependencies": {
+    "@next/swc-win32-x64-msvc": "16.2.0",
+    "@next/swc-linux-x64-gnu": "16.2.0",
+    "sharp": "^0.34.5"
   }
 }

@@ -28,7 +28,10 @@
     "@supabase/supabase-js": "^2.103.3",
     "enhanced-resolve": "^5.20.1",
     "jspdf": "^4.2.1",
-    "jspdf-autotable": "^5.0.7"
+    "jspdf-autotable": "^5.0.7",
+    "nodemailer": "^8.0.5",
+    "@types/nodemailer": "^8.0.0",
+    "@types/node": "20.19.37"
   },
   "optionalDependencies": {
     "@next/swc-win32-x64-msvc": "16.2.0",

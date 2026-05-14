@@ -39,40 +39,8 @@ export const AppProviders = ({ children }: { children: React.ReactNode }) => {
     let subscription: { unsubscribe: () => void } | null = null;
 
     const syncSession = async () => {
-      // 1. Check local storage first for speed
-      const storedUser = localStorage.getItem("srmall_user");
-      if (storedUser) {
-        try {
-          const parsed = JSON.parse(storedUser);
-          setUser(parsed);
-          setIsAuthenticated(true);
-        } catch (e) {
-          localStorage.removeItem("srmall_user");
-        }
-      }
-
-      // 2. Check Supabase for social logins or session recovery
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (session?.user?.email) {
-        // Always verify with our database to get the latest correct role
-        const res = await loginAction({ 
-          email: session.user.email, 
-          password: "OAUTH_LOGIN_BYPASS" 
-        });
-        
-        if (res.success && res.data) {
-          const userData = {
-            id: res.data.id,
-            name: res.data.name,
-            email: res.data.email,
-            role: res.data.role
-          };
-          setUser(userData);
-          setIsAuthenticated(true);
-          localStorage.setItem("srmall_user", JSON.stringify(userData));
-        }
-      }
+      // Automatic session recovery disabled as per user request.
+      // Users must now manually log in each time the site is opened.
 
       // 3. Listen for auth changes
       const { data } = supabase.auth.onAuthStateChange(async (event, session) => {

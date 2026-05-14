@@ -731,7 +731,7 @@ export async function getTenantReportDataAction() {
     const slots = await prisma.areaSlot.findMany();
 
     const data: any[] = tenants.map((t: any) => {
-      const slot = slots.find((s) => s.unit_id === t.unitId);
+      const slot = slots.find((s: any) => s.unit_id === t.unitId);
 
       const expiryDate = new Date(t.createdAt);
       expiryDate.setFullYear(expiryDate.getFullYear() + 1);

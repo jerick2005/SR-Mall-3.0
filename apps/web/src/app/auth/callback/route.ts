@@ -50,9 +50,10 @@ export async function GET(request: Request) {
       // If user exists but is just a customer, or if they don't exist yet (will be created on first login in AuthProvider)
       return NextResponse.redirect(`${origin}/public-view`);
       
-    } catch (err) {
-      console.error('Session exchange error:', err);
-      return NextResponse.redirect(`${origin}/unauthorized?error=SessionExchangeFailed`);
+    } catch (err: any) {
+      console.error('Auth Callback Critical Error:', err);
+      const errorMessage = err?.message || 'Unknown error';
+      return NextResponse.redirect(`${origin}/unauthorized?error=${encodeURIComponent(errorMessage)}`);
     }
   }
 

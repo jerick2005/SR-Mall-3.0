@@ -4,7 +4,7 @@
 
 ### 👑 Administrator Account
 
-- **Email**: `srmall@admin.com`
+- **Email**: `jerickaradilla76@gmail.com`
 - **Password**: `123123`
 - **Role**: ADMIN
 - **Name**: SR-MANAGE Admin

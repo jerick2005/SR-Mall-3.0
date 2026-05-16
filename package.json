@@ -19,23 +19,23 @@
   },
   "devDependencies": {
     "prettier": "latest",
-    "turbo": "latest"
+    "turbo": "^2.9.14"
   },
   "engines": {
     "node": ">=18"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.103.3",
+    "@types/node": "20.19.37",
+    "@types/nodemailer": "^8.0.0",
     "enhanced-resolve": "^5.20.1",
     "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.7",
-    "nodemailer": "^8.0.5",
-    "@types/nodemailer": "^8.0.0",
-    "@types/node": "20.19.37"
+    "nodemailer": "^8.0.5"
   },
   "optionalDependencies": {
-    "@next/swc-win32-x64-msvc": "16.2.0",
     "@next/swc-linux-x64-gnu": "16.2.0",
+    "@next/swc-win32-x64-msvc": "16.2.0",
     "sharp": "^0.34.5"
   }
 }

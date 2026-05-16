@@ -114,17 +114,26 @@ export default function SpaceManagerPage() {
     setLoading(true);
     const result = await getAreaSlots();
     if (result.success && result.data) {
-      // Initialize floor plan positions for slots that don't have them
+      const floorCounts: Record<string, number> = {};
+      
       const slotsWithPositions = result.data.map(
-        (slot: any, index: number) => ({
-          ...slot,
-          x: slot.x || (index % 6) * 150 + 50,
-          y: slot.y || Math.floor(index / 6) * 120 + 50,
-          width: slot.width || 120,
-          height: slot.height || 80,
-          floor: slot.floor || "ground",
-          category: slot.category || "retail",
-        }),
+        (slot: any) => {
+          const floor = slot.floor || "ground";
+          if (floorCounts[floor] === undefined) floorCounts[floor] = 0;
+          const floorIndex = floorCounts[floor]++;
+          
+          const hasPosition = slot.x !== 0 || slot.y !== 0;
+          
+          return {
+            ...slot,
+            x: hasPosition ? slot.x : (floorIndex % 6) * 150 + 50,
+            y: hasPosition ? slot.y : Math.floor(floorIndex / 6) * 120 + 50,
+            width: slot.width || 120,
+            height: slot.height || 80,
+            floor: floor,
+            category: slot.category || "retail",
+          };
+        }
       );
       setSlots(slotsWithPositions);
     }
@@ -142,7 +151,13 @@ export default function SpaceManagerPage() {
       sqm_size: activeSlot.sqm_size || 0,
       base_rent: activeSlot.base_rent || 0,
       space_images: activeSlot.space_images || [],
-    } as AreaSlot);
+      floor: activeSlot.floor || "ground",
+      category: activeSlot.category || "retail",
+      x: activeSlot.x || 0,
+      y: activeSlot.y || 0,
+      width: activeSlot.width || 120,
+      height: activeSlot.height || 80,
+    } as any);
 
     if (result.success) {
       setIsEditing(false);
@@ -169,7 +184,7 @@ export default function SpaceManagerPage() {
     setDraggedSlot(null);
   };
 
-  const handleDrop = (e: React.DragEvent, x: number, y: number) => {
+  const handleDrop = async (e: React.DragEvent, x: number, y: number) => {
     e.preventDefault();
     if (!draggedSlot) return;
 
@@ -177,7 +192,23 @@ export default function SpaceManagerPage() {
       slot.id === draggedSlot.id ? { ...slot, x, y } : slot,
     );
     setSlots(updatedSlots);
+    const dragged = draggedSlot;
     handleDragEnd();
+
+    await upsertAreaSlot({
+      id: dragged.id,
+      unit_id: dragged.unit_id,
+      status: dragged.status,
+      sqm_size: dragged.sqm_size,
+      base_rent: dragged.base_rent,
+      space_images: dragged.space_images,
+      floor: dragged.floor,
+      category: dragged.category,
+      x: x,
+      y: y,
+      width: dragged.width,
+      height: dragged.height,
+    } as any);
   };
 
   const handleDragOver = (e: React.DragEvent) => {

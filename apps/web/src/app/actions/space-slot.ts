@@ -34,6 +34,12 @@ export async function upsertAreaSlot(data: {
   sqm_size: number;
   base_rent: number;
   space_images: string[];
+  floor?: string;
+  category?: string;
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
 }) {
   try {
     if (data.id) {
@@ -45,6 +51,12 @@ export async function upsertAreaSlot(data: {
           sqm_size: data.sqm_size,
           base_rent: data.base_rent,
           space_images: data.space_images,
+          ...(data.floor !== undefined && { floor: data.floor }),
+          ...(data.category !== undefined && { category: data.category }),
+          ...(data.x !== undefined && { x: data.x }),
+          ...(data.y !== undefined && { y: data.y }),
+          ...(data.width !== undefined && { width: data.width }),
+          ...(data.height !== undefined && { height: data.height }),
         },
       });
     } else {
@@ -55,6 +67,12 @@ export async function upsertAreaSlot(data: {
           sqm_size: data.sqm_size,
           base_rent: data.base_rent,
           space_images: data.space_images,
+          floor: data.floor || "ground",
+          category: data.category || "retail",
+          x: data.x || 0,
+          y: data.y || 0,
+          width: data.width || 120,
+          height: data.height || 80,
         },
       });
     }

@@ -36,10 +36,10 @@ async function main() {
     // Create Admin User (Using upsert to prevent duplicates)
     console.log("👤 Synchronizing admin user...");
     const admin = await prisma.user.upsert({
-      where: { email: "srmall@admin.com" },
+      where: { email: "jerickaradilla76@gmail.com" },
       update: {},
       create: {
-        email: "srmall@admin.com",
+        email: "jerickaradilla76@gmail.com",
         name: "System Admin",
         password: "123123",
         role: "ADMIN",

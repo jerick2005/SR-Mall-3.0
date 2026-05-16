@@ -11,7 +11,7 @@ export async function getTenantInvoices(tenantId: string) {
       orderBy: { createdAt: "desc" },
     });
     return invoices;
-  } catch (error) {
+  } catch (error: any) {
     console.error("Failed to fetch tenant invoices:", error);
     return [];
   }
@@ -55,7 +55,7 @@ export async function getAllInvoices() {
       orderBy: { createdAt: "desc" },
     });
     return invoices;
-  } catch (error) {
+  } catch (error: any) {
     console.error("Failed to fetch all invoices:", error);
     return [];
   }
@@ -113,7 +113,7 @@ export async function recordManualPaymentAction(
             referenceNo: referenceNo,
           },
         }),
-      }).catch((err) =>
+      }).catch((err: any) =>
         console.error("Failed to dispatch payment confirmation email:", err),
       );
     }
@@ -173,7 +173,7 @@ export async function generateInvoice(data: {
             month: data.month,
           },
         }),
-      }).catch((err) =>
+      }).catch((err: any) =>
         console.error("Failed to dispatch bill posted email:", err),
       );
     }

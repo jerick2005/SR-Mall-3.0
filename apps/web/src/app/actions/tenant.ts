@@ -376,7 +376,7 @@ export async function registerTenantAction(data: {
     const hashedPassword = await bcrypt.hash(data.password, 10);
 
     // 3. Create the User & Tenant in a transaction
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx: any) => {
       const newUser = await tx.user.create({
         data: {
           email: data.email,
@@ -471,7 +471,7 @@ export async function requestTenantAction(
     if (admins.length > 0) {
       // 1. Internal System Notifications
       await prisma.notification.createMany({
-        data: admins.map((admin) => ({
+        data: admins.map((admin: any) => ({
           userId: admin.id,
           type: "AD_SUBMISSION_RECEIVED",
           title: "New Merchant Application",
@@ -637,7 +637,7 @@ export async function deleteTenantAction(tenantId: string) {
     }
 
     // Use a transaction to ensure both operations complete atomically
-    await prisma.$transaction(async (tx) => {
+    await prisma.$transaction(async (tx: any) => {
       // Revert the user back to CUSTOMER instead of deleting them
       if (tenant.userId) {
         await tx.user.update({
@@ -740,7 +740,7 @@ export async function getTenantReportDataAction() {
     const slots = await prisma.areaSlot.findMany();
 
     const data: any[] = tenants.map((t: any) => {
-      const slot = slots.find((s) => s.unit_id === t.unitId);
+      const slot = slots.find((s: any) => s.unit_id === t.unitId);
 
       const expiryDate = new Date(t.createdAt);
       expiryDate.setFullYear(expiryDate.getFullYear() + 1);

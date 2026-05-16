@@ -51,7 +51,7 @@ export async function submitInquiryAction(data: {
 
     if (admins.length > 0) {
       await prisma.notification.createMany({
-        data: admins.map((admin) => ({
+        data: admins.map((admin: any) => ({
           userId: admin.id,
           type: "NEW_BOOKING_INQUIRY",
           title: "Strategic Project Inquiry",

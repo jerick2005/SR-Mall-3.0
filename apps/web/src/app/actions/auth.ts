@@ -219,7 +219,7 @@ export async function deleteUserAction(userId: string) {
 
     if (!user) return { success: false, error: "User not found." };
 
-    await prisma.$transaction(async (tx) => {
+    await prisma.$transaction(async (tx: any) => {
       // If user is a tenant, free up their assigned area slot before deletion
       if (user.tenant) {
         const slot = await tx.areaSlot.findFirst({
@@ -253,7 +253,7 @@ export async function updateUserRoleAction(userId: string, newRole: string) {
 
     if (!user) return { success: false, error: "User not found." };
 
-    await prisma.$transaction(async (tx) => {
+    await prisma.$transaction(async (tx: any) => {
       // If demoting from TENANT to CUSTOMER/ADMIN, we should clean up their tenant profile
       if (user.role === "TENANT" && newRole !== "TENANT" && user.tenant) {
         const slot = await tx.areaSlot.findFirst({

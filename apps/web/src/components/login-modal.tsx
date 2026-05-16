@@ -86,7 +86,8 @@ export const LoginModal = ({ isOpen, onClose }: LoginModalProps) => {
         provider,
         options: {
           redirectTo: `${window.location.origin}/auth/callback`,
-        },
+          flowType: 'pkce',
+        } as any,
       });
       if (error) {
         throw error;

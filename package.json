@@ -1,23 +1,41 @@
 {
   "name": "srmall-capstone",
+  "version": "1.0.0",
+  "packageManager": "npm@10.2.4",
   "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
-    "build": "node -e \"require('fs').copyFileSync('.env', 'apps/web/.env')\" && cd apps/web && npm run build",
-    "dev": "node -e \"require('fs').copyFileSync('.env', 'apps/web/.env')\" && cd apps/web && npm run dev", 
-    "lint": "node -e \"require('fs').copyFileSync('.env', 'apps/web/.env')\" && cd apps/web && npm run lint",
+    "build": "npx turbo run build",
+    "dev": "npx turbo run dev",
+    "lint": "npx turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
-    "db:generate": "node -e \"require('fs').copyFileSync('.env', 'packages/database/.env')\" && cd packages/database && npm run db:generate",
-    "db:push": "node -e \"require('fs').copyFileSync('.env', 'packages/database/.env')\" && cd packages/database && npm run db:push",
-    "db:seed": "node -e \"require('fs').copyFileSync('.env', 'packages/database/.env')\" && cd packages/database && npm run db:seed",
+    "db:generate": "npx turbo run db:generate",
+    "db:push": "npx turbo run db:push",
+    "db:seed": "npx turbo run db:seed",
     "setup": "docker-compose up -d db && npm run db:generate && npm run db:push && npm run db:seed"
   },
   "devDependencies": {
-    "prettier": "latest"
+    "prettier": "latest",
+    "turbo": "latest"
   },
   "engines": {
     "node": ">=18"
   },
   "dependencies": {
-    "enhanced-resolve": "^5.20.1"
+    "@supabase/supabase-js": "^2.103.3",
+    "enhanced-resolve": "^5.20.1",
+    "jspdf": "^4.2.1",
+    "jspdf-autotable": "^5.0.7",
+    "nodemailer": "^8.0.5",
+    "@types/nodemailer": "^8.0.0",
+    "@types/node": "20.19.37"
+  },
+  "optionalDependencies": {
+    "@next/swc-win32-x64-msvc": "16.2.0",
+    "@next/swc-linux-x64-gnu": "16.2.0",
+    "sharp": "^0.34.5"
   }
 }

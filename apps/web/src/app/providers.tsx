@@ -36,6 +36,18 @@ export const AppProviders = ({ children }: { children: React.ReactNode }) => {
 
   // Persistence logic
   useEffect(() => {
+    // Restore local session from localStorage immediately on mount to prevent logouts on refresh
+    const storedUser = localStorage.getItem("srmall_user");
+    if (storedUser) {
+      try {
+        const parsed = JSON.parse(storedUser);
+        setIsAuthenticated(true);
+        setUser(parsed);
+      } catch (err) {
+        console.error("Failed to parse stored user:", err);
+      }
+    }
+
     let subscription: { unsubscribe: () => void } | null = null;
 
     const syncSession = async () => {

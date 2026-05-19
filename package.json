@@ -8,13 +8,14 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "npx turbo run build",
-    "dev": "npx turbo run dev",
-    "lint": "npx turbo run lint",
+    "build": "npm run build --workspaces --if-present",
+    "dev": "npm run dev -w web",
+    "lint": "npm run lint --workspaces --if-present",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
-    "db:generate": "npx turbo run db:generate",
-    "db:push": "npx turbo run db:push",
-    "db:seed": "npx turbo run db:seed",
+    "db:generate": "npm run db:generate -w @srmall/database",
+    "db:push": "npm run db:push -w @srmall/database",
+    "db:seed": "npm run db:seed -w @srmall/database",
+    "db:reset": "npm run db:reset -w @srmall/database",
     "setup": "docker-compose up -d db && npm run db:generate && npm run db:push && npm run db:seed"
   },
   "devDependencies": {

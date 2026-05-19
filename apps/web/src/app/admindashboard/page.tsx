@@ -53,6 +53,8 @@ import {
   fixUserRolesAction,
   checkUserRolesAction,
 } from "@/app/actions/fix-roles";
+import { getAllInvoices } from "@/app/actions/finance";
+import { getRecentActivity } from "@/app/actions/dashboard";
 
 // --- Types ---
 interface DashboardStats {
@@ -113,6 +115,8 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [fixingRoles, setFixingRoles] = useState(false);
   const [roleStats, setRoleStats] = useState({ userRole: 0, customerRole: 0 });
+  const [revenueData, setRevenueData] = useState<{name: string; value: number}[]>(REVENUE_DATA);
+  const [categoryData, setCategoryData] = useState<{name: string; value: number}[]>(CATEGORY_DATA);
   const [stats, setStats] = useState<DashboardStats>({
     totalUsers: 0,
     totalRevenue: 0,
@@ -163,58 +167,67 @@ export default function AdminDashboard() {
         (s: any) => s.status === "MAINTENANCE",
       ).length;
 
-      // Calculate revenue
-      const totalRevenue = spaces.reduce((sum: number, space: any) => {
-        if (space.status === "OCCUPIED") {
-          return sum + space.sqm_size * 150;
+      // Calculate sector performance
+      const categoryCounts: Record<string, number> = {};
+      spaces.forEach((s: any) => {
+        if (s.status === "OCCUPIED") {
+          const cat = s.category || "Unknown";
+          categoryCounts[cat] = (categoryCounts[cat] || 0) + 1;
         }
-        return sum;
-      }, 0);
+      });
+      const newCategoryData = Object.entries(categoryCounts)
+        .map(([name, value]) => ({
+          name: name.charAt(0).toUpperCase() + name.slice(1),
+          value
+        }))
+        .sort((a, b) => b.value - a.value)
+        .slice(0, 5);
+      
+      setCategoryData(newCategoryData.length > 0 ? newCategoryData : CATEGORY_DATA.map(c => ({...c, value: 0})));
+
+      // Fetch invoices data
+      const invoices = await getAllInvoices();
+
+      // Calculate revenue per month (last 6 months)
+      const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      const last6Months: { name: string; year: number; value: number }[] = [];
+      const d = new Date();
+      d.setDate(1); // Set to first of month to avoid overflow issues
+      for (let i = 5; i >= 0; i--) {
+        const date = new Date(d.getTime());
+        date.setMonth(d.getMonth() - i);
+        last6Months.push({
+          name: months[date.getMonth()],
+          year: date.getFullYear(),
+          value: 0
+        });
+      }
+
+      let actualTotalRevenue = 0;
+      invoices.forEach((inv: any) => {
+        if (inv.status === "PAID") {
+          actualTotalRevenue += inv.amount;
+          const invDate = new Date(inv.createdAt);
+          const monthStr = months[invDate.getMonth()];
+          const year = invDate.getFullYear();
+          const target = last6Months.find(m => m.name === monthStr && m.year === year);
+          if (target) {
+            target.value += inv.amount;
+          }
+        }
+      });
+      
+      setRevenueData(last6Months.map(m => ({ name: m.name, value: m.value })));
+
+      const totalRevenue = actualTotalRevenue > 0 ? actualTotalRevenue : 0;
 
       // Payment status
       const paidCount = Math.floor(tenants.length * 0.82);
       const overdueCount = tenants.length - paidCount;
 
-      // Generate recent activity
-      const activity: RecentActivity[] = [
-        {
-          id: "1",
-          type: "booking",
-          title: "New Booking Inquiry",
-          description: `Interested in Event Center - ${tenants[0]?.shop_name || "Customer"} inquiry`,
-          time: "2m ago",
-          urgent: true,
-        },
-        {
-          id: "2",
-          type: "payment",
-          title: "Payment Received",
-          description: `${tenants[0]?.shop_name || "Tenant"} - ₱${(tenants[0]?.rent_cost || 5000).toLocaleString()}`,
-          time: "15m ago",
-        },
-        {
-          id: "3",
-          type: "support",
-          title: "Support Ticket",
-          description: "Utility Issue at L2-205 - Coffee Culture",
-          time: "1h ago",
-        },
-        {
-          id: "4",
-          type: "contract",
-          title: "Contract Renewal",
-          description: `${tenants[1]?.shop_name || "Tenant"} contract expiring soon`,
-          time: "2h ago",
-          urgent: true,
-        },
-        {
-          id: "5",
-          type: "blacklist",
-          title: "Security Alert",
-          description: "User reported for suspicious activity",
-          time: "3h ago",
-        },
-      ];
+      // Fetch recent activity
+      const activityResult = await getRecentActivity();
+      const activity: RecentActivity[] = activityResult.success && activityResult.data ? activityResult.data : [];
 
       // Generate expiring contracts
       const contracts: ExpiringContract[] = tenants
@@ -253,20 +266,20 @@ export default function AdminDashboard() {
 
       setStats({
         totalUsers: totalUsers || 0,
-        totalRevenue: totalRevenue || 520000,
-        totalTenants: tenants.length || 24,
-        totalSpaces: spaces.length || 100,
-        occupiedSpaces: occupied || 85,
-        availableSpaces: available || 12,
-        pendingSpaces: pending || 3,
+        totalRevenue: totalRevenue,
+        totalTenants: tenants.length,
+        totalSpaces: spaces.length,
+        occupiedSpaces: occupied,
+        availableSpaces: available,
+        pendingSpaces: pending,
         adEngagement: 12450 + Math.floor(Math.random() * 1000),
         urgentAlerts:
           contracts.filter((c) => c.urgent).length +
-          activity.filter((a) => a.urgent).length || 4,
-        paidCount: paidCount || 19,
-        overdueCount: overdueCount || 5,
+          activity.filter((a) => a.urgent).length,
+        paidCount: paidCount,
+        overdueCount: overdueCount,
         expiringContracts:
-          contracts.filter((c) => c.daysLeft <= 30).length || 2,
+          contracts.filter((c) => c.daysLeft <= 30).length,
       });
 
       setRecentActivity(activity);
@@ -417,7 +430,7 @@ export default function AdminDashboard() {
         />
         <StatCard
           title="Occupancy Rate"
-          value={`${Math.round((stats.occupiedSpaces / stats.totalSpaces) * 100)}%`}
+          value={`${stats.totalSpaces > 0 ? Math.round((stats.occupiedSpaces / stats.totalSpaces) * 100) : 0}%`}
           trend="Optimal"
           icon={<Building2 size={20} />}
           color="emerald"
@@ -461,7 +474,7 @@ export default function AdminDashboard() {
           <div className="h-[350px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart
-                data={REVENUE_DATA}
+                data={revenueData}
                 margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
               >
                 <defs>
@@ -564,7 +577,7 @@ export default function AdminDashboard() {
             </ResponsiveContainer>
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
               <p className="text-4xl font-black text-charcoal dark:text-white leading-none">
-                {Math.round((stats.occupiedSpaces / stats.totalSpaces) * 100)}%
+                {stats.totalSpaces > 0 ? Math.round((stats.occupiedSpaces / stats.totalSpaces) * 100) : 0}%
               </p>
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">
                 Occupied
@@ -616,7 +629,7 @@ export default function AdminDashboard() {
 
           <div className="h-[250px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={CATEGORY_DATA}>
+              <BarChart data={categoryData}>
                 <CartesianGrid
                   strokeDasharray="3 3"
                   vertical={false}
@@ -640,7 +653,7 @@ export default function AdminDashboard() {
                   }}
                 />
                 <Bar dataKey="value" radius={[6, 6, 0, 0]}>
-                  {CATEGORY_DATA.map((entry, index) => (
+                  {categoryData.map((entry, index) => (
                     <Cell
                       key={`cell-${index}`}
                       fill={COLORS[index % COLORS.length]}

@@ -41,6 +41,7 @@ export default function ProfilePage() {
     "general" | "security" | "favorites"
   >("general");
   const [isLoading, setIsLoading] = useState(false);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [isMerchantModalOpen, setIsMerchantModalOpen] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
@@ -137,6 +138,33 @@ export default function ProfilePage() {
     });
   };
 
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    setIsUploadingImage(true);
+    try {
+      const { uploadAvatarAction } = await import("@/app/actions/auth");
+      const formData = new FormData();
+      formData.append("file", file);
+      
+      const res = await uploadAvatarAction(user.id, formData);
+      if (res.success && res.data) {
+        updateUser({
+          ...user,
+          avatarUrl: res.data.avatarUrl
+        } as any);
+        toast.success("Profile Image Updated");
+      } else {
+        toast.error("Upload Failed", { description: res.error });
+      }
+    } catch (err) {
+      toast.error("Error", { description: "Failed to upload image." });
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
+
   if (!isAuthenticated) return null;
 
   const favoriteShops = allShops.filter((s) => favIds.includes(s.id));
@@ -195,12 +223,17 @@ export default function ProfilePage() {
               <div className="bg-white dark:bg-zinc-900 rounded-[2.5rem] p-8 border border-slate-100 dark:border-white/5 shadow-xl shadow-slate-200/50 dark:shadow-none relative overflow-hidden group">
                 <div className="relative z-10 flex flex-col items-center">
                   <div className="relative mb-6">
-                    <div className="w-24 h-24 rounded-full bg-primary text-white flex items-center justify-center font-black text-3xl shadow-2xl shadow-primary/30 ring-4 ring-primary/10">
-                      {user?.name?.charAt(0).toUpperCase()}
+                    <div className="w-24 h-24 rounded-full bg-primary text-white flex items-center justify-center font-black text-3xl shadow-2xl shadow-primary/30 ring-4 ring-primary/10 overflow-hidden relative">
+                      {(user as any)?.avatarUrl ? (
+                        <img src={(user as any).avatarUrl} alt="Profile" className="w-full h-full object-cover" />
+                      ) : (
+                        user?.name?.charAt(0).toUpperCase()
+                      )}
                     </div>
-                    <button className="absolute bottom-1 right-1 w-8 h-8 rounded-full bg-charcoal dark:bg-white text-white dark:text-black flex items-center justify-center border-4 border-white dark:border-zinc-900 group-hover:scale-110 transition-transform">
-                      <Camera size={14} />
-                    </button>
+                    <label className="absolute bottom-1 right-1 w-8 h-8 rounded-full bg-charcoal dark:bg-white text-white dark:text-black flex items-center justify-center border-4 border-white dark:border-zinc-900 hover:scale-110 transition-transform cursor-pointer">
+                      <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} disabled={isUploadingImage} />
+                      {isUploadingImage ? <Loader2 size={14} className="animate-spin" /> : <Camera size={14} />}
+                    </label>
                   </div>
                   <h3 className="text-lg font-black text-charcoal dark:text-white text-center line-clamp-1">
                     {user?.name}

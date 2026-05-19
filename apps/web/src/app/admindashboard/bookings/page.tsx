@@ -923,7 +923,7 @@ export default function MasterBookingsPage() {
                   <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5 mb-3">
                     {ev.user?.name || "Authorized Client"}
                   </p>
-                  
+
                   {ev.message && (
                     <div className="p-3 bg-white dark:bg-zinc-900 rounded-xl border border-slate-100 dark:border-white/5">
                       <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 flex items-center gap-1.5">

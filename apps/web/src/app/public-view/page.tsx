@@ -1262,7 +1262,7 @@ export default function PublicDigitalConcierge() {
 
                       {/* Professional Glassmorphism Overlay */}
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60 group-hover:opacity-80 transition-opacity duration-500"></div>
-                      
+
                       <div className={clsx("absolute", "top-6", "right-6")}>
                         <div
                           className={clsx(
@@ -1294,10 +1294,10 @@ export default function PublicDigitalConcierge() {
                           Unit {slot.unit_id}
                         </h4>
                         <div className="flex items-center gap-2 mt-2">
-                           <div className={clsx("w-1.5 h-1.5 rounded-full", slot.status === "AVAILABLE" ? "bg-emerald-400 animate-pulse" : "bg-amber-400")}></div>
-                           <p className="text-[10px] font-bold text-white/70 uppercase tracking-widest">
-                             Plaza Wing — Level 1
-                           </p>
+                          <div className={clsx("w-1.5 h-1.5 rounded-full", slot.status === "AVAILABLE" ? "bg-emerald-400 animate-pulse" : "bg-amber-400")}></div>
+                          <p className="text-[10px] font-bold text-white/70 uppercase tracking-widest">
+                            Plaza Wing — Level 1
+                          </p>
                         </div>
                       </div>
 
@@ -1346,10 +1346,10 @@ export default function PublicDigitalConcierge() {
                           <span className="text-xs font-black text-primary">SQM</span>
                         </div>
                       </div>
-                      
+
                       <div className="flex flex-col items-end gap-1">
-                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Lease Terms</span>
-                         <span className="text-xs font-black text-charcoal dark:text-white uppercase">Flexible</span>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Lease Terms</span>
+                        <span className="text-xs font-black text-charcoal dark:text-white uppercase">Flexible</span>
                       </div>
                     </div>
                   </div>
@@ -1419,8 +1419,8 @@ export default function PublicDigitalConcierge() {
                       </p>
                     </div>
                     <div className="text-right">
-                       <p className="text-[10px] font-bold text-primary uppercase tracking-widest">Explore</p>
-                       <p className="text-[9px] font-bold text-slate-400 uppercase">Full Map</p>
+                      <p className="text-[10px] font-bold text-primary uppercase tracking-widest">Explore</p>
+                      <p className="text-[9px] font-bold text-slate-400 uppercase">Full Map</p>
                     </div>
                   </div>
                 </Link>

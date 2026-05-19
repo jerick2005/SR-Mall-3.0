@@ -44,7 +44,7 @@ export const AppProviders = ({ children }: { children: React.ReactNode }) => {
 
       // 3. Listen for auth changes
       const { data } = supabase.auth.onAuthStateChange(async (event, session) => {
-        if (event === 'SIGNED_IN' && session?.user?.email) {
+        if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session?.user?.email) {
            const res = await loginAction({ 
              email: session.user.email, 
              password: "OAUTH_LOGIN_BYPASS" 
@@ -82,9 +82,13 @@ export const AppProviders = ({ children }: { children: React.ReactNode }) => {
   };
 
   const logout = () => {
+    const hasUser = localStorage.getItem("srmall_user");
     setIsAuthenticated(false);
     setUser(null);
     localStorage.removeItem("srmall_user");
+    if (hasUser) {
+      supabase.auth.signOut().catch((err) => console.error("SignOut error:", err));
+    }
   };
 
   return (

@@ -4,6 +4,7 @@ import { prisma } from "@srmall/database";
 import bcrypt from "bcryptjs";
 import { getBaseUrl } from "@/utils/get-base-url";
 import { revalidatePath } from "next/cache";
+import { getCloudStorageProvider } from "@/lib/cloud-storage";
 
 export async function loginAction(data: { email: string; password: string }) {
   try {
@@ -310,6 +311,35 @@ export async function updateProfileAction(
       };
     }
     return { success: false, error: "Failed to update profile." };
+  }
+}
+
+export async function uploadAvatarAction(userId: string, formData: FormData) {
+  try {
+    const file = formData.get("file") as File;
+    if (!file) return { success: false, error: "No file provided" };
+
+    const storage = getCloudStorageProvider();
+    const { url } = await storage.uploadFile(file, "avatars");
+
+    // We can't use type safety here temporarily because we just added avatarUrl to schema
+    const updatedUser = await (prisma as any).user.update({
+      where: { id: userId },
+      data: { avatarUrl: url },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        avatarUrl: true,
+      },
+    });
+
+    revalidatePath("/profile");
+    return { success: true, data: updatedUser };
+  } catch (error: any) {
+    console.error("[UPLOAD_AVATAR_ERROR]:", error);
+    return { success: false, error: error.message || "Failed to upload avatar" };
   }
 }
 

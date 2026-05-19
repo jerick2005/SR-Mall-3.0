@@ -26,7 +26,8 @@ class LocalStorageProvider implements CloudStorageProvider {
     formData.append("folder", folder);
 
     try {
-      const response = await fetch("/api/upload", {
+      const baseUrl = await getBaseUrl();
+      const response = await fetch(`${baseUrl}/api/upload`, {
         method: "POST",
         body: formData,
       });
@@ -48,8 +49,9 @@ class LocalStorageProvider implements CloudStorageProvider {
 
   async deleteFile(key: string): Promise<boolean> {
     try {
+      const baseUrl = await getBaseUrl();
       const response = await fetch(
-        `/api/upload?key=${encodeURIComponent(key)}`,
+        `${baseUrl}/api/upload?key=${encodeURIComponent(key)}`,
         {
           method: "DELETE",
         },
@@ -84,7 +86,8 @@ class CloudinaryProvider implements CloudStorageProvider {
     formData.append("folder", folder);
 
     try {
-      const response = await fetch("/api/upload", {
+      const baseUrl = await getBaseUrl();
+      const response = await fetch(`${baseUrl}/api/upload`, {
         method: "POST",
         body: formData,
       });
@@ -107,8 +110,9 @@ class CloudinaryProvider implements CloudStorageProvider {
 
   async deleteFile(key: string): Promise<boolean> {
     try {
+      const baseUrl = await getBaseUrl();
       const response = await fetch(
-        `/api/upload?key=${encodeURIComponent(key)}`,
+        `${baseUrl}/api/upload?key=${encodeURIComponent(key)}`,
         {
           method: "DELETE",
         },

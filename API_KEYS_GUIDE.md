@@ -18,7 +18,7 @@ The project now uses a single **Unified Environment File** at the root of the pr
 | Category | Variable | Description | Value |
 | :--- | :--- | :--- | :--- |
 | **Database** | `DATABASE_URL` | PostgreSQL connection string | `postgresql://postgres:admin123@localhost:5435/srmalldb` |
-| **App** | `NEXT_PUBLIC_APP_URL` | The base URL of your application | `http://192.168.0.112:3000` |
+| **App** | `NEXT_PUBLIC_APP_URL` | The base URL of your application | `http://192.168.0.133:3000` |
 | **Supabase** | `NEXT_PUBLIC_SUPABASE_URL` | Your Supabase project URL | `https://caywuflktxjcvxafbmnt.supabase.co` |
 | **Supabase** | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Your Supabase project Anon/Public key | `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...` (See .env) |
 | **Cloudinary** | `CLOUDINARY_CLOUD_NAME` | Cloudinary account name | `dpg3ooznl` |
@@ -64,7 +64,7 @@ Copy the following into your `.env` and `apps/web/.env.local` files:
 DATABASE_URL="postgresql://postgres:admin123@localhost:5435/srmalldb"
 
 # App
-NEXT_PUBLIC_APP_URL="http://192.168.0.112:3000"
+NEXT_PUBLIC_APP_URL="http://192.168.0.133:3000"
 NODE_ENV="development"
 
 # Supabase

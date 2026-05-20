@@ -11,7 +11,6 @@ import {
   Palette,
   Receipt,
 } from "lucide-react";
-import { useAuth } from "@/app/providers";
 import clsx from "clsx";
 
 const navItems = [
@@ -50,7 +49,6 @@ const navItems = [
 ];
 
 export const AdminSidebar = () => {
-  const { user } = useAuth();
   const pathname = usePathname();
 
   return (
@@ -75,32 +73,12 @@ export const AdminSidebar = () => {
       <div
         className={clsx(
           "flex-1",
-          "overflow-y-auto",
+          "overflow-hidden",
           "py-8",
           "px-5",
           "space-y-1.5",
         )}
       >
-        <div className="px-5 mb-8 pb-8 border-b border-slate-100 dark:border-white/5">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-primary text-white flex items-center justify-center font-bold text-xl overflow-hidden border-2 border-white dark:border-zinc-800 shadow-lg">
-              {user?.avatarUrl ? (
-                <img src={user.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
-              ) : (
-                user?.name ? user.name.charAt(0).toUpperCase() : "A"
-              )}
-            </div>
-            <div className="flex flex-col">
-              <span className="text-sm font-black text-charcoal dark:text-white leading-tight">
-                {user?.name || "Admin"}
-              </span>
-              <span className="text-[9px] font-bold text-primary uppercase tracking-[0.2em] mt-1">
-                Portal Management
-              </span>
-            </div>
-          </div>
-        </div>
-
         <div className={clsx("px-5", "mb-4")}>
           <p
             className={clsx(

@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/utils/supabase";
 import { loginAction } from "@/app/actions/auth";
 import { useAuth } from "@/app/providers";
 
-export default function AuthCallbackPage() {
+function AuthCallbackPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { login } = useAuth();
@@ -97,3 +97,28 @@ export default function AuthCallbackPage() {
     </div>
   );
 }
+
+export default function AuthCallbackPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-slate-50 dark:bg-black flex flex-col items-center justify-center p-4">
+        <div className="bg-white dark:bg-zinc-900 shadow-xl rounded-2xl p-8 max-w-md w-full border border-slate-100 dark:border-zinc-800 text-center">
+          <div className="space-y-6">
+            <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
+            <div className="space-y-2">
+              <h2 className="text-xl font-semibold text-slate-900 dark:text-white">
+                Loading Auth Session
+              </h2>
+              <p className="text-sm text-slate-500 dark:text-slate-400">
+                Synchronizing your secure connection...
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    }>
+      <AuthCallbackPageContent />
+    </Suspense>
+  );
+}
+

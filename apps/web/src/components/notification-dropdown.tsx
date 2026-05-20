@@ -141,7 +141,7 @@ export default function NotificationDropdown({
           />
 
           {/* Dropdown Panel */}
-          <div className="absolute right-0 top-12 w-[calc(100vw-2rem)] sm:w-96 bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl border border-slate-100 dark:border-white/5 z-50 overflow-hidden max-w-sm sm:max-w-none">
+          <div className="fixed sm:absolute left-4 right-4 sm:left-auto sm:right-0 top-24 sm:top-12 sm:w-96 bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl border border-slate-100 dark:border-white/5 z-50 overflow-hidden max-w-md sm:max-w-none">
             {/* Header */}
             <div className="flex items-center justify-between p-6 border-b border-slate-100 dark:border-white/5">
               <div className="flex items-center gap-3">
@@ -235,7 +235,7 @@ export default function NotificationDropdown({
                 }
                 setIsOpen(false);
               }}
-              className="w-full text-center text-xs font-bold text-primary hover:text-primary-hover transition-colors"
+              className="w-full text-center py-4 border-t border-slate-100 dark:border-white/5 text-xs font-bold text-primary hover:text-primary-hover transition-colors bg-slate-50/50 dark:bg-zinc-800/30"
             >
               View all notifications
             </button>

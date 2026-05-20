@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
 
     // ─── CLOUDINARY SERVER-SIDE UPLOAD ──────────────────────────────────────
     if (provider === "cloudinary") {
-      const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+      const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || process.env.CLOUDINARY_CLOUD_NAME;
       const apiKey = process.env.CLOUDINARY_API_KEY;
       const apiSecret = process.env.CLOUDINARY_API_SECRET;
 
@@ -123,7 +123,7 @@ export async function DELETE(request: NextRequest) {
       const resourceType = rest[0]; // e.g., 'image' or 'video'
       const publicId = rest.slice(1).join(":"); // e.g. folder/filename
 
-      const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+      const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || process.env.CLOUDINARY_CLOUD_NAME;
       const apiKey = process.env.CLOUDINARY_API_KEY;
       const apiSecret = process.env.CLOUDINARY_API_SECRET;
 

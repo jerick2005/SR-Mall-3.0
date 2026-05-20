@@ -12,6 +12,7 @@ import {
   X,
 } from "lucide-react";
 import { useState, useEffect } from "react";
+import { useAuth } from "@/app/providers";
 import clsx from "clsx";
 
 const navItems = [
@@ -62,6 +63,7 @@ export const TenantSidebar = ({
   isMobileOpen,
   onMobileClose,
 }: TenantSidebarProps = {}) => {
+  const { user } = useAuth();
   const pathname = usePathname();
   const [isMobile, setIsMobile] = useState(false);
 
@@ -106,31 +108,43 @@ export const TenantSidebar = ({
       >
         <div
           className={clsx(
-            "lg:hidden",
             "flex",
             "items-center",
             "justify-between",
             "p-4",
+            "lg:p-6",
             "border-b",
             "border-slate-200",
             "dark:border-white/10",
+            "bg-slate-50/50",
+            "dark:bg-white/5",
           )}
         >
-          <span
-            className={clsx(
-              "text-[10px]",
-              "font-black",
-              "text-slate-400",
-              "dark:text-zinc-600",
-              "uppercase",
-              "tracking-[0.3em]",
-            )}
-          >
-            Menu
-          </span>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-xl bg-primary text-white flex items-center justify-center font-bold text-lg overflow-hidden border-2 border-white dark:border-zinc-800 shadow-md">
+              {/* @ts-ignore */}
+              {user?.avatarUrl ? (
+                /* @ts-ignore */
+                <img src={user.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+              ) : (
+                /* @ts-ignore */
+                user?.name ? user.name.charAt(0).toUpperCase() : "T"
+              )}
+            </div>
+            <div className="flex flex-col">
+              <span className="text-sm font-black text-charcoal dark:text-white leading-tight truncate max-w-[140px]">
+                {/* @ts-ignore */}
+                {user?.name || user?.email?.split('@')[0]}
+              </span>
+              <span className="text-[8px] font-bold text-primary uppercase tracking-[0.2em] mt-0.5">
+                Business Owner
+              </span>
+            </div>
+          </div>
           <button
             onClick={onMobileClose}
             className={clsx(
+              "lg:hidden",
               "p-2",
               "text-slate-500",
               "hover:text-charcoal",

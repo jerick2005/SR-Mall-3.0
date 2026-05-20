@@ -16,17 +16,24 @@ import {
   getMessagesByConversation,
   replyToConversation,
 } from "@/app/actions/chat-queries";
+import { useAuth } from "@/app/providers";
 
 export default function MessengerHub() {
+  const { user } = useAuth();
   const [conversations, setConversations] = useState<any[]>([]);
-  const [activeChat, setActiveChat] = useState<any>(null);
+  const [activeChatId, setActiveChatId] = useState<string | null>(null);
   const [messages, setMessages] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [replyText, setReplyText] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [filter, setFilter] = useState("All");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Derived active chat object ensures data is always current from the conversations list
+  const activeChat = conversations.find((c) => c.id === activeChatId) || null;
 
   useEffect(() => {
     fetchConversations();
@@ -35,26 +42,46 @@ export default function MessengerHub() {
   }, []);
 
   const fetchConversations = async () => {
-    const data = await getAdminConversations();
-    setConversations(data);
-    setLoading(false);
-    if (data.length > 0 && !activeChat) {
-      setActiveChat(data[0]);
+    setIsRefreshing(true);
+    try {
+      const data = await getAdminConversations();
+      setConversations(data);
+
+      // We use a functional update (currentId => ...) to ensure we always have the 
+      // latest state value even inside a setInterval closure.
+      setActiveChatId((currentId) => {
+        // Only auto-select the first chat if none is currently selected.
+        if (!currentId && data.length > 0) {
+          return data[0].id;
+        }
+        return currentId;
+      });
+    } catch (err) {
+      console.error("Failed to fetch conversations:", err);
+    } finally {
+      setLoading(false);
+      setIsRefreshing(false);
     }
   };
 
   useEffect(() => {
-    if (activeChat) {
+    if (activeChatId) {
       fetchMessages();
       const interval = setInterval(fetchMessages, 4000);
       return () => clearInterval(interval);
     }
-  }, [activeChat?.id]);
+  }, [activeChatId]);
 
   const fetchMessages = async () => {
-    if (!activeChat) return;
-    const msgs = await getMessagesByConversation(activeChat.id);
+    if (!activeChatId) return;
+    const msgs = await getMessagesByConversation(activeChatId);
     setMessages(msgs);
+  };
+
+  const handleSelectChat = (chat: any) => {
+    if (chat.id === activeChatId) return;
+    setMessages([]); // Immediately clear messages to prevent misalignment
+    setActiveChatId(chat.id);
   };
 
   useEffect(() => {
@@ -63,20 +90,28 @@ export default function MessengerHub() {
 
   const handleSendReply = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!replyText.trim() || !activeChat || isSending) return;
+    if (!replyText.trim() || !activeChatId || isSending) return;
 
     setIsSending(true);
-    const res = await replyToConversation(activeChat.id, true, replyText);
+    const res = await replyToConversation(activeChatId, true, replyText);
     if (res.success) {
       setReplyText("");
       fetchMessages();
+      fetchConversations();
     }
     setIsSending(false);
   };
 
   const filteredChats = conversations.filter((c) => {
+    const searchStr = searchQuery.toLowerCase();
+    const matchesSearch =
+      (c.user.name || "").toLowerCase().includes(searchStr) ||
+      (c.user.email || "").toLowerCase().includes(searchStr) ||
+      (c.messages[0]?.content || "").toLowerCase().includes(searchStr);
+
+    if (!matchesSearch) return false;
     if (filter === "All") return true;
-    if (filter === "Unread") return c.messages[0]?.senderId !== c.targetId; // Simple unread logic
+    if (filter === "Unread") return c.messages[0]?.senderId !== c.targetId;
     return true;
   });
 
@@ -84,9 +119,12 @@ export default function MessengerHub() {
     <div className="h-screen flex flex-col pt-10 px-8 pb-8 animate-fade-in-up">
       <div className="mb-6 flex items-end justify-between shrink-0">
         <div>
-          <h1 className="text-3xl font-black text-charcoal dark:text-white tracking-tight">
-            Messenger Command Hub
-          </h1>
+          <div className="flex items-center gap-3 mb-1">
+            <h1 className="text-3xl font-black text-charcoal dark:text-white tracking-tight">
+              Messenger Command Hub
+            </h1>
+            {isRefreshing && <Loader2 size={16} className="animate-spin text-slate-400" />}
+          </div>
           <p className="text-sm text-slate-500 font-medium mt-1">
             Centralized management for bookings, inquiries, and tenant support.
           </p>
@@ -105,6 +143,8 @@ export default function MessengerHub() {
               <input
                 type="text"
                 placeholder="Search conversations..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-zinc-800 rounded-xl border border-slate-200 dark:border-white/10 text-sm font-medium focus:border-primary outline-none"
               />
             </div>
@@ -113,11 +153,10 @@ export default function MessengerHub() {
                 <button
                   key={f}
                   onClick={() => setFilter(f)}
-                  className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider whitespace-nowrap transition-colors ${
-                    filter === f
-                      ? "bg-charcoal text-white dark:bg-white dark:text-black"
-                      : "bg-white dark:bg-zinc-800 text-slate-500 border border-slate-200 dark:border-white/10 hover:border-slate-300"
-                  }`}
+                  className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider whitespace-nowrap transition-colors ${filter === f
+                    ? "bg-charcoal text-white dark:bg-white dark:text-black"
+                    : "bg-white dark:bg-zinc-800 text-slate-500 border border-slate-200 dark:border-white/10 hover:border-slate-300"
+                    }`}
                 >
                   {f}
                 </button>
@@ -137,32 +176,40 @@ export default function MessengerHub() {
               filteredChats.map((chat) => (
                 <div
                   key={chat.id}
-                  onClick={() => setActiveChat(chat)}
-                  className={`p-5 border-b border-slate-100 dark:border-white/5 cursor-pointer transition-colors ${
-                    activeChat?.id === chat.id
-                      ? "bg-primary/5 dark:bg-primary/10 border-l-4 border-l-primary"
-                      : "hover:bg-white dark:hover:bg-zinc-800/50 border-l-4 border-l-transparent"
-                  }`}
+                  onClick={() => handleSelectChat(chat)}
+                  className={`p-5 border-b border-slate-100 dark:border-white/5 cursor-pointer transition-colors flex items-center gap-3 ${activeChat?.id === chat.id
+                    ? "bg-primary/5 dark:bg-primary/10 border-l-4 border-l-primary"
+                    : "hover:bg-white dark:hover:bg-zinc-800/50 border-l-4 border-l-transparent"
+                    }`}
                 >
-                  <div className="flex justify-between items-start mb-1">
-                    <h4 className="text-sm font-bold text-charcoal dark:text-white">
-                      {chat.user.name || chat.user.email}
-                    </h4>
-                    <span className="text-[9px] font-bold text-slate-400 uppercase">
-                      {new Date(chat.updatedAt).toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </span>
+                  <div className="w-10 h-10 rounded-full bg-blue-500/10 text-blue-500 flex items-center justify-center font-bold overflow-hidden shrink-0 border border-slate-100 dark:border-white/5">
+                    {chat.user.avatarUrl ? (
+                      <img src={chat.user.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                    ) : (
+                      (chat.user.name || chat.user.email).substring(0, 2).toUpperCase()
+                    )}
                   </div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-md bg-slate-100 text-slate-500 dark:bg-zinc-800">
-                      {chat.type}
-                    </span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex justify-between items-start mb-1">
+                      <h4 className="text-sm font-bold text-charcoal dark:text-white truncate">
+                        {chat.user.name || chat.user.email}
+                      </h4>
+                      <span className="text-[9px] font-bold text-slate-400 uppercase shrink-0">
+                        {new Date(chat.updatedAt).toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-md bg-slate-100 text-slate-500 dark:bg-zinc-800">
+                        {chat.type}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-500 font-medium truncate">
+                      {chat.messages[0]?.content}
+                    </p>
                   </div>
-                  <p className="text-xs text-slate-500 font-medium truncate">
-                    {chat.messages[0]?.content}
-                  </p>
                 </div>
               ))
             )}
@@ -180,7 +227,7 @@ export default function MessengerHub() {
                   </h3>
                 </div>
                 <div className="flex items-center gap-2">
-                  <button className="flex items-center gap-2 px-3 py-1.5 bg-red-50 text-error hover:bg-error hover:text-white rounded-lg text-xs font-bold transition-all border border-red-100">
+                  <button className="flex items-center gap-2 px-3 py-1.5 bg-red-50 dark:bg-red-950/30 text-error dark:text-red-400 hover:bg-error dark:hover:bg-red-600 hover:text-white rounded-lg text-xs font-bold transition-all border border-red-100 dark:border-red-900/50 shadow-sm active:scale-95">
                     <ShieldAlert size={14} /> Blacklist User
                   </button>
                 </div>
@@ -189,26 +236,52 @@ export default function MessengerHub() {
               <div className="flex-1 overflow-y-auto p-8 space-y-6 bg-slate-50/30 dark:bg-black/20">
                 {messages.map((msg) => {
                   const isFromAdmin = msg.senderId === activeChat.targetId;
+                  const senderAvatar = isFromAdmin ? user?.avatarUrl : activeChat.user.avatarUrl;
+                  const senderName = isFromAdmin ? user?.name : activeChat.user.name || activeChat.user.email;
+
                   return (
                     <div
                       key={msg.id}
-                      className={`flex flex-col ${isFromAdmin ? "items-end" : "items-start"} animate-fade-in`}
+                      className={`flex gap-3 ${isFromAdmin ? "justify-end" : "justify-start"} items-end animate-fade-in`}
                     >
-                      <div
-                        className={`max-w-[70%] px-5 py-3 shadow-sm rounded-2xl ${
-                          isFromAdmin
+                      {!isFromAdmin && (
+                        <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-zinc-800 flex items-center justify-center overflow-hidden shrink-0 border border-slate-100 dark:border-white/5">
+                          {senderAvatar ? (
+                            <img src={senderAvatar} alt="Sender" className="w-full h-full object-cover" />
+                          ) : (
+                            <span className="text-[10px] font-bold text-slate-500 uppercase">
+                              {(senderName || "?").substring(0, 2).toUpperCase()}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                      <div className={`flex flex-col ${isFromAdmin ? "items-end" : "items-start"}`}>
+                        <div
+                          className={`max-w-[280px] sm:max-w-[400px] lg:max-w-[500px] px-5 py-3 shadow-sm rounded-2xl ${isFromAdmin
                             ? "bg-primary text-white rounded-tr-sm"
                             : "bg-white dark:bg-zinc-800 border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-300 rounded-tl-sm"
-                        }`}
-                      >
-                        <p className="text-sm font-medium">{msg.content}</p>
+                            }`}
+                        >
+                          <p className="text-sm font-medium">{msg.content}</p>
+                        </div>
+                        <span className="text-[9px] font-bold text-slate-400 uppercase mt-2 px-1">
+                          {new Date(msg.createdAt).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </span>
                       </div>
-                      <span className="text-[9px] font-bold text-slate-400 uppercase mt-2 px-1">
-                        {new Date(msg.createdAt).toLocaleTimeString([], {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </span>
+                      {isFromAdmin && (
+                        <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-zinc-800 flex items-center justify-center overflow-hidden shrink-0 border border-slate-100 dark:border-white/5">
+                          {senderAvatar ? (
+                            <img src={senderAvatar} alt="Sender" className="w-full h-full object-cover" />
+                          ) : (
+                            <span className="text-[10px] font-bold text-slate-500 uppercase">
+                              {(senderName || "?").substring(0, 2).toUpperCase()}
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </div>
                   );
                 })}
@@ -265,9 +338,11 @@ export default function MessengerHub() {
                 {/* Profile Card */}
                 <div className="bg-white dark:bg-zinc-800 p-5 rounded-2xl border border-slate-200 dark:border-white/10 shadow-sm transition-all hover:shadow-md">
                   <div className="flex items-center gap-3 mb-4">
-                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xl uppercase">
-                      {(activeChat.user.name || activeChat.user.email).charAt(
-                        0,
+                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xl uppercase overflow-hidden border border-slate-100 dark:border-white/5">
+                      {activeChat.user.avatarUrl ? (
+                        <img src={activeChat.user.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                      ) : (
+                        (activeChat.user.name || activeChat.user.email).charAt(0)
                       )}
                     </div>
                     <div>

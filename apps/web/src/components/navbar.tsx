@@ -314,9 +314,15 @@ export const Navbar = () => {
                           "justify-center",
                           "font-bold",
                           "text-xs sm:text-sm",
+                          "overflow-hidden",
+                          "border border-slate-100 dark:border-white/5",
                         )}
                       >
-                        {user?.name ? user.name.charAt(0).toUpperCase() : "U"}
+                        {user?.avatarUrl ? (
+                          <img src={user.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                        ) : (
+                          user?.name ? user.name.charAt(0).toUpperCase() : "U"
+                        )}
                       </div>
                       <div
                         className={clsx(
@@ -424,31 +430,31 @@ export const Navbar = () => {
                           </Link>
                           {(user?.role === "CUSTOMER" ||
                             user?.role === "USER") && (
-                            <button
-                              suppressHydrationWarning
-                              onClick={() => {
-                                setIsMerchantModalOpen(true);
-                                setIsProfileOpen(false);
-                              }}
-                              className={clsx(
-                                "w-full",
-                                "flex",
-                                "items-center",
-                                "gap-3",
-                                "px-6",
-                                "py-3",
-                                "text-xs",
-                                "font-black",
-                                "text-primary",
-                                "hover:bg-primary/5",
-                                "transition-colors",
-                                "uppercase",
-                                "tracking-widest",
-                              )}
-                            >
-                              <Store size={16} /> Become a Partner
-                            </button>
-                          )}
+                              <button
+                                suppressHydrationWarning
+                                onClick={() => {
+                                  setIsMerchantModalOpen(true);
+                                  setIsProfileOpen(false);
+                                }}
+                                className={clsx(
+                                  "w-full",
+                                  "flex",
+                                  "items-center",
+                                  "gap-3",
+                                  "px-6",
+                                  "py-3",
+                                  "text-xs",
+                                  "font-black",
+                                  "text-primary",
+                                  "hover:bg-primary/5",
+                                  "transition-colors",
+                                  "uppercase",
+                                  "tracking-widest",
+                                )}
+                              >
+                                <Store size={16} /> Become a Partner
+                              </button>
+                            )}
                         </div>
 
                         <div className="p-2 border-t border-slate-100 dark:border-white/5">
@@ -510,6 +516,27 @@ export const Navbar = () => {
       {/* Mobile Menu Overlay */}
       {isMobileMenuOpen && (
         <div className="fixed inset-0 top-20 z-40 bg-white dark:bg-zinc-900 md:hidden overflow-y-auto animate-fade-in">
+          {isAuthenticated && (
+            <div className="px-6 py-6 border-b border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-white/5">
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 rounded-2xl bg-primary text-white flex items-center justify-center font-bold text-xl overflow-hidden border-2 border-white dark:border-zinc-800 shadow-lg">
+                  {user?.avatarUrl ? (
+                    <img src={user.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                  ) : (
+                    user?.name ? user.name.charAt(0).toUpperCase() : "U"
+                  )}
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-lg font-black text-charcoal dark:text-white leading-tight">
+                    {user?.name || user?.email?.split('@')[0]}
+                  </span>
+                  <span className="text-[10px] font-bold text-primary uppercase tracking-[0.2em] mt-0.5">
+                    {user?.role} Account
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
           <div className="flex flex-col px-4 py-4">
             {[
               { href: "/products", label: "All Products" },

@@ -8,9 +8,9 @@ import { loginAction } from "./actions/auth";
 
 interface AuthContextType {
   isAuthenticated: boolean;
-  user: { id: string; name: string; email: string; role?: string } | null;
-  login: (id: string, name: string, email: string, role?: string) => void;
-  updateUser: (data: { name: string; email: string }) => void;
+  user: { id: string; name: string; email: string; role?: string; avatarUrl?: string | null } | null;
+  login: (id: string, name: string, email: string, role?: string, avatarUrl?: string | null) => void;
+  updateUser: (data: { name?: string; email?: string; avatarUrl?: string | null }) => void;
   logout: () => void;
 }
 
@@ -32,6 +32,7 @@ export const AppProviders = ({ children }: { children: React.ReactNode }) => {
     name: string;
     email: string;
     role?: string;
+    avatarUrl?: string | null;
   } | null>(null);
 
   // Persistence logic
@@ -62,7 +63,7 @@ export const AppProviders = ({ children }: { children: React.ReactNode }) => {
              password: "OAUTH_LOGIN_BYPASS" 
            });
            if (res.success && res.data) {
-             login(res.data.id, res.data.name, res.data.email, res.data.role);
+             login(res.data.id, res.data.name, res.data.email, res.data.role, res.data.avatarUrl);
            }
         } else if (event === 'SIGNED_OUT') {
            logout();
@@ -78,14 +79,14 @@ export const AppProviders = ({ children }: { children: React.ReactNode }) => {
     };
   }, []);
 
-  const login = (id: string, name: string, email: string, role?: string) => {
-    const userData = { id, name, email, role };
+  const login = (id: string, name: string, email: string, role?: string, avatarUrl?: string | null) => {
+    const userData = { id, name, email, role, avatarUrl };
     setIsAuthenticated(true);
     setUser(userData);
     localStorage.setItem("srmall_user", JSON.stringify(userData));
   };
 
-  const updateUser = (data: { name: string; email: string }) => {
+  const updateUser = (data: { name?: string; email?: string; avatarUrl?: string | null }) => {
     if (user) {
       const updatedUser = { ...user, ...data };
       setUser(updatedUser);

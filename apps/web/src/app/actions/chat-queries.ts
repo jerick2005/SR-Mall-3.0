@@ -52,8 +52,16 @@ export async function getTenantConversations(userId: string) {
   try {
     const conversations = await prisma.conversation.findMany({
       where: {
-        type: "TENANT",
-        targetId: userId,
+        OR: [
+          {
+            type: "TENANT",
+            targetId: userId,
+          },
+          {
+            type: "ADMIN",
+            userId: userId,
+          },
+        ],
       },
       include: {
         user: true,
@@ -189,5 +197,17 @@ export async function replyToConversation(
   } catch (error) {
     console.error("Failed to reply:", error);
     return { success: false };
+  }
+}
+
+export async function getPortalAdminAction() {
+  try {
+    const admin = await prisma.user.findFirst({
+      where: { role: "ADMIN" },
+      select: { id: true, name: true, email: true, avatarUrl: true },
+    });
+    return admin;
+  } catch (error) {
+    return null;
   }
 }

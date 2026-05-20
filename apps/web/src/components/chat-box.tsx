@@ -47,10 +47,11 @@ export const ChatBox = ({
   const [recipient, setRecipient] = useState<"admin" | "shop">(
     initialRecipient || "shop",
   );
-  const [availableShops, setAvailableShops] = useState<string[]>(DEFAULT_SHOPS);
-  const [selectedShop, setSelectedShop] = useState(
-    initialShopName || DEFAULT_SHOPS[0],
-  );
+  const [availableShops, setAvailableShops] = useState<{ name: string, logo: string | null }[]>([]);
+  const [selectedShop, setSelectedShop] = useState<{ name: string, logo: string | null }>({
+    name: initialShopName || DEFAULT_SHOPS[0],
+    logo: null
+  });
   const [viewMode, setViewMode] = useState<"list" | "chat">("list");
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -59,12 +60,14 @@ export const ChatBox = ({
     async function fetchShops() {
       const res = await getAllStorefrontsAction();
       if (res.success && res.data) {
-        const names = res.data.map((s: any) => s.shop_name);
-        setAvailableShops(names.length > 0 ? names : DEFAULT_SHOPS);
+        const shops = res.data.map((s: any) => ({ name: s.shop_name, logo: s.logo_url }));
+        setAvailableShops(shops);
+
         if (initialShopName) {
-          setSelectedShop(initialShopName);
-        } else if (names.length > 0 && !names.includes(selectedShop)) {
-          setSelectedShop(names[0]);
+          const match = shops.find(s => s.name === initialShopName);
+          setSelectedShop(match || { name: initialShopName, logo: null });
+        } else if (shops.length > 0) {
+          setSelectedShop(shops[0]);
         }
       }
     }
@@ -78,7 +81,8 @@ export const ChatBox = ({
       setViewMode("chat");
     }
     if (initialShopName) {
-      setSelectedShop(initialShopName);
+      const match = availableShops.find(s => s.name === initialShopName);
+      setSelectedShop(match || { name: initialShopName, logo: null });
       setViewMode("chat");
     }
     // Clear messages when switching context to ensure isolation
@@ -103,7 +107,7 @@ export const ChatBox = ({
       const history = await getConversationHistory(
         user.email,
         recipient,
-        selectedShop,
+        selectedShop.name,
       );
       setDbMessages(history);
     };
@@ -153,7 +157,7 @@ export const ChatBox = ({
         userId: user.email,
         recipientType: recipient,
         content: textToSend,
-        shopName: selectedShop,
+        shopName: selectedShop.name,
         slotId: slotId,
       });
     }
@@ -174,18 +178,32 @@ export const ChatBox = ({
               </button>
             )}
             <div className="relative">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center font-black text-lg sm:text-xl shadow-inner">
-                {viewMode === "chat" && recipient === "shop"
-                  ? selectedShop.substring(0, 1).toUpperCase()
-                  : "S"}
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center overflow-hidden font-black text-lg sm:text-xl shadow-inner">
+                {viewMode === "list" && isAuthenticated && user?.avatarUrl ? (
+                  <img
+                    src={user.avatarUrl}
+                    alt="Profile"
+                    className="w-full h-full object-cover"
+                  />
+                ) : viewMode === "chat" && recipient === "shop" ? (
+                  selectedShop.logo ? (
+                    <img src={selectedShop.logo} alt="Shop" className="w-full h-full object-cover" />
+                  ) : (
+                    selectedShop.name.substring(0, 1).toUpperCase()
+                  )
+                ) : (
+                  "S"
+                )}
               </div>
               <div className="absolute -bottom-1 -right-1 w-3 h-3 sm:w-4 sm:h-4 bg-green-400 rounded-full border-2 border-primary animate-pulse"></div>
             </div>
             <div className="flex flex-col">
-              <h3 className="font-bold text-xs sm:text-sm tracking-tight">
+              <h3 className="font-bold text-xs sm:text-sm tracking-tight truncate max-w-[150px]">
                 {viewMode === "chat" && recipient === "shop"
-                  ? selectedShop
-                  : "Mall Messenger"}
+                  ? selectedShop.name
+                  : viewMode === "list" && isAuthenticated
+                    ? `Hi, ${user?.name?.split(" ")[0]}`
+                    : "Mall Messenger"}
               </h3>
               <span className="text-[9px] sm:text-[10px] font-bold text-white/80 uppercase tracking-widest">
                 {viewMode === "chat" ? "Active Conversation" : "Live Connect"}
@@ -212,9 +230,35 @@ export const ChatBox = ({
           <div className="flex-1 overflow-y-auto bg-slate-50 dark:bg-black/20 custom-scrollbar">
             {isAuthenticated ? (
               <div className="p-3 sm:p-4 space-y-2">
+                {isAuthenticated && (
+                  <div className="mx-2 mb-6 p-4 bg-white dark:bg-zinc-800 rounded-2xl border border-slate-100 dark:border-white/5 flex items-center gap-4 shadow-sm">
+                    <div className="w-12 h-12 rounded-xl overflow-hidden bg-primary/10 flex items-center justify-center shrink-0">
+                      {user?.avatarUrl ? (
+                        <img
+                          src={user.avatarUrl}
+                          alt={user.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <span className="text-lg font-black text-primary">
+                          {user?.name?.substring(0, 1).toUpperCase()}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold text-charcoal dark:text-white truncate">
+                        {user?.name}
+                      </p>
+                      <p className="text-[10px] font-medium text-slate-400 truncate uppercase tracking-tight">
+                        Authenticated Customer
+                      </p>
+                    </div>
+                  </div>
+                )}
+
                 <div className="px-2 mb-4 mt-1 flex flex-col gap-3">
-                  <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest">
-                    Your Conversations
+                  <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
+                    Active Channels
                   </h4>
                   <div className="relative">
                     <Search
@@ -227,7 +271,7 @@ export const ChatBox = ({
                       placeholder="Search stores or admin..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full bg-white dark:bg-zinc-800 border border-slate-200 dark:border-white/10 rounded-xl py-2 pl-9 pr-3 text-xs font-medium text-charcoal dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-primary shadow-sm transition-all focus:ring-2 focus:ring-primary/20"
+                      className="w-full bg-white dark:bg-zinc-800 border border-slate-200 dark:border-white/10 rounded-xl py-2.5 pl-9 pr-3 text-xs font-medium text-charcoal dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-primary shadow-sm transition-all focus:ring-2 focus:ring-primary/20"
                     />
                   </div>
                 </div>
@@ -237,35 +281,35 @@ export const ChatBox = ({
                   "mall administration booking support admin".includes(
                     searchQuery.toLowerCase(),
                   )) && (
-                  <div
-                    onClick={() => {
-                      setRecipient("admin");
-                      setViewMode("chat");
-                    }}
-                    className="flex items-center gap-4 p-4 bg-white dark:bg-zinc-800 rounded-xl hover:shadow-md cursor-pointer transition-all border border-slate-100 dark:border-white/5"
-                  >
-                    <div className="w-12 h-12 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold">
-                      MA
+                    <div
+                      onClick={() => {
+                        setRecipient("admin");
+                        setViewMode("chat");
+                      }}
+                      className="flex items-center gap-4 p-4 bg-white dark:bg-zinc-800 rounded-xl hover:shadow-md cursor-pointer transition-all border border-slate-100 dark:border-white/5"
+                    >
+                      <div className="w-12 h-12 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold">
+                        MA
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="font-bold text-sm text-charcoal dark:text-white">
+                          Mall Administration
+                        </h4>
+                        <p className="text-xs text-slate-500 font-medium">
+                          Booking & Support Inquiries
+                        </p>
+                      </div>
                     </div>
-                    <div className="flex-1">
-                      <h4 className="font-bold text-sm text-charcoal dark:text-white">
-                        Mall Administration
-                      </h4>
-                      <p className="text-xs text-slate-500 font-medium">
-                        Booking & Support Inquiries
-                      </p>
-                    </div>
-                  </div>
-                )}
+                  )}
 
                 {/* Shops */}
                 {availableShops
                   .filter((shop) =>
-                    shop.toLowerCase().includes(searchQuery.toLowerCase()),
+                    shop.name.toLowerCase().includes(searchQuery.toLowerCase()),
                   )
                   .map((shop) => (
                     <div
-                      key={shop}
+                      key={shop.name}
                       onClick={() => {
                         setRecipient("shop");
                         setSelectedShop(shop);
@@ -273,12 +317,16 @@ export const ChatBox = ({
                       }}
                       className="flex items-center gap-4 p-4 bg-white dark:bg-zinc-800 rounded-xl hover:shadow-md cursor-pointer transition-all border border-slate-100 dark:border-white/5"
                     >
-                      <div className="w-12 h-12 rounded-full bg-blue-500/10 text-blue-500 flex items-center justify-center font-bold">
-                        {shop.substring(0, 2).toUpperCase()}
+                      <div className="w-12 h-12 rounded-full overflow-hidden bg-blue-500/10 text-blue-500 flex items-center justify-center font-bold border border-slate-100 dark:border-white/5">
+                        {shop.logo ? (
+                          <img src={shop.logo} alt="Logo" className="w-full h-full object-cover" />
+                        ) : (
+                          shop.name.substring(0, 2).toUpperCase()
+                        )}
                       </div>
                       <div className="flex-1 overflow-hidden">
                         <h4 className="font-bold text-sm text-charcoal dark:text-white truncate">
-                          {shop}
+                          {shop.name}
                         </h4>
                         <p className="text-xs text-slate-500 font-medium">
                           Tenant Support
@@ -322,26 +370,52 @@ export const ChatBox = ({
 
               {dbMessages.map((msg: any) => {
                 const isUserSender = msg.sender?.email === user?.email;
+                const senderAvatar = isUserSender ? user?.avatarUrl : msg.sender?.avatarUrl;
+                const senderName = isUserSender ? user?.name : msg.sender?.name || msg.sender?.email;
+
                 return (
                   <div
                     key={msg.id}
-                    className={`flex flex-col ${isUserSender ? "items-end" : "items-start"} animate-fade-in`}
+                    className={`flex gap-2.5 ${isUserSender ? "justify-end" : "justify-start"} items-end animate-fade-in`}
                   >
-                    <div
-                      className={`max-w-[85%] rounded-3xl px-5 py-3.5 shadow-sm text-sm font-medium leading-relaxed ${
-                        isUserSender
+                    {!isUserSender && (
+                      <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-zinc-800 flex items-center justify-center overflow-hidden shrink-0 border border-slate-100 dark:border-white/5">
+                        {senderAvatar ? (
+                          <img src={senderAvatar} alt="Sender" className="w-full h-full object-cover" />
+                        ) : (
+                          <span className="text-[10px] font-bold text-slate-500 uppercase">
+                            {(senderName || (recipient === "admin" ? "AD" : selectedShop.name)).substring(0, 2).toUpperCase()}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                    <div className={`flex flex-col ${isUserSender ? "items-end" : "items-start"}`}>
+                      <div
+                        className={`max-w-[240px] sm:max-w-[280px] rounded-3xl px-4 py-2.5 shadow-sm text-sm font-medium leading-relaxed ${isUserSender
                           ? "bg-primary text-white rounded-tr-sm"
                           : "bg-white dark:bg-zinc-800 text-charcoal dark:text-slate-300 rounded-tl-sm border border-slate-100 dark:border-white/5"
-                      }`}
-                    >
-                      {msg.content}
+                          }`}
+                      >
+                        {msg.content}
+                      </div>
+                      <div className="mt-1 px-2 text-[9px] font-bold uppercase tracking-widest text-slate-400">
+                        {new Date(msg.createdAt).toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </div>
                     </div>
-                    <div className="mt-1.5 px-2 text-[9px] font-bold uppercase tracking-widest text-slate-400">
-                      {new Date(msg.createdAt).toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </div>
+                    {isUserSender && (
+                      <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-zinc-800 flex items-center justify-center overflow-hidden shrink-0 border border-slate-100 dark:border-white/5">
+                        {senderAvatar ? (
+                          <img src={senderAvatar} alt="Sender" className="w-full h-full object-cover" />
+                        ) : (
+                          <span className="text-[10px] font-bold text-slate-500 uppercase">
+                            {(senderName || "ME").substring(0, 2).toUpperCase()}
+                          </span>
+                        )}
+                      </div>
+                    )}
                   </div>
                 );
               })}

@@ -92,8 +92,12 @@ export const TenantNavbar = ({ onMenuClick }: TenantNavbarProps) => {
               onClick={() => setIsProfileOpen(!isProfileOpen)}
               className="flex items-center gap-2 px-2 sm:px-3 py-1.5 bg-slate-50 dark:bg-zinc-800 rounded-full border border-slate-100 dark:border-white/5 transition-all hover:shadow-lg"
             >
-              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-primary text-white flex items-center justify-center font-bold text-xs sm:text-sm shadow-inner tracking-wider">
-                {user?.name ? user.name.charAt(0).toUpperCase() : "T"}
+              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-primary text-white flex items-center justify-center font-bold text-xs sm:text-sm shadow-inner tracking-wider overflow-hidden border border-slate-100 dark:border-white/5">
+                {user?.avatarUrl ? (
+                  <img src={user.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                ) : (
+                  user?.name ? user.name.charAt(0).toUpperCase() : "T"
+                )}
               </div>
               <div className="flex-col items-start leading-none hidden md:flex">
                 <span className="text-xs font-bold text-charcoal dark:text-white">

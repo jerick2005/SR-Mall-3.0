@@ -9,7 +9,7 @@ import NotificationDropdown from "../notification-dropdown";
 import { Bell, ChevronDown, LogOut, Search, User } from "lucide-react";
 
 export const AdminNavbar = () => {
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const router = useRouter();
 
@@ -61,12 +61,16 @@ export const AdminNavbar = () => {
               onClick={() => setIsProfileOpen(!isProfileOpen)}
               className="flex items-center gap-3 px-3 py-1.5 bg-slate-50 dark:bg-zinc-800 rounded-full border border-slate-100 dark:border-white/5 transition-all hover:shadow-lg"
             >
-              <div className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center font-bold text-sm shadow-inner tracking-wider">
-                AD
+              <div className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center font-bold text-sm shadow-inner tracking-wider overflow-hidden border border-slate-100 dark:border-white/5">
+                {user?.avatarUrl ? (
+                  <img src={user.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                ) : (
+                  user?.name ? user.name.substring(0, 2).toUpperCase() : "AD"
+                )}
               </div>
               <div className="flex flex-col items-start leading-none hidden md:flex">
                 <span className="text-xs font-bold text-charcoal dark:text-white">
-                  Admin Module
+                  {user?.name || "Admin Module"}
                 </span>
                 <span className="text-[10px] text-slate-400 font-medium tracking-tight">
                   Super Administrator

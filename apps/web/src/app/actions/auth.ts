@@ -35,6 +35,7 @@ export async function loginAction(data: { email: string; password: string }) {
             name: newUser.name || newUser.email.split("@")[0],
             email: newUser.email,
             role: newUser.role,
+            avatarUrl: (newUser as any).avatarUrl || null,
             tenantId: null,
             isBlacklisted: false,
           },
@@ -82,6 +83,7 @@ export async function loginAction(data: { email: string; password: string }) {
         name: user.name || user.email.split("@")[0],
         email: user.email,
         role: user.role,
+        avatarUrl: (user as any).avatarUrl || null,
         tenantId: user.tenant?.id || null,
         isBlacklisted: (user as any).isBlacklisted,
       },
@@ -387,5 +389,98 @@ export async function updateSecurityAction(
   } catch (error: any) {
     console.error("[SECURITY_UPDATE_ERROR]:", error);
     return { success: false, error: error.message };
+  }
+}
+
+export async function requestPasswordResetAction(email: string) {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { email: email.toLowerCase() },
+    });
+
+    if (!user) {
+      // For security, don't reveal if user exists. Just say email sent.
+      return { success: true, message: "If an account exists, a reset link has been sent." };
+    }
+
+    // Generate a 6-digit token or a UUID
+    const token = Math.floor(100000 + Math.random() * 900000).toString();
+    const expires = new Date(Date.now() + 3600000); // 1 hour expiry
+
+    // Save token to DB
+    await prisma.passwordResetToken.upsert({
+      where: { token },
+      update: { token, expires }, // Rare collision case
+      create: {
+        email: email.toLowerCase(),
+        token,
+        expires,
+      },
+    });
+
+    // Send email
+    const { sendGmail } = await import("@/lib/gmail");
+    await sendGmail({
+      to: email,
+      subject: "🔒 Reset Your SR Mall Password",
+      html: `
+        <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eee; border-radius: 12px;">
+          <h2 style="color: #be1e2d; text-align: center;">Password Recovery</h2>
+          <p>Hello,</p>
+          <p>We received a request to reset your password. Use the verification code below to authorize the change:</p>
+          <div style="background: #f8fafc; padding: 20px; text-align: center; font-size: 32px; font-weight: bold; letter-spacing: 10px; color: #1e293b; border-radius: 8px; margin: 20px 0; border: 1px dashed #be1e2d;">
+            ${token}
+          </div>
+          <p style="color: #64748b; font-size: 14px;">This code expires in 1 hour. If you didn't request this, you can safely ignore this email.</p>
+          <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;" />
+          <p style="font-size: 11px; color: #94a3b8; text-align: center;">
+            SR Mall Experience Desk • Standard Security Protocol
+          </p>
+        </div>
+      `,
+    });
+
+    return { success: true, message: "A recovery code has been sent to your email." };
+  } catch (error) {
+    console.error("[PWD_RESET_REQ_ERROR]:", error);
+    return { success: false, error: "Failed to send reset email." };
+  }
+}
+
+export async function resetPasswordAction(data: {
+  email: string;
+  token: string;
+  newPassword: string;
+}) {
+  try {
+    const { email, token, newPassword } = data;
+
+    const resetToken = await prisma.passwordResetToken.findFirst({
+      where: {
+        token,
+        email: email.toLowerCase(),
+      },
+    });
+
+    if (!resetToken || resetToken.expires < new Date()) {
+      return { success: false, error: "Invalid or expired verification code." };
+    }
+
+    // Hash and update password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await prisma.user.update({
+      where: { email: email.toLowerCase() },
+      data: { password: hashedPassword },
+    });
+
+    // Delete token after use
+    await prisma.passwordResetToken.delete({
+      where: { id: resetToken.id },
+    });
+
+    return { success: true, message: "Password updated successfully." };
+  } catch (error) {
+    console.error("[PWD_RESET_ERROR]:", error);
+    return { success: false, error: "Failed to reset password." };
   }
 }

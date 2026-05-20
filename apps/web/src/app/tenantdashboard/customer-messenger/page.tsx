@@ -53,7 +53,7 @@ export default function CustomerMessenger() {
             updatedAt: new Date(),
             messages: [],
             isVirtual: true // Mark as virtual so we can handle initial message
-          });
+          } as any);
         }
       }
 

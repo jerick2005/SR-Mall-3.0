@@ -16,6 +16,7 @@ import {
   Facebook,
   Eye,
   EyeOff,
+  Loader2,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/app/providers";

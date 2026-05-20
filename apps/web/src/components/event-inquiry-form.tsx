@@ -142,14 +142,14 @@ export const EventInquiryForm = ({
         )}
       >
         <div
-          className={clsx("flex", "flex-row", "min-h-[380px] sm:min-h-[600px]")}
+          className={clsx("flex", "flex-col", "md:flex-row", "min-h-[380px] md:min-h-[600px]")}
         >
           {/* Left Side: Brand & Value Prop (Force Sidebar) */}
           <div
             className={clsx(
-              "w-5/12 sm:w-5/12",
+              "w-full md:w-5/12",
               "bg-primary",
-              "p-4 xs:p-6 sm:p-12 lg:p-16",
+              "p-8 sm:p-12 lg:p-16",
               "text-white",
               "flex",
               "flex-col",
@@ -175,10 +175,10 @@ export const EventInquiryForm = ({
               )}
             ></div>
 
-            <div className="space-y-4 sm:space-y-10 relative z-10">
+            <div className="space-y-6 sm:space-y-10 relative z-10">
               <div
                 className={clsx(
-                  "w-10 h-10 sm:w-16 sm:h-16",
+                  "w-12 h-12 sm:w-16 sm:h-16",
                   "bg-white/20",
                   "rounded-xl sm:rounded-[2rem]",
                   "flex",
@@ -189,42 +189,41 @@ export const EventInquiryForm = ({
                   "border-white/30",
                 )}
               >
-                <Ticket size={18} className="text-white sm:size-8" />
+                <Ticket size={24} className="text-white sm:size-8" />
               </div>
               <div>
-                <span className="text-[7px] xs:text-[9px] sm:text-[11px] font-black uppercase tracking-[0.2em] text-white/60 mb-1 sm:mb-2 block">
+                <span className="text-xs sm:text-[11px] font-black uppercase tracking-[0.2em] text-white/60 mb-2 block">
                   Premium Venue Hire
                 </span>
                 <h3
                   className={clsx(
-                    "text-[12px] xs:text-base sm:text-4xl lg:text-5xl",
+                    "text-3xl sm:text-4xl lg:text-5xl",
                     "font-black",
                     "tracking-tighter",
                     "leading-[0.9]",
                   )}
                 >
-                  Plan Your <br className="sm:hidden" /> Next <br />{" "}
+                  Plan Your <br className="hidden sm:block md:hidden lg:block" /> Next <br className="hidden md:block lg:hidden" />{" "}
                   Masterpiece.
                 </h3>
               </div>
               <p
                 className={clsx(
-                  "text-[7px] xs:text-[9px] sm:text-base",
+                  "text-sm sm:text-base",
                   "text-white/80",
-                  "leading-tight sm:leading-relaxed",
+                  "leading-relaxed",
                   "font-medium",
-                  "max-w-[90px] xs:max-w-none",
                 )}
               >
                 The base for legendary{" "}
-                <br className="hidden xs:block sm:hidden" /> global moments.
+                <br className="hidden sm:block md:hidden lg:block" /> global moments.
               </p>
             </div>
 
             <div
               className={clsx(
-                "mt-6 sm:mt-12",
-                "space-y-2 sm:space-y-5",
+                "mt-8 sm:mt-12",
+                "space-y-3 sm:space-y-5",
                 "relative",
                 "z-10",
               )}
@@ -239,16 +238,16 @@ export const EventInquiryForm = ({
                   className={clsx(
                     "flex",
                     "items-center",
-                    "gap-2 sm:gap-4",
+                    "gap-3 sm:gap-4",
                     "group",
                   )}
                 >
-                  <div className="w-4 h-4 sm:w-7 sm:h-7 rounded-full bg-white/10 flex items-center justify-center border border-white/5">
-                    <item.icon size={8} className="text-white sm:size-[14px]" />
+                  <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-white/10 flex items-center justify-center border border-white/5">
+                    <item.icon size={12} className="text-white sm:size-[14px]" />
                   </div>
                   <span
                     className={clsx(
-                      "text-[7px] xs:text-[8px] sm:text-sm",
+                      "text-xs sm:text-sm",
                       "font-black",
                       "whitespace-nowrap",
                       "uppercase",
@@ -265,8 +264,8 @@ export const EventInquiryForm = ({
           {/* Right Side: Form Content */}
           <div
             className={clsx(
-              "w-7/12 sm:w-7/12",
-              "p-4 xs:p-8 sm:p-12 lg:p-20",
+              "w-full md:w-7/12",
+              "p-6 sm:p-8 md:p-12 lg:p-20",
               "bg-slate-50/50",
               "dark:bg-black/40",
               "flex",
@@ -274,12 +273,12 @@ export const EventInquiryForm = ({
               "justify-center",
             )}
           >
-            <div className="mb-4 sm:mb-12">
+            <div className="mb-6 sm:mb-12">
               <div className="flex items-center gap-2 sm:gap-3 mb-1 sm:mb-2">
-                <div className="w-1.5 h-4 sm:w-2 sm:h-10 bg-primary rounded-full"></div>
+                <div className="w-1.5 h-6 sm:w-2 sm:h-10 bg-primary rounded-full"></div>
                 <h4
                   className={clsx(
-                    "text-[12px] xs:text-base sm:text-3xl lg:text-4xl",
+                    "text-xl sm:text-2xl md:text-3xl lg:text-4xl",
                     "font-black",
                     "text-charcoal",
                     "dark:text-white",
@@ -289,7 +288,7 @@ export const EventInquiryForm = ({
                   RESERVATION
                 </h4>
               </div>
-              <p className="text-[7px] xs:text-[9px] sm:text-sm text-slate-500 font-bold ml-3 sm:ml-5 uppercase tracking-widest">
+              <p className="text-xs sm:text-sm text-slate-500 font-bold ml-4 sm:ml-5 uppercase tracking-widest">
                 Protocol response: 12h.
               </p>
             </div>

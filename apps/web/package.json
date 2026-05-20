@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
-    "@srmall/database": "file:../../packages/database",
+    "@srmall/database": "1.0.0",
     "@supabase/supabase-js": "^2.103.3",
     "autoprefixer": "^10.4.14",
     "bcryptjs": "^3.0.3",

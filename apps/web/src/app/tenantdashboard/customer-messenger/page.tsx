@@ -49,7 +49,7 @@ export default function CustomerMessenger() {
             type: "ADMIN",
             userId: user.id,
             targetId: admin.id,
-            target: admin,
+            target: admin as any,
             updatedAt: new Date(),
             messages: [],
             isVirtual: true // Mark as virtual so we can handle initial message

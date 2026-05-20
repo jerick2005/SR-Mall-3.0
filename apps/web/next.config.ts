@@ -41,6 +41,7 @@ const nextConfig: NextConfig = {
     "jspdf",
     "jspdf-autotable",
   ],
+  transpilePackages: ["@srmall/database"],
   experimental: {
     serverActions: {
       allowedOrigins: ["*", ...getLocalOrigins()],

@@ -167,25 +167,25 @@ export const ShopSalesSlider = ({ shops }: { shops: any[] }) => {
               {/* Additional dark overlay for better readability if needed, but keeping user's requested style primary */}
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
 
-              <div className="absolute bottom-0 left-0 w-full p-8 sm:p-12 md:p-16 flex flex-col md:flex-row md:items-end justify-between gap-8">
-                <div className="space-y-4 max-w-2xl">
+              <div className="absolute bottom-0 left-0 w-full p-6 sm:p-12 md:p-16 flex flex-col md:flex-row md:items-end justify-between gap-6 sm:gap-8">
+                <div className="space-y-3 sm:space-y-4 max-w-2xl">
                   <span className="inline-block px-4 py-1.5 bg-white/20 backdrop-blur-md text-white text-[10px] font-black uppercase tracking-widest rounded-full border border-white/30">
                     {currentSale.shopName}
                   </span>
-                  <h3 className="text-3xl sm:text-5xl md:text-7xl font-black text-white leading-tight uppercase tracking-tighter">
+                  <h3 className="text-2xl sm:text-5xl md:text-7xl font-black text-white leading-tight uppercase tracking-tighter">
                     {currentSale.title}
                   </h3>
-                  <div className="flex items-center gap-3 text-white/90 font-bold text-lg">
-                    <Tag size={20} className="text-primary" />
+                  <div className="flex items-center gap-3 text-white/90 font-bold text-base sm:text-lg">
+                    <Tag size={16} className="text-primary sm:w-5 sm:h-5" />
                     {currentSale.date}
                   </div>
                 </div>
                 
-                <Link href={`/shop/${currentSale.shopId}`} suppressHydrationWarning className="group flex items-center gap-4 px-8 py-5 bg-primary text-white font-black uppercase tracking-widest rounded-2xl hover:bg-white hover:text-primary transition-all active:scale-95 shadow-2xl shadow-primary/40 shrink-0">
+                <Link href={`/shop/${currentSale.shopId}`} suppressHydrationWarning className="group flex items-center gap-2 sm:gap-4 px-4 py-2.5 sm:px-8 sm:py-5 bg-primary text-white font-black text-[9px] sm:text-xs uppercase tracking-widest rounded-xl sm:rounded-2xl hover:bg-white hover:text-primary transition-all active:scale-95 shadow-2xl shadow-primary/40 shrink-0 self-start md:self-auto">
                   Now Visiting
                   <br className="hidden sm:block" />
                   {currentSale.shopName}
-                  <ArrowRight size={20} className="group-hover:translate-x-2 transition-transform" />
+                  <ArrowRight className="w-3.5 h-3.5 sm:w-5 sm:h-5 group-hover:translate-x-2 transition-transform" />
                 </Link>
               </div>
             </motion.div>
